@@ -6,7 +6,7 @@
 
 int add_to_link_list(struct link **links, char *href, char *rel)
 {
-  struct link *onelink, *now, *last;
+  struct link *onelink, *curr, *last;
 
   onelink = malloc(sizeof(struct link));
   if (onelink == NULL)
@@ -20,10 +20,10 @@ int add_to_link_list(struct link **links, char *href, char *rel)
     /* First element in the list */
     *links = onelink;
   else {
-    now = *links;
-    while (now != NULL) {
-      last = now;
-      now = now->next;
+    curr = *links;
+    while (curr != NULL) {
+      last = curr;
+      curr = curr->next;
     }
     last->next = onelink;
   }
@@ -33,27 +33,27 @@ int add_to_link_list(struct link **links, char *href, char *rel)
 
 void print_link_list(struct link **links, FILE *stream)
 {
-  struct link *now;
+  struct link *curr;
 
   if (stream == NULL)
     stream = stderr;
 
-  now = *links;
-  while (now != NULL) {
-    fprintf(stream, "HREF %s, REL %s\n", now->href, now->rel);
-    now = now->next;
+  curr = *links;
+  while (curr != NULL) {
+    fprintf(stream, "HREF %s, REL %s\n", curr->href, curr->rel);
+    curr = curr->next;
   }
 }
 
 char *find_href_by_rel_in_link_list(struct link **links, char *rel)
 {
-  struct link *now;
+  struct link *curr;
 
-  now = *links;
-  while (now != NULL) {
-    if (STREQ(now->rel, rel))
-      return now->href;
-    now = now->next;
+  curr = *links;
+  while (curr != NULL) {
+    if (STREQ(curr->rel, rel))
+      return curr->href;
+    curr = curr->next;
   }
 
   return NULL;
@@ -61,15 +61,15 @@ char *find_href_by_rel_in_link_list(struct link **links, char *rel)
 
 void free_link_list(struct link **links)
 {
-  struct link *now, *next;
+  struct link *curr, *next;
 
-  now = *links;
-  while (now != NULL) {
-    next = now->next;
-    free(now->href);
-    free(now->rel);
-    free(now);
-    now = next;
+  curr = *links;
+  while (curr != NULL) {
+    next = curr->next;
+    free(curr->href);
+    free(curr->rel);
+    free(curr);
+    curr = next;
   }
 
   *links = NULL;

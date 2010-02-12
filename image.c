@@ -8,7 +8,7 @@ int add_to_image_list(struct image **images, const char *href, const char *id,
 		      const char *description, const char *architecture,
 		      const char *owner_id, const char *name)
 {
-  struct image *oneimage, *now, *last;
+  struct image *oneimage, *curr, *last;
 
   oneimage = malloc(sizeof(struct image));
   if (oneimage == NULL)
@@ -26,10 +26,10 @@ int add_to_image_list(struct image **images, const char *href, const char *id,
     /* First element in the list */
     *images = oneimage;
   else {
-    now = *images;
-    while (now != NULL) {
-      last = now;
-      now = now->next;
+    curr = *images;
+    while (curr != NULL) {
+      last = curr;
+      curr = curr->next;
     }
     last->next = oneimage;
   }
@@ -39,38 +39,38 @@ int add_to_image_list(struct image **images, const char *href, const char *id,
 
 void print_image_list(struct image **images, FILE *stream)
 {
-  struct image *now;
+  struct image *curr;
 
   if (stream == NULL)
     stream = stderr;
 
-  now = *images;
-  while (now != NULL) {
-    fprintf(stream, "Href: %s\n", now->href);
-    fprintf(stream, "ID: %s\n", now->id);
-    fprintf(stream, "Description: %s\n", now->description);
-    fprintf(stream, "Architecture: %s\n", now->architecture);
-    fprintf(stream, "Owner ID: %s\n", now->owner_id);
-    fprintf(stream, "Name: %s\n", now->name);
-    now = now->next;
+  curr = *images;
+  while (curr != NULL) {
+    fprintf(stream, "Href: %s\n", curr->href);
+    fprintf(stream, "ID: %s\n", curr->id);
+    fprintf(stream, "Description: %s\n", curr->description);
+    fprintf(stream, "Architecture: %s\n", curr->architecture);
+    fprintf(stream, "Owner ID: %s\n", curr->owner_id);
+    fprintf(stream, "Name: %s\n", curr->name);
+    curr = curr->next;
   }
 }
 
 void free_image_list(struct image **images)
 {
-  struct image *now, *next;
+  struct image *curr, *next;
 
-  now = *images;
-  while (now != NULL) {
-    next = now->next;
-    free(now->href);
-    free(now->id);
-    free(now->description);
-    free(now->architecture);
-    free(now->owner_id);
-    free(now->name);
-    free(now);
-    now = next;
+  curr = *images;
+  while (curr != NULL) {
+    next = curr->next;
+    free(curr->href);
+    free(curr->id);
+    free(curr->description);
+    free(curr->architecture);
+    free(curr->owner_id);
+    free(curr->name);
+    free(curr);
+    curr = next;
   }
 
   *images = NULL;

@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -338,6 +339,7 @@ static int get_instances(struct deltacloud_api *api,
     return -1;
   }
 
+  *instances = NULL;
   if (parse_instances_xml(data, instances) < 0) {
     fprintf(stderr, "Could not parse instances XML\n");
     goto cleanup;
@@ -448,6 +450,7 @@ static int get_realms(struct deltacloud_api *api, struct realm **realms)
     return -1;
   }
 
+  *realms = NULL;
   if (parse_realms_xml(data, realms) < 0) {
     fprintf(stderr, "Could not parse realms XML\n");
     goto cleanup;
@@ -461,15 +464,66 @@ static int get_realms(struct deltacloud_api *api, struct realm **realms)
   return ret;
 }
 
-static int parse_flavors_xml(char *xml_string, struct flavor **flavors)
+static int parse_flavor_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			    struct flavor **flavors)
 {
-  xmlDocPtr xml;
-  xmlNodePtr root, cur, flavor_cur;
-  int ret = -1;
-  xmlXPathContextPtr ctxt = NULL;
+  xmlNodePtr flavor_cur, oldnode;
   char *href = NULL, *id = NULL, *memory = NULL, *storage = NULL;
   char *architecture = NULL;
   int listret;
+  int ret = -1;
+
+  oldnode = ctxt->node;
+
+  while (cur != NULL) {
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "flavor")) {
+      href = (char *)xmlGetProp(cur, BAD_CAST "href");
+
+      ctxt->node = cur;
+      flavor_cur = cur->children;
+      while (flavor_cur != NULL) {
+	if (flavor_cur->type == XML_ELEMENT_NODE) {
+	  if (STREQ((const char *)flavor_cur->name, "id"))
+	    id = getXPathString("string(./id)", ctxt);
+	  else if (STREQ((const char *)flavor_cur->name, "memory"))
+	    memory = getXPathString("string(./memory)", ctxt);
+	  else if (STREQ((const char *)flavor_cur->name, "storage"))
+	    storage = getXPathString("string(./storage)", ctxt);
+	  else if (STREQ((const char *)flavor_cur->name, "architecture"))
+	    architecture = getXPathString("string(./architecture)", ctxt);
+	}
+	flavor_cur = flavor_cur->next;
+      }
+      listret = add_to_flavor_list(flavors, href, id, memory, storage,
+				   architecture);
+      MY_FREE(href);
+      MY_FREE(id);
+      MY_FREE(memory);
+      MY_FREE(storage);
+      MY_FREE(architecture);
+      if (listret < 0) {
+	fprintf(stderr, "Could not add new flavor to list\n");
+	goto cleanup;
+      }
+    }
+    cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  ctxt->node = oldnode;
+
+  return ret;
+}
+
+static int parse_flavors_xml(char *xml_string, struct flavor **flavors)
+{
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
 
   xml = xmlReadDoc(BAD_CAST xml_string, "flavors.xml", NULL,
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
@@ -496,39 +550,9 @@ static int parse_flavors_xml(char *xml_string, struct flavor **flavors)
     goto cleanup;
   }
 
-  cur = root->children;
-  while (cur != NULL) {
-    if (cur->type == XML_ELEMENT_NODE &&
-	STREQ((const char *)cur->name, "flavor")) {
-      href = (char *)xmlGetProp(cur, BAD_CAST "href");
-
-      ctxt->node = cur;
-      flavor_cur = cur->children;
-      while (flavor_cur != NULL) {
-	if (flavor_cur->type == XML_ELEMENT_NODE) {
-	  if (STREQ((const char *)flavor_cur->name, "id"))
-	    id = getXPathString("string(./id)", ctxt);
-	  else if (STREQ((const char *)flavor_cur->name, "memory"))
-	    memory = getXPathString("string(./memory)", ctxt);
-	  else if (STREQ((const char *)flavor_cur->name, "storage"))
-	    storage = getXPathString("string(./storage)", ctxt);
-	  else if (STREQ((const char *)flavor_cur->name, "architecture"))
-	    architecture = getXPathString("string(./architecture)", ctxt);
-	}
-	flavor_cur = flavor_cur->next;
-      }
-      listret = add_to_flavor_list(flavors, href, id, memory, storage, architecture);
-      MY_FREE(href);
-      MY_FREE(id);
-      MY_FREE(memory);
-      MY_FREE(storage);
-      MY_FREE(architecture);
-      if (listret < 0) {
-	fprintf(stderr, "Could not add new flavor to list\n");
-	goto cleanup;
-      }
-    }
-    cur = cur->next;
+  if (parse_flavor_xml(root->children, ctxt, flavors) < 0) {
+    fprintf(stderr, "Could not parse 'flavor' XML\n");
+    goto cleanup;
   }
 
   ret = 0;
@@ -559,6 +583,7 @@ static int get_flavors(struct deltacloud_api *api, struct flavor **flavors)
     return -1;
   }
 
+  *flavors = NULL;
   if (parse_flavors_xml(data, flavors) < 0) {
     fprintf(stderr, "Could not parse XML data for flavors\n");
     goto cleanup;
@@ -567,6 +592,102 @@ static int get_flavors(struct deltacloud_api *api, struct flavor **flavors)
   ret = 0;
 
  cleanup:
+  MY_FREE(data);
+
+  return ret;
+}
+
+static int get_flavor_by_id(struct deltacloud_api *api, const char *id,
+			    struct flavor *flavor)
+{
+  char *flavorsurl, *data, *fullurl;
+  int ret = -1;
+  struct flavor *tmpflavor = NULL;
+
+  flavorsurl = find_href_by_rel_in_link_list(&api->links, "flavors");
+  if (flavorsurl == NULL) {
+    fprintf(stderr, "Could not find the link for 'flavors'\n");
+    return -1;
+  }
+
+  if (asprintf(&fullurl, "%s?id=%s", flavorsurl, id) < 0) {
+    fprintf(stderr, "Could not allocate memory for fullurl\n");
+    return -1;
+  }
+
+  data = get_url(fullurl, api->user, api->password);
+  if (data == NULL) {
+    fprintf(stderr, "Could not get XML data from url %s\n", fullurl);
+    goto cleanup;
+  }
+
+  if (parse_flavors_xml(data, &tmpflavor) < 0) {
+    fprintf(stderr, "Could not parse XML data for flavors\n");
+    goto cleanup;
+  }
+
+  copy_flavor(flavor, tmpflavor);
+  free_flavor_list(&tmpflavor);
+
+  ret = 0;
+
+ cleanup:
+  MY_FREE(fullurl);
+  MY_FREE(data);
+
+  return ret;
+}
+
+static int get_flavor_by_uri(struct deltacloud_api *api, const char *url,
+			     struct flavor *flavor)
+{
+  char *data;
+  struct flavor *tmpflavor = NULL;
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
+
+  data = get_url(url, api->user, api->password);
+  if (data == NULL) {
+    fprintf(stderr, "Could not get XML data from url %s\n", url);
+    return -1;
+  }
+
+  xml = xmlReadDoc(BAD_CAST data, "flavor.xml", NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    fprintf(stderr, "Failed to parse XML\n");
+    goto cleanup;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    fprintf(stderr, "Failed to get the root element\n");
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    fprintf(stderr, "Could not initialize XML parsing\n");
+    goto cleanup;
+  }
+
+  if (parse_flavor_xml(root, ctxt, &tmpflavor) < 0) {
+    fprintf(stderr, "Could not parse 'flavor' XML\n");
+    goto cleanup;
+  }
+
+  copy_flavor(flavor, tmpflavor);
+  free_flavor_list(&tmpflavor);
+
+  ret = 0;
+
+ cleanup:
+  if (ctxt != NULL)
+    xmlXPathFreeContext(ctxt);
+  xmlFreeDoc(xml);
   MY_FREE(data);
 
   return ret;
@@ -674,6 +795,7 @@ static int get_images(struct deltacloud_api *api, struct image **images)
     return -1;
   }
 
+  *images = NULL;
   if (parse_images_xml(data, images) < 0) {
     fprintf(stderr, "Could not parse images XML\n");
     goto cleanup;
@@ -773,6 +895,7 @@ static int get_instance_states(struct deltacloud_api *api,
     return -1;
   }
 
+  *instance_states = NULL;
   if (parse_instance_states_xml(data, instance_states) < 0) {
     fprintf(stderr, "Could not parse instance_states XML\n");
     goto cleanup;
@@ -894,6 +1017,7 @@ static int get_storage_volumes(struct deltacloud_api *api,
     return -1;
   }
 
+  *storage_volumes = NULL;
   if (parse_storage_volumes_xml(data, storage_volumes) < 0) {
     fprintf(stderr, "Could not parse storage_volumes XML\n");
     goto cleanup;
@@ -1009,6 +1133,7 @@ static int get_storage_snapshots(struct deltacloud_api *api,
     return -1;
   }
 
+  *storage_snapshots = NULL;
   if (parse_storage_snapshots_xml(data, storage_snapshots) < 0) {
     fprintf(stderr, "Could not parse storage_snapshots XML\n");
     goto cleanup;
@@ -1043,13 +1168,15 @@ static int create_instance(struct deltacloud_api *api)
 int main(int argc, char *argv[])
 {
   struct deltacloud_api api;
-  struct instance *instances = NULL;
-  struct image *images = NULL;
-  struct flavor *flavors = NULL;
-  struct realm *realms = NULL;
-  struct instance_state *instance_states = NULL;
-  struct storage_volume *storage_volumes = NULL;
-  struct storage_snapshot *storage_snapshots = NULL;
+  struct instance *instances;
+  struct image *images;
+  struct flavor *flavors;
+  struct realm *realms;
+  struct instance_state *instance_states;
+  struct storage_volume *storage_volumes;
+  struct storage_snapshot *storage_snapshots;
+  struct flavor flavor;
+  char *fullurl;
   int ret = 3;
 
   if (argc != 4) {
@@ -1083,6 +1210,26 @@ int main(int argc, char *argv[])
   fprintf(stderr, "--------------FLAVORS------------------------\n");
   print_flavor_list(&flavors, NULL);
   free_flavor_list(&flavors);
+
+  if (get_flavor_by_id(&api, "m1-small", &flavor) < 0) {
+    fprintf(stderr, "Failed to get 'm1-small' flavor\n");
+    goto cleanup;
+  }
+  print_flavor(&flavor, NULL);
+  free_flavor(&flavor);
+
+  if (asprintf(&fullurl, "%s/flavors/c1-medium", api.url) < 0) {
+    fprintf(stderr, "Failed to allocate fullurl\n");
+    goto cleanup;
+  }
+  if (get_flavor_by_uri(&api, fullurl, &flavor) < 0) {
+    fprintf(stderr, "Failed to get 'c1-medium' flavor\n");
+    MY_FREE(fullurl);
+    goto cleanup;
+  }
+  print_flavor(&flavor, NULL);
+  free_flavor(&flavor);
+  MY_FREE(fullurl);
 
   if (get_realms(&api, &realms) < 0) {
     fprintf(stderr, "Failed to get_realms\n");

@@ -9,7 +9,7 @@ int add_to_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
 				 const char *created, const char *state,
 				 const char *storage_volume_href)
 {
-  struct storage_snapshot *onestorage_snapshot, *now, *last;
+  struct storage_snapshot *onestorage_snapshot, *curr, *last;
 
   onestorage_snapshot = malloc(sizeof(struct storage_snapshot));
   if (onestorage_snapshot == NULL)
@@ -26,10 +26,10 @@ int add_to_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
     /* First element in the list */
     *storage_snapshots = onestorage_snapshot;
   else {
-    now = *storage_snapshots;
-    while (now != NULL) {
-      last = now;
-      now = now->next;
+    curr = *storage_snapshots;
+    while (curr != NULL) {
+      last = curr;
+      curr = curr->next;
     }
     last->next = onestorage_snapshot;
   }
@@ -40,36 +40,36 @@ int add_to_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
 void print_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
 				 FILE *stream)
 {
-  struct storage_snapshot *now;
+  struct storage_snapshot *curr;
 
   if (stream == NULL)
     stream = stderr;
 
-  now = *storage_snapshots;
-  while (now != NULL) {
-    fprintf(stream, "Href: %s\n", now->href);
-    fprintf(stream, "ID: %s\n", now->id);
-    fprintf(stream, "Created: %s\n", now->created);
-    fprintf(stream, "State: %s\n", now->state);
-    fprintf(stream, "Storage Volume Href: %s\n", now->storage_volume_href);
-    now = now->next;
+  curr = *storage_snapshots;
+  while (curr != NULL) {
+    fprintf(stream, "Href: %s\n", curr->href);
+    fprintf(stream, "ID: %s\n", curr->id);
+    fprintf(stream, "Created: %s\n", curr->created);
+    fprintf(stream, "State: %s\n", curr->state);
+    fprintf(stream, "Storage Volume Href: %s\n", curr->storage_volume_href);
+    curr = curr->next;
   }
 }
 
 void free_storage_snapshot_list(struct storage_snapshot **storage_snapshots)
 {
-  struct storage_snapshot *now, *next;
+  struct storage_snapshot *curr, *next;
 
-  now = *storage_snapshots;
-  while (now != NULL) {
-    next = now->next;
-    free(now->href);
-    free(now->id);
-    free(now->created);
-    free(now->state);
-    free(now->storage_volume_href);
-    free(now);
-    now = next;
+  curr = *storage_snapshots;
+  while (curr != NULL) {
+    next = curr->next;
+    free(curr->href);
+    free(curr->id);
+    free(curr->created);
+    free(curr->state);
+    free(curr->storage_volume_href);
+    free(curr);
+    curr = next;
   }
 
   *storage_snapshots = NULL;
