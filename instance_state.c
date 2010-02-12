@@ -4,8 +4,8 @@
 #include "common.h"
 #include "instance_state.h"
 
-int add_to_transition_list(struct transition **transitions, char *action,
-			   char *to)
+int add_to_transition_list(struct transition **transitions, const char *action,
+			   const char *to)
 {
   struct transition *onetransition, *now, *last;
 
@@ -64,7 +64,8 @@ void free_transition_list(struct transition **transitions)
 }
 
 int add_to_instance_state_list(struct instance_state **instance_states,
-			       char *name, struct transition *transitions)
+			       const char *name,
+			       struct transition *transitions)
 {
   struct instance_state *oneinstance_state, *now, *last;
 

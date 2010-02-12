@@ -27,7 +27,8 @@ static size_t memory_callback(void *ptr, size_t size, size_t nmemb, void *data)
   return realsize;
 }
 
-char *do_curl(char *url, char *user, char *password, char *data, int datalen)
+char *do_curl(const char *url, const char *user, const char *password,
+	      char *data, int datalen)
 {
   CURL *curl;
   CURLcode res;

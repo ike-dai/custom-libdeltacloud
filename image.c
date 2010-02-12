@@ -4,9 +4,9 @@
 #include "common.h"
 #include "image.h"
 
-int add_to_image_list(struct image **images, char *href, char *id,
-		      char *description, char *architecture, char *owner_id,
-		      char *name)
+int add_to_image_list(struct image **images, const char *href, const char *id,
+		      const char *description, const char *architecture,
+		      const char *owner_id, const char *name)
 {
   struct image *oneimage, *now, *last;
 

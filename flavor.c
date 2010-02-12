@@ -4,8 +4,9 @@
 #include "common.h"
 #include "flavor.h"
 
-int add_to_flavor_list(struct flavor **flavors, char *href, char *id,
-		       char *memory, char *storage, char *architecture)
+int add_to_flavor_list(struct flavor **flavors, const char *href,
+		       const char *id, const char *memory, const char *storage,
+		       const char *architecture)
 {
   struct flavor *oneflavor, *now, *last;
 

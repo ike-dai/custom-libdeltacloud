@@ -15,15 +15,16 @@ struct instance_state {
   struct instance_state *next;
 };
 
-int add_to_transition_list(struct transition **transitions, char *action,
-			    char *to);
+int add_to_transition_list(struct transition **transitions, const char *action,
+			   const char *to);
 void print_transition_list(struct transition **transitions, FILE *stream);
 void free_transition_list(struct transition **transitions);
 
 int add_to_instance_state_list(struct instance_state **instance_states,
-				char *name, struct transition *transitions);
+			       const char *name,
+			       struct transition *transitions);
 void print_instance_state_list(struct instance_state **instance_states,
-				FILE *stream);
+			       FILE *stream);
 void free_instance_state_list(struct instance_state **instance_states);
 
 #endif
