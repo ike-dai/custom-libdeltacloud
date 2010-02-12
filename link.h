@@ -1,5 +1,5 @@
-#ifndef LINKS_H
-#define LINKS_H
+#ifndef LINK_H
+#define LINK_H
 
 struct link {
   char *href;

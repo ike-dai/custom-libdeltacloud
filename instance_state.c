@@ -4,8 +4,8 @@
 #include "common.h"
 #include "instance_state.h"
 
-int add_to_transitions_list(struct transition **transitions, char *action,
-			    char *to)
+int add_to_transition_list(struct transition **transitions, char *action,
+			   char *to)
 {
   struct transition *onetransition, *now, *last;
 
@@ -32,7 +32,7 @@ int add_to_transitions_list(struct transition **transitions, char *action,
   return 0;
 }
 
-void print_transitions_list(struct transition **transitions, FILE *stream)
+void print_transition_list(struct transition **transitions, FILE *stream)
 {
   struct transition *now;
 
@@ -47,7 +47,7 @@ void print_transitions_list(struct transition **transitions, FILE *stream)
   }
 }
 
-void free_transitions_list(struct transition **transitions)
+void free_transition_list(struct transition **transitions)
 {
   struct transition *now, *next;
 
@@ -63,8 +63,8 @@ void free_transitions_list(struct transition **transitions)
   *transitions = NULL;
 }
 
-int add_to_instance_states_list(struct instance_state **instance_states,
-				char *name, struct transition *transitions)
+int add_to_instance_state_list(struct instance_state **instance_states,
+			       char *name, struct transition *transitions)
 {
   struct instance_state *oneinstance_state, *now, *last;
 
@@ -94,8 +94,8 @@ int add_to_instance_states_list(struct instance_state **instance_states,
   return 0;
 }
 
-void print_instance_states_list(struct instance_state **instance_states,
-				FILE *stream)
+void print_instance_state_list(struct instance_state **instance_states,
+			       FILE *stream)
 {
   struct instance_state *now;
 
@@ -105,12 +105,12 @@ void print_instance_states_list(struct instance_state **instance_states,
   now = *instance_states;
   while (now != NULL) {
     fprintf(stream, "Name: %s\n", now->name);
-    print_transitions_list(&now->transitions, stream);
+    print_transition_list(&now->transitions, stream);
     now = now->next;
   }
 }
 
-void free_instance_states_list(struct instance_state **instance_states)
+void free_instance_state_list(struct instance_state **instance_states)
 {
   struct instance_state *now, *next;
 
@@ -118,7 +118,7 @@ void free_instance_states_list(struct instance_state **instance_states)
   while (now != NULL) {
     next = now->next;
     free(now->name);
-    free_transitions_list(&now->transitions);
+    free_transition_list(&now->transitions);
     free(now);
     now = next;
   }

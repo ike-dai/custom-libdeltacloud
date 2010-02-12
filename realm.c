@@ -35,7 +35,7 @@ int add_to_realm_list(struct realm **realms, char *href, char *id, char *name,
   return 0;
 }
 
-void print_realms_list(struct realm **realms, FILE *stream)
+void print_realm_list(struct realm **realms, FILE *stream)
 {
   struct realm *now;
 
@@ -53,7 +53,7 @@ void print_realms_list(struct realm **realms, FILE *stream)
   }
 }
 
-void free_realms_list(struct realm **realms)
+void free_realm_list(struct realm **realms)
 {
   struct realm *now, *next;
 

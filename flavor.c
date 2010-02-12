@@ -35,7 +35,7 @@ int add_to_flavor_list(struct flavor **flavors, char *href, char *id,
   return 0;
 }
 
-void print_flavors_list(struct flavor **flavors, FILE *stream)
+void print_flavor_list(struct flavor **flavors, FILE *stream)
 {
   struct flavor *now;
 
@@ -53,7 +53,7 @@ void print_flavors_list(struct flavor **flavors, FILE *stream)
   }
 }
 
-void free_flavors_list(struct flavor **flavors)
+void free_flavor_list(struct flavor **flavors)
 {
   struct flavor *now, *next;
 

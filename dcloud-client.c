@@ -421,7 +421,7 @@ static int parse_realms_xml(char *xml_string, struct realm **realms)
 
  cleanup:
   if (ret < 0)
-    free_realms_list(realms);
+    free_realm_list(realms);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   xmlFreeDoc(xml);
@@ -532,7 +532,7 @@ static int parse_flavors_xml(char *xml_string, struct flavor **flavors)
 
  cleanup:
   if (ret < 0)
-    free_flavors_list(flavors);
+    free_flavor_list(flavors);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   xmlFreeDoc(xml);
@@ -576,7 +576,7 @@ static int parse_images_xml(char *xml_string, struct image **images)
   int ret = -1;
   xmlXPathContextPtr ctxt = NULL;
   char *href = NULL, *id = NULL, *description = NULL, *architecture = NULL;
-  char *owner_id = NULL;
+  char *owner_id = NULL, *name = NULL;
   int listret;
 
   xml = xmlReadDoc(BAD_CAST xml_string, "images.xml", NULL,
@@ -622,16 +622,19 @@ static int parse_images_xml(char *xml_string, struct image **images)
 	    architecture = getXPathString("string(./architecture)", ctxt);
 	  else if (STREQ((const char *)image_cur->name, "owner_id"))
 	    owner_id = getXPathString("string(./owner_id)", ctxt);
+	  else if (STREQ((const char *)image_cur->name, "name"))
+	    name = getXPathString("string(./name)", ctxt);
 	}
 	image_cur = image_cur->next;
       }
       listret = add_to_image_list(images, href, id, description, architecture,
-				  owner_id);
+				  owner_id, name);
       MY_FREE(href);
       MY_FREE(id);
       MY_FREE(description);
       MY_FREE(architecture);
       MY_FREE(owner_id);
+      MY_FREE(name);
       if (listret < 0) {
 	fprintf(stderr, "Could not add new image to list\n");
 	goto cleanup;
@@ -644,7 +647,7 @@ static int parse_images_xml(char *xml_string, struct image **images)
 
  cleanup:
   if (ret < 0)
-    free_images_list(images);
+    free_image_list(images);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   xmlFreeDoc(xml);
@@ -722,17 +725,17 @@ static int parse_instance_states_xml(char *xml_string,
 	    STREQ((const char *)state_cur->name, "transition")) {
 	  action = (char *)xmlGetProp(state_cur, BAD_CAST "action");
 	  to = (char *)xmlGetProp(state_cur, BAD_CAST "to");
-	  add_to_transitions_list(&transitions, action, to);
+	  add_to_transition_list(&transitions, action, to);
 	  MY_FREE(action);
 	  MY_FREE(to);
 	}
 	state_cur = state_cur->next;
       }
-      listret = add_to_instance_states_list(instance_states, name, transitions);
+      listret = add_to_instance_state_list(instance_states, name, transitions);
       MY_FREE(name);
       if (listret < 0) {
 	fprintf(stderr, "Could not add new instance_state to list\n");
-	free_transitions_list(&transitions);
+	free_transition_list(&transitions);
 	goto cleanup;
       }
       transitions = NULL;
@@ -744,7 +747,7 @@ static int parse_instance_states_xml(char *xml_string,
 
  cleanup:
   if (ret < 0)
-    free_instance_states_list(instance_states);
+    free_instance_state_list(instance_states);
   xmlFreeDoc(xml);
   return ret;
 }
@@ -1067,32 +1070,32 @@ int main(int argc, char *argv[])
     goto cleanup;
   }
   fprintf(stderr, "--------------IMAGES-------------------------\n");
-  print_images_list(&images, NULL);
-  free_images_list(&images);
+  print_image_list(&images, NULL);
+  free_image_list(&images);
 
   if (get_flavors(&api, &flavors) < 0) {
     fprintf(stderr, "Failed to get_flavors\n");
     goto cleanup;
   }
   fprintf(stderr, "--------------FLAVORS------------------------\n");
-  print_flavors_list(&flavors, NULL);
-  free_flavors_list(&flavors);
+  print_flavor_list(&flavors, NULL);
+  free_flavor_list(&flavors);
 
   if (get_realms(&api, &realms) < 0) {
     fprintf(stderr, "Failed to get_realms\n");
     goto cleanup;
   }
   fprintf(stderr, "--------------REALMS-------------------------\n");
-  print_realms_list(&realms, NULL);
-  free_realms_list(&realms);
+  print_realm_list(&realms, NULL);
+  free_realm_list(&realms);
 
   if (get_instance_states(&api, &instance_states) < 0) {
     fprintf(stderr, "Failed to get_instance_states\n");
     goto cleanup;
   }
   fprintf(stderr, "--------------INSTANCE STATES----------------\n");
-  print_instance_states_list(&instance_states, NULL);
-  free_instance_states_list(&instance_states);
+  print_instance_state_list(&instance_states, NULL);
+  free_instance_state_list(&instance_states);
 
   if (get_instances(&api, &instances) < 0) {
     fprintf(stderr, "Failed to get_instances\n");

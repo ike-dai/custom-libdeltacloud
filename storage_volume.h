@@ -1,5 +1,5 @@
-#ifndef STORAGE_VOLUMES_H
-#define STORAGE_VOLUMES_H
+#ifndef STORAGE_VOLUME_H
+#define STORAGE_VOLUME_H
 
 struct storage_volume {
   char *href;

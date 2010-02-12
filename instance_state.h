@@ -1,5 +1,5 @@
-#ifndef INSTANCE_STATES_H
-#define INSTANCE_STATES_H
+#ifndef INSTANCE_STATE_H
+#define INSTANCE_STATE_H
 
 struct transition {
   char *action;
@@ -15,15 +15,15 @@ struct instance_state {
   struct instance_state *next;
 };
 
-int add_to_transitions_list(struct transition **transitions, char *action,
+int add_to_transition_list(struct transition **transitions, char *action,
 			    char *to);
-void print_transitions_list(struct transition **transitions, FILE *stream);
-void free_transitions_list(struct transition **transitions);
+void print_transition_list(struct transition **transitions, FILE *stream);
+void free_transition_list(struct transition **transitions);
 
-int add_to_instance_states_list(struct instance_state **instance_states,
+int add_to_instance_state_list(struct instance_state **instance_states,
 				char *name, struct transition *transitions);
-void print_instance_states_list(struct instance_state **instance_states,
+void print_instance_state_list(struct instance_state **instance_states,
 				FILE *stream);
-void free_instance_states_list(struct instance_state **instance_states);
+void free_instance_state_list(struct instance_state **instance_states);
 
 #endif

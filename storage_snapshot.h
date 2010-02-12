@@ -1,5 +1,5 @@
-#ifndef STORAGE_SNAPSHOTS_H
-#define STORAGE_SNAPSHOTS_H
+#ifndef STORAGE_SNAPSHOT_H
+#define STORAGE_SNAPSHOT_H
 
 struct storage_snapshot {
   char *href;

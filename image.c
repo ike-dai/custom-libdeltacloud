@@ -5,7 +5,8 @@
 #include "image.h"
 
 int add_to_image_list(struct image **images, char *href, char *id,
-		      char *description, char *architecture, char *owner_id)
+		      char *description, char *architecture, char *owner_id,
+		      char *name)
 {
   struct image *oneimage, *now, *last;
 
@@ -18,6 +19,7 @@ int add_to_image_list(struct image **images, char *href, char *id,
   oneimage->description = strdup_or_null(description);
   oneimage->architecture = strdup_or_null(architecture);
   oneimage->owner_id = strdup_or_null(owner_id);
+  oneimage->name = strdup_or_null(name);
   oneimage->next = NULL;
 
   if (*images == NULL)
@@ -35,7 +37,7 @@ int add_to_image_list(struct image **images, char *href, char *id,
   return 0;
 }
 
-void print_images_list(struct image **images, FILE *stream)
+void print_image_list(struct image **images, FILE *stream)
 {
   struct image *now;
 
@@ -49,11 +51,12 @@ void print_images_list(struct image **images, FILE *stream)
     fprintf(stream, "Description: %s\n", now->description);
     fprintf(stream, "Architecture: %s\n", now->architecture);
     fprintf(stream, "Owner ID: %s\n", now->owner_id);
+    fprintf(stream, "Name: %s\n", now->name);
     now = now->next;
   }
 }
 
-void free_images_list(struct image **images)
+void free_image_list(struct image **images)
 {
   struct image *now, *next;
 
@@ -65,6 +68,7 @@ void free_images_list(struct image **images)
     free(now->description);
     free(now->architecture);
     free(now->owner_id);
+    free(now->name);
     free(now);
     now = next;
   }
