@@ -40,7 +40,8 @@ void free_action_list(struct action **actions);
 int add_to_instance_list(struct instance **instances, const char *id,
 			 const char *name, const char *owner_id,
 			 const char *image_href, const char *flavor_href,
-			 const char *realm_href, struct action *actions,
+			 const char *realm_href, const char *state,
+			 struct action *actions,
 			 struct address *public_addresses,
 			 struct address *private_addresses);
 void print_instance_list(struct instance **instances, FILE *stream);

@@ -120,7 +120,8 @@ void free_action_list(struct action **actions)
 int add_to_instance_list(struct instance **instances, const char *id,
 			 const char *name, const char *owner_id,
 			 const char *image_href, const char *flavor_href,
-			 const char *realm_href, struct action *actions,
+			 const char *realm_href, const char *state,
+			 struct action *actions,
 			 struct address *public_addresses,
 			 struct address *private_addresses)
 {
@@ -136,6 +137,7 @@ int add_to_instance_list(struct instance **instances, const char *id,
   oneinstance->image_href = strdup_or_null(image_href);
   oneinstance->flavor_href = strdup_or_null(flavor_href);
   oneinstance->realm_href = strdup_or_null(realm_href);
+  oneinstance->state = strdup_or_null(state);
   oneinstance->actions = actions;
   oneinstance->public_addresses = public_addresses;
   oneinstance->private_addresses = private_addresses;
@@ -171,6 +173,7 @@ void print_instance_list(struct instance **instances, FILE *stream)
     fprintf(stream, "Image HREF: %s\n", now->image_href);
     fprintf(stream, "Flavor HREF: %s\n", now->flavor_href);
     fprintf(stream, "Realm HREF: %s\n", now->realm_href);
+    fprintf(stream, "State: %s\n", now->state);
     print_action_list(&now->actions, stream);
     print_address_list(&now->public_addresses, stream);
     print_address_list(&now->private_addresses, stream);
@@ -191,6 +194,7 @@ void free_instance_list(struct instance **instances)
     free(now->image_href);
     free(now->flavor_href);
     free(now->realm_href);
+    free(now->state);
     free_action_list(&now->actions);
     free_address_list(&now->public_addresses);
     free_address_list(&now->private_addresses);

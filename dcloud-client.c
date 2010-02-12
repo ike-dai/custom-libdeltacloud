@@ -221,7 +221,7 @@ static int parse_instances_xml(char *xml_string, struct instance **instances)
   int ret = -1;
   xmlXPathContextPtr ctxt = NULL;
   char *id = NULL, *name = NULL, *owner_id = NULL, *image_href = NULL;
-  char *flavor_href = NULL, *realm_href = NULL;
+  char *flavor_href = NULL, *realm_href = NULL, *state = NULL;
   struct action *actions = NULL;
   struct address *public_addresses = NULL;
   struct address *private_addresses = NULL;
@@ -273,6 +273,8 @@ static int parse_instances_xml(char *xml_string, struct instance **instances)
 	    flavor_href = (char *)xmlGetProp(cur, BAD_CAST "href");
 	  else if (STREQ((const char *)instance_cur->name, "realm"))
 	    realm_href = (char *)xmlGetProp(cur, BAD_CAST "href");
+	  else if (STREQ((const char *)instance_cur->name, "state"))
+	    state = getXPathString("string(./state)", ctxt);
 	  else if (STREQ((const char *)instance_cur->name, "actions"))
 	    actions = parse_actions_xml(instance_cur);
 	  else if (STREQ((const char *)instance_cur->name, "public-addresses"))
@@ -284,7 +286,7 @@ static int parse_instances_xml(char *xml_string, struct instance **instances)
 	instance_cur = instance_cur->next;
       }
       listret = add_to_instance_list(instances, id, name, owner_id, image_href,
-				     flavor_href, realm_href, actions,
+				     flavor_href, realm_href, state, actions,
 				     public_addresses, private_addresses);
       MY_FREE(id);
       MY_FREE(name);
@@ -292,6 +294,7 @@ static int parse_instances_xml(char *xml_string, struct instance **instances)
       MY_FREE(image_href);
       MY_FREE(flavor_href);
       MY_FREE(realm_href);
+      MY_FREE(state);
       if (listret < 0) {
 	free_address_list(&public_addresses);
 	free_address_list(&private_addresses);
