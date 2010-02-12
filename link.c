@@ -45,14 +45,14 @@ void print_link_list(struct link **links, FILE *stream)
   }
 }
 
-char *find_href_by_rel_in_link_list(struct link **links, char *rel)
+struct link *find_by_rel_in_link_list(struct link **links, char *rel)
 {
   struct link *curr;
 
   curr = *links;
   while (curr != NULL) {
     if (STREQ(curr->rel, rel))
-      return curr->href;
+      return curr;
     curr = curr->next;
   }
 
