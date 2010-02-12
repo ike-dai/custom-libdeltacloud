@@ -14,14 +14,6 @@
 #include "storage_volumes.h"
 #include "storage_snapshots.h"
 
-struct deltacloud_api {
-  char *url;
-  char *user;
-  char *password;
-
-  struct link *links;
-};
-
 static int parse_api_xml(const char *xml_string, struct link **links)
 {
   xmlDocPtr xml;
@@ -1040,7 +1032,6 @@ int main(int argc, char *argv[])
 {
   char *url, *user, *password;
   struct link *apilinks = NULL;
-  struct deltacloud_api api;
   struct instance *instances = NULL;
   struct image *images = NULL;
   struct flavor *flavors = NULL;
