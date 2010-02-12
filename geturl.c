@@ -61,18 +61,22 @@ char *do_curl(char *url, char *user, char *password, char *data, int datalen)
     goto cleanup;
   }
 
-  res = curl_easy_setopt(curl, CURLOPT_USERNAME, user);
-  if (res != CURLE_OK) {
-    fprintf(stderr, "Failed to set username header: %s\n",
-	    curl_easy_strerror(res));
-    goto cleanup;
+  if (user != NULL) {
+    res = curl_easy_setopt(curl, CURLOPT_USERNAME, user);
+    if (res != CURLE_OK) {
+      fprintf(stderr, "Failed to set username header: %s\n",
+	      curl_easy_strerror(res));
+      goto cleanup;
+    }
   }
 
-  res = curl_easy_setopt(curl, CURLOPT_PASSWORD, password);
-  if (res != CURLE_OK) {
-    fprintf(stderr, "Failed to set password header: %s\n",
-	    curl_easy_strerror(res));
-    goto cleanup;
+  if (password != NULL) {
+    res = curl_easy_setopt(curl, CURLOPT_PASSWORD, password);
+    if (res != CURLE_OK) {
+      fprintf(stderr, "Failed to set password header: %s\n",
+	      curl_easy_strerror(res));
+      goto cleanup;
+    }
   }
 
   res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, memory_callback);

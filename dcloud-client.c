@@ -14,6 +14,14 @@
 #include "storage_volumes.h"
 #include "storage_snapshots.h"
 
+struct deltacloud_api {
+  char *url;
+  char *user;
+  char *password;
+
+  struct link *links;
+};
+
 static int parse_api_xml(const char *xml_string, struct link **links)
 {
   xmlDocPtr xml;
@@ -79,17 +87,18 @@ static int parse_api_xml(const char *xml_string, struct link **links)
   return ret;
 }
 
-static int get_links(char *url, char *user, char *password, struct link **links)
+static int get_links(struct deltacloud_api *api)
 {
   char *data;
   int ret = -1;
 
-  data = get_url(url, user, password);
+  data = get_url(api->url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Failed to get data from url %s\n",url);
+    fprintf(stderr, "Failed to get API data from url %s\n", api->url);
     return -1;
   }
-  if (parse_api_xml(data, links) < 0) {
+  api->links = NULL;
+  if (parse_api_xml(data, &api->links) < 0) {
     fprintf(stderr, "Failed to parse the API XML\n");
     goto cleanup;
   }
@@ -308,23 +317,24 @@ static int parse_instances_xml(char *xml_string, struct instance **instances)
   return ret;
 }
 
-static int get_instances(char *user, char *password, struct link **links,
+static int get_instances(struct deltacloud_api *api,
 			 struct instance **instances)
 {
   char *url, *data;
   int ret = -1;
 
-  url = find_href_by_rel_in_link_list(links, "instances");
+  url = find_href_by_rel_in_link_list(&api->links, "instances");
   if (url == NULL) {
     fprintf(stderr, "Could not find the link for 'instances'\n");
     return -1;
   }
 
-  data = get_url(url, user, password);
+  data = get_url(url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get instance data\n");
+    fprintf(stderr, "Could not get XML for instances from url %s\n", url);
     return -1;
   }
+
   if (parse_instances_xml(data, instances) < 0) {
     fprintf(stderr, "Could not parse instances XML\n");
     goto cleanup;
@@ -418,21 +428,20 @@ static int parse_realms_xml(char *xml_string, struct realm **realms)
   return ret;
 }
 
-static int get_realms(char *user, char *password, struct link **links,
-		      struct realm **realms)
+static int get_realms(struct deltacloud_api *api, struct realm **realms)
 {
   char *url, *data;
   int ret = -1;
 
-  url = find_href_by_rel_in_link_list(links, "realms");
+  url = find_href_by_rel_in_link_list(&api->links, "realms");
   if (url == NULL) {
     fprintf(stderr, "Could not find the link for 'realms'\n");
     return -1;
   }
 
-  data = get_url(url, user, password);
+  data = get_url(url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not fetch realms XML\n");
+    fprintf(stderr, "Could not fetch XML for realms from url %s\n", url);
     return -1;
   }
 
@@ -530,21 +539,20 @@ static int parse_flavors_xml(char *xml_string, struct flavor **flavors)
   return ret;
 }
 
-static int get_flavors(char *user, char *password, struct link **links,
-		       struct flavor **flavors)
+static int get_flavors(struct deltacloud_api *api, struct flavor **flavors)
 {
   char *url, *data;
   int ret = -1;
 
-  url = find_href_by_rel_in_link_list(links, "flavors");
+  url = find_href_by_rel_in_link_list(&api->links, "flavors");
   if (url == NULL) {
     fprintf(stderr, "Could not find the link for 'flavors'\n");
     return -1;
   }
 
-  data = get_url(url, user, password);
+  data = get_url(url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML data for flavors\n");
+    fprintf(stderr, "Could not get XML data from url %s\n", url);
     return -1;
   }
 
@@ -643,21 +651,20 @@ static int parse_images_xml(char *xml_string, struct image **images)
   return ret;
 }
 
-static int get_images(char *user, char *password, struct link **links,
-		      struct image **images)
+static int get_images(struct deltacloud_api *api, struct image **images)
 {
   char *url, *data;
   int ret = -1;
 
-  url = find_href_by_rel_in_link_list(links, "images");
+  url = find_href_by_rel_in_link_list(&api->links, "images");
   if (url == NULL) {
     fprintf(stderr, "Could not find the link for 'images'\n");
     return -1;
   }
 
-  data = get_url(url, user, password);
+  data = get_url(url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get the XML for images\n");
+    fprintf(stderr, "Could not get the XML from images url %s\n", url);
     return -1;
   }
 
@@ -742,21 +749,21 @@ static int parse_instance_states_xml(char *xml_string,
   return ret;
 }
 
-static int get_instance_states(char *user, char *password, struct link **links,
+static int get_instance_states(struct deltacloud_api *api,
 			       struct instance_state **instance_states)
 {
   char *url, *data;
   int ret = -1;
 
-  url = find_href_by_rel_in_link_list(links, "instance_states");
+  url = find_href_by_rel_in_link_list(&api->links, "instance_states");
   if (url == NULL) {
     fprintf(stderr, "Could not find the link for 'instance-states'\n");
     return -1;
   }
 
-  data = get_url(url, user, password);
+  data = get_url(url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get instance_states XML\n");
+    fprintf(stderr, "Could not get XML for instance_states from url %s\n", url);
     return -1;
   }
 
@@ -863,21 +870,21 @@ static int parse_storage_volumes_xml(char *xml_string,
   return ret;
 }
 
-static int get_storage_volumes(char *user, char *password, struct link **links,
+static int get_storage_volumes(struct deltacloud_api *api,
 			       struct storage_volume **storage_volumes)
 {
   char *url, *data;
   int ret = -1;
 
-  url = find_href_by_rel_in_link_list(links, "storage_volumes");
+  url = find_href_by_rel_in_link_list(&api->links, "storage_volumes");
   if (url == NULL) {
     fprintf(stderr, "Could not find the link for 'storage_volumes'\n");
     return -1;
   }
 
-  data = get_url(url, user, password);
+  data = get_url(url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get data for storage_volumes\n");
+    fprintf(stderr, "Could not get XML for storage_volumes from url %s\n", url);
     return -1;
   }
 
@@ -978,22 +985,21 @@ static int parse_storage_snapshots_xml(char *xml_string,
   return ret;
 }
 
-static int get_storage_snapshots(char *user, char *password,
-				 struct link **links,
+static int get_storage_snapshots(struct deltacloud_api *api,
 				 struct storage_snapshot **storage_snapshots)
 {
   char *url, *data;
   int ret = -1;
 
-  url = find_href_by_rel_in_link_list(links, "storage_snapshots");
+  url = find_href_by_rel_in_link_list(&api->links, "storage_snapshots");
   if (url == NULL) {
     fprintf(stderr, "Could not find the link for 'storage_snapshots'\n");
     return -1;
   }
 
-  data = get_url(url, user, password);
+  data = get_url(url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML for storage_snapshots\n");
+    fprintf(stderr, "Could not get XML for storage_snapshots from url %s\n", url);
     return -1;
   }
 
@@ -1010,19 +1016,19 @@ static int get_storage_snapshots(char *user, char *password,
   return ret;
 }
 
-static int create_instance(char *user, char *password, struct link **links)
+static int create_instance(struct deltacloud_api *api)
 {
-  char *url;
-  char *data;
+  char *url, *data;
 
-  url = find_href_by_rel_in_link_list(links, "instances");
+  url = find_href_by_rel_in_link_list(&api->links, "instances");
   if (url == NULL) {
     fprintf(stderr, "Could not find the link for 'instances'\n");
     return -1;
   }
 
-  data = post_url(url, user, password, "image_id=img3", strlen("image_id=img3"));
-  fprintf(stderr, "After create_instance: %s\n",data);
+  data = post_url(url, api->user, api->password,
+		  "image_id=img3", strlen("image_id=img3"));
+  fprintf(stderr, "After create_instance: %s\n", data);
   MY_FREE(data);
 
   return 0;
@@ -1030,8 +1036,7 @@ static int create_instance(char *user, char *password, struct link **links)
 
 int main(int argc, char *argv[])
 {
-  char *url, *user, *password;
-  struct link *apilinks = NULL;
+  struct deltacloud_api api;
   struct instance *instances = NULL;
   struct image *images = NULL;
   struct flavor *flavors = NULL;
@@ -1046,18 +1051,18 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  url = argv[1];
-  user = argv[2];
-  password = argv[3];
+  api.url = argv[1];
+  api.user = argv[2];
+  api.password = argv[3];
 
-  if (get_links(url, user, password, &apilinks) < 0) {
+  if (get_links(&api) < 0) {
     fprintf(stderr, "Failed to find links for the API\n");
     return 2;
   }
   fprintf(stderr, "--------------LINKS--------------------------\n");
-  print_link_list(&apilinks, NULL);
+  print_link_list(&api.links, NULL);
 
-  if (get_images(user, password, &apilinks, &images) < 0) {
+  if (get_images(&api, &images) < 0) {
     fprintf(stderr, "Failed to get_images\n");
     goto cleanup;
   }
@@ -1065,7 +1070,7 @@ int main(int argc, char *argv[])
   print_images_list(&images, NULL);
   free_images_list(&images);
 
-  if (get_flavors(user, password, &apilinks, &flavors) < 0) {
+  if (get_flavors(&api, &flavors) < 0) {
     fprintf(stderr, "Failed to get_flavors\n");
     goto cleanup;
   }
@@ -1073,7 +1078,7 @@ int main(int argc, char *argv[])
   print_flavors_list(&flavors, NULL);
   free_flavors_list(&flavors);
 
-  if (get_realms(user, password, &apilinks, &realms) < 0) {
+  if (get_realms(&api, &realms) < 0) {
     fprintf(stderr, "Failed to get_realms\n");
     goto cleanup;
   }
@@ -1081,7 +1086,7 @@ int main(int argc, char *argv[])
   print_realms_list(&realms, NULL);
   free_realms_list(&realms);
 
-  if (get_instance_states(user, password, &apilinks, &instance_states) < 0) {
+  if (get_instance_states(&api, &instance_states) < 0) {
     fprintf(stderr, "Failed to get_instance_states\n");
     goto cleanup;
   }
@@ -1089,7 +1094,7 @@ int main(int argc, char *argv[])
   print_instance_states_list(&instance_states, NULL);
   free_instance_states_list(&instance_states);
 
-  if (get_instances(user, password, &apilinks, &instances) < 0) {
+  if (get_instances(&api, &instances) < 0) {
     fprintf(stderr, "Failed to get_instances\n");
     goto cleanup;
   }
@@ -1097,7 +1102,7 @@ int main(int argc, char *argv[])
   print_instance_list(&instances, NULL);
   free_instance_list(&instances);
 
-  if (get_storage_volumes(user, password, &apilinks, &storage_volumes) < 0) {
+  if (get_storage_volumes(&api, &storage_volumes) < 0) {
     fprintf(stderr, "Failed to get_storage_volumes\n");
     goto cleanup;
   }
@@ -1105,7 +1110,7 @@ int main(int argc, char *argv[])
   print_storage_volume_list(&storage_volumes, NULL);
   free_storage_volume_list(&storage_volumes);
 
-  if (get_storage_snapshots(user, password, &apilinks, &storage_snapshots) < 0) {
+  if (get_storage_snapshots(&api, &storage_snapshots) < 0) {
     fprintf(stderr, "Failed to get_storage_snapshots\n");
     goto cleanup;
   }
@@ -1114,7 +1119,7 @@ int main(int argc, char *argv[])
   free_storage_snapshot_list(&storage_snapshots);
 
   fprintf(stderr, "--------------CREATE INSTANCE---------------\n");
-  if (create_instance(user, password, &apilinks) < 0) {
+  if (create_instance(&api) < 0) {
     fprintf(stderr, "Failed to create_instance\n");
     goto cleanup;
   }
@@ -1122,7 +1127,7 @@ int main(int argc, char *argv[])
   ret = 0;
 
  cleanup:
-  free_link_list(&apilinks);
+  free_link_list(&api.links);
 
   return ret;
 }
