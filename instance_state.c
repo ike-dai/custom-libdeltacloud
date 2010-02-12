@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "instance_states.h"
+#include "instance_state.h"
 
 int add_to_transitions_list(struct transition **transitions, char *action,
 			    char *to)

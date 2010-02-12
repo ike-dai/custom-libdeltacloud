@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "common.h"
-#include "storage_snapshots.h"
+#include "storage_snapshot.h"
 
 int add_to_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
 				 const char *href, const char *id,

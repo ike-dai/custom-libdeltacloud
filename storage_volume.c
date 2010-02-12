@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "common.h"
-#include "storage_volumes.h"
+#include "storage_volume.h"
 
 int add_to_storage_volume_list(struct storage_volume **storage_volumes,
 			       const char *href, const char *id,

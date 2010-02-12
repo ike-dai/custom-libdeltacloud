@@ -5,14 +5,14 @@
 #include <libxml/xpath.h>
 #include "common.h"
 #include "geturl.h"
-#include "links.h"
-#include "instances.h"
-#include "realms.h"
-#include "flavors.h"
-#include "images.h"
-#include "instance_states.h"
-#include "storage_volumes.h"
-#include "storage_snapshots.h"
+#include "link.h"
+#include "instance.h"
+#include "realm.h"
+#include "flavor.h"
+#include "image.h"
+#include "instance_state.h"
+#include "storage_volume.h"
+#include "storage_snapshot.h"
 
 struct deltacloud_api {
   char *url;

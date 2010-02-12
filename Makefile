@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-g -Wall -I/usr/include/libxml2
-OBJS=dcloud-client.o geturl.o links.o instances.o realms.o flavors.o images.o \
-	instance_states.o storage_volumes.o storage_snapshots.o
+OBJS=dcloud-client.o geturl.o link.o instance.o realm.o flavor.o image.o \
+	instance_state.o storage_volume.o storage_snapshot.o
 LIBS=-lxml2 -lcurl
 
 all: dcloud-client

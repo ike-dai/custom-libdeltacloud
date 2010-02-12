@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "common.h"
-#include "instances.h"
+#include "instance.h"
 
 int add_to_address_list(struct address **addresses, char *address)
 {

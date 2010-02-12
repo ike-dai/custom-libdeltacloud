@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "images.h"
+#include "image.h"
 
 int add_to_image_list(struct image **images, char *href, char *id,
 		      char *description, char *architecture, char *owner_id)

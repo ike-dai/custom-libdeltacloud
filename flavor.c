@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "flavors.h"
+#include "flavor.h"
 
 int add_to_flavor_list(struct flavor **flavors, char *href, char *id,
 		       char *memory, char *storage, char *architecture)

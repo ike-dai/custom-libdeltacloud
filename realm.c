@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "realms.h"
+#include "realm.h"
 
 int add_to_realm_list(struct realm **realms, char *href, char *id, char *name,
 		      char *state, char *limit)

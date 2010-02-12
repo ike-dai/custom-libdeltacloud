@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "links.h"
+#include "link.h"
 
 int add_to_link_list(struct link **links, char *href, char *rel)
 {
