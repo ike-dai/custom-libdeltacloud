@@ -30,6 +30,19 @@ int add_to_address_list(struct address **addresses, char *address)
   return 0;
 }
 
+static void copy_address_list(struct address **dst, struct address **src)
+{
+  struct address *curr;
+
+  *dst = NULL;
+
+  curr = *src;
+  while (curr != NULL) {
+    add_to_address_list(dst, curr->address);
+    curr = curr->next;
+  }
+}
+
 void print_address_list(struct address **addresses, FILE *stream)
 {
   struct address *curr;
@@ -84,6 +97,19 @@ int add_to_action_list(struct action **actions, char *rel, char *href)
   }
 
   return 0;
+}
+
+static void copy_action_list(struct action **dst, struct action **src)
+{
+  struct action *curr;
+
+  *dst = NULL;
+
+  curr = *src;
+  while (curr != NULL) {
+    add_to_action_list(dst, curr->rel, curr->href);
+    curr = curr->next;
+  }
 }
 
 void print_action_list(struct action **actions, FILE *stream)
@@ -158,6 +184,38 @@ int add_to_instance_list(struct instance **instances, const char *id,
   return 0;
 }
 
+void copy_instance(struct instance *dst, struct instance *src)
+{
+  dst->id = strdup_or_null(src->id);
+  dst->name = strdup_or_null(src->name);
+  dst->owner_id = strdup_or_null(src->owner_id);
+  dst->image_href = strdup_or_null(src->image_href);
+  dst->flavor_href = strdup_or_null(src->flavor_href);
+  dst->realm_href = strdup_or_null(src->realm_href);
+  dst->state = strdup_or_null(src->state);
+  copy_action_list(&dst->actions, &src->actions);
+  copy_address_list(&dst->public_addresses, &src->public_addresses);
+  copy_address_list(&dst->private_addresses, &src->private_addresses);
+  dst->next = NULL;
+}
+
+void print_instance(struct instance *instance, FILE *stream)
+{
+  if (stream == NULL)
+    stream = stderr;
+
+  fprintf(stream, "ID: %s\n", instance->id);
+  fprintf(stream, "Name: %s\n", instance->name);
+  fprintf(stream, "Owner ID: %s\n", instance->owner_id);
+  fprintf(stream, "Image HREF: %s\n", instance->image_href);
+  fprintf(stream, "Flavor HREF: %s\n", instance->flavor_href);
+  fprintf(stream, "Realm HREF: %s\n", instance->realm_href);
+  fprintf(stream, "State: %s\n", instance->state);
+  print_action_list(&instance->actions, stream);
+  print_address_list(&instance->public_addresses, stream);
+  print_address_list(&instance->private_addresses, stream);
+}
+
 void print_instance_list(struct instance **instances, FILE *stream)
 {
   struct instance *curr;
@@ -167,18 +225,23 @@ void print_instance_list(struct instance **instances, FILE *stream)
 
   curr = *instances;
   while (curr != NULL) {
-    fprintf(stream, "ID: %s\n", curr->id);
-    fprintf(stream, "Name: %s\n", curr->name);
-    fprintf(stream, "Owner ID: %s\n", curr->owner_id);
-    fprintf(stream, "Image HREF: %s\n", curr->image_href);
-    fprintf(stream, "Flavor HREF: %s\n", curr->flavor_href);
-    fprintf(stream, "Realm HREF: %s\n", curr->realm_href);
-    fprintf(stream, "State: %s\n", curr->state);
-    print_action_list(&curr->actions, stream);
-    print_address_list(&curr->public_addresses, stream);
-    print_address_list(&curr->private_addresses, stream);
+    print_instance(curr, NULL);
     curr = curr->next;
   }
+}
+
+void free_instance(struct instance *instance)
+{
+  free(instance->id);
+  free(instance->name);
+  free(instance->owner_id);
+  free(instance->image_href);
+  free(instance->flavor_href);
+  free(instance->realm_href);
+  free(instance->state);
+  free_action_list(&instance->actions);
+  free_address_list(&instance->public_addresses);
+  free_address_list(&instance->private_addresses);
 }
 
 void free_instance_list(struct instance **instances)
@@ -188,16 +251,7 @@ void free_instance_list(struct instance **instances)
   curr = *instances;
   while (curr != NULL) {
     next = curr->next;
-    free(curr->id);
-    free(curr->name);
-    free(curr->owner_id);
-    free(curr->image_href);
-    free(curr->flavor_href);
-    free(curr->realm_href);
-    free(curr->state);
-    free_action_list(&curr->actions);
-    free_address_list(&curr->public_addresses);
-    free_address_list(&curr->private_addresses);
+    free_instance(curr);
     free(curr);
     curr = next;
   }

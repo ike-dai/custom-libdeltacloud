@@ -44,7 +44,10 @@ int add_to_instance_list(struct instance **instances, const char *id,
 			 struct action *actions,
 			 struct address *public_addresses,
 			 struct address *private_addresses);
+void copy_instance(struct instance *dst, struct instance *src);
+void print_instance(struct instance *instance, FILE *stream);
 void print_instance_list(struct instance **instances, FILE *stream);
+void free_instance(struct instance *instance);
 void free_instance_list(struct instance **instances);
 
 #endif

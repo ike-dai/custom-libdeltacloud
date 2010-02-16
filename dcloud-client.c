@@ -215,45 +215,20 @@ static struct action *parse_actions_xml(xmlNodePtr instance)
   return actions;
 }
 
-static int parse_instances_xml(char *xml_string, struct instance **instances)
+static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			      struct instance **instances)
 {
-  xmlDocPtr xml;
-  xmlNodePtr root, cur, instance_cur;
-  int ret = -1;
-  xmlXPathContextPtr ctxt = NULL;
+  xmlNodePtr oldnode, instance_cur;
   char *id = NULL, *name = NULL, *owner_id = NULL, *image_href = NULL;
   char *flavor_href = NULL, *realm_href = NULL, *state = NULL;
   struct action *actions = NULL;
   struct address *public_addresses = NULL;
   struct address *private_addresses = NULL;
   int listret;
+  int ret = -1;
 
-  xml = xmlReadDoc(BAD_CAST xml_string, "instances.xml", NULL,
-		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
-		   XML_PARSE_NOWARNING);
-  if (!xml) {
-    fprintf(stderr, "Failed to parse XML\n");
-    return -1;
-  }
+  oldnode = ctxt->node;
 
-  root = xmlDocGetRootElement(xml);
-  if (root == NULL) {
-    fprintf(stderr, "Failed to get the root element\n");
-    goto cleanup;
-  }
-
-  if (STRNEQ((const char *)root->name, "instances")) {
-    fprintf(stderr, "Root element was not 'instances'\n");
-    goto cleanup;
-  }
-
-  ctxt = xmlXPathNewContext(xml);
-  if (ctxt == NULL) {
-    fprintf(stderr, "Could not initialize XML parsing\n");
-    goto cleanup;
-  }
-
-  cur = root->children;
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "instance")) {
@@ -313,6 +288,51 @@ static int parse_instances_xml(char *xml_string, struct instance **instances)
   ret = 0;
 
  cleanup:
+  ctxt->node = oldnode;
+
+  return ret;
+}
+
+static int parse_instances_xml(char *xml_string, struct instance **instances)
+{
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
+
+  xml = xmlReadDoc(BAD_CAST xml_string, "instances.xml", NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    fprintf(stderr, "Failed to parse XML\n");
+    return -1;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    fprintf(stderr, "Failed to get the root element\n");
+    goto cleanup;
+  }
+
+  if (STRNEQ((const char *)root->name, "instances")) {
+    fprintf(stderr, "Root element was not 'instances'\n");
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    fprintf(stderr, "Could not initialize XML parsing\n");
+    goto cleanup;
+  }
+
+  if (parse_instance_xml(root->children, ctxt, instances) < 0) {
+    fprintf(stderr, "Could not parse 'instances' XML\n");
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
   if (ret < 0)
     free_instance_list(instances);
   if (ctxt != NULL)
@@ -350,6 +370,67 @@ static int get_instances(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
+  MY_FREE(data);
+
+  return ret;
+}
+
+static int get_instance_by_id(struct deltacloud_api *api, const char *id,
+			      struct instance *instance)
+{
+  char *url, *data;
+  struct instance *tmpinstance = NULL;
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
+
+  if (asprintf(&url, "%s/instances/%s", api->url, id) < 0) {
+    fprintf(stderr, "Failed to allocate memory for url\n");
+    return -1;
+  }
+
+  data = get_url(url, api->user, api->password);
+  if (data == NULL) {
+    fprintf(stderr, "Could not get XML data from url %s\n", url);
+    goto cleanup;
+  }
+
+  xml = xmlReadDoc(BAD_CAST data, "instance.xml", NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    fprintf(stderr, "Failed to parse XML\n");
+    goto cleanup;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    fprintf(stderr, "Failed to get the root element\n");
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    fprintf(stderr, "Could not initialize XML parsing\n");
+    goto cleanup;
+  }
+
+  if (parse_instance_xml(root, ctxt, &tmpinstance) < 0) {
+    fprintf(stderr, "Could not parse 'instance' XML\n");
+    goto cleanup;
+  }
+
+  copy_instance(instance, tmpinstance);
+  free_instance_list(&tmpinstance);
+
+  ret = 0;
+
+ cleanup:
+  MY_FREE(url);
+  if (ctxt != NULL)
+    xmlXPathFreeContext(ctxt);
+  xmlFreeDoc(xml);
   MY_FREE(data);
 
   return ret;
@@ -1374,6 +1455,7 @@ int main(int argc, char *argv[])
   struct instance_state instance_state;
   struct realm realm;
   struct image image;
+  struct instance instance;
   char *fullurl;
   int ret = 3;
 
@@ -1464,6 +1546,10 @@ int main(int argc, char *argv[])
   fprintf(stderr, "--------------INSTANCES---------------------\n");
   print_instance_list(&instances, NULL);
   free_instance_list(&instances);
+
+  get_instance_by_id(&api, "inst18", &instance);
+  print_instance(&instance, NULL);
+  free_instance(&instance);
 
   if (get_storage_volumes(&api, &storage_volumes) < 0) {
     fprintf(stderr, "Failed to get_storage_volumes\n");
