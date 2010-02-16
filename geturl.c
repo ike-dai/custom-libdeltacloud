@@ -44,7 +44,7 @@ char *do_curl(const char *url, const char *user, const char *password,
   chunk.data = NULL;
   chunk.size = 0;
 
-  reqlist = curl_slist_append(reqlist, "Accept: text/xml");
+  reqlist = curl_slist_append(reqlist, "Accept: application/xml");
   if (reqlist == NULL) {
     fprintf(stderr, "Failed to create request list\n");
     goto cleanup;
