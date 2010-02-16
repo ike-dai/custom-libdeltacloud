@@ -1585,10 +1585,19 @@ static int get_storage_snapshot_by_id(struct deltacloud_api *api,
   return ret;
 }
 
-static int create_instance(struct deltacloud_api *api)
+static int create_instance(struct deltacloud_api *api, const char *image_id,
+			   const char *name, const char *realm_id,
+			   const char *flavor_id)
 {
   struct link *thislink;
-  char *data;
+  char *data, *params;
+  size_t param_size;
+  FILE *paramfp;
+
+  if (image_id == NULL) {
+    fprintf(stderr, "Image ID cannot be NULL\n");
+    return -1;
+  }
 
   thislink = find_by_rel_in_link_list(&api->links, "instances");
   if (thislink == NULL) {
@@ -1596,10 +1605,26 @@ static int create_instance(struct deltacloud_api *api)
     return -1;
   }
 
-  data = post_url(thislink->href, api->user, api->password,
-		  "image_id=img3", strlen("image_id=img3"));
+  paramfp = open_memstream(&params, &param_size);
+  if (paramfp == NULL) {
+    fprintf(stderr, "Could not allocate memory for parameters\n");
+    return -1;
+  }
+
+  fprintf(paramfp, "image_id=%s", image_id);
+  if (name != NULL)
+    fprintf(paramfp, "&name=%s", name);
+  if (realm_id != NULL)
+    fprintf(paramfp, "&realm_id=%s", realm_id);
+  if (flavor_id != NULL)
+    fprintf(paramfp, "&flavor_id=%s", flavor_id);
+  fclose(paramfp);
+
+  data = post_url(thislink->href, api->user, api->password, params, param_size);
+
   fprintf(stderr, "After create_instance: %s\n", data);
   MY_FREE(data);
+  MY_FREE(params);
 
   return 0;
 }
@@ -1741,7 +1766,7 @@ int main(int argc, char *argv[])
   free_storage_snapshot(&storage_snapshot);
 
   fprintf(stderr, "--------------CREATE INSTANCE---------------\n");
-  if (create_instance(&api) < 0) {
+  if (create_instance(&api, "img3", NULL, NULL, NULL) < 0) {
     fprintf(stderr, "Failed to create_instance\n");
     goto cleanup;
   }
