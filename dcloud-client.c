@@ -919,6 +919,24 @@ static int get_instance_states(struct deltacloud_api *api,
   return ret;
 }
 
+static int get_instance_state(struct deltacloud_api *api, const char *name,
+			      struct instance_state *instance_state)
+{
+  struct instance_state *statelist = NULL;
+  struct instance_state *found;
+
+  if (get_instance_states(api, &statelist) < 0) {
+    fprintf(stderr, "Failed to get instance_states\n");
+    return -1;
+  }
+  found = find_by_name_in_instance_state_list(&statelist, name);
+  print_instance_state(found, NULL);
+  copy_instance_state(instance_state, found);
+  free_instance_state_list(&statelist);
+
+  return 0;
+}
+
 static int parse_storage_volumes_xml(char *xml_string,
 				     struct storage_volume **storage_volumes)
 {
@@ -1191,6 +1209,7 @@ int main(int argc, char *argv[])
   struct storage_volume *storage_volumes;
   struct storage_snapshot *storage_snapshots;
   struct flavor flavor;
+  struct instance_state instance_state;
   char *fullurl;
   int ret = 3;
 
@@ -1261,6 +1280,10 @@ int main(int argc, char *argv[])
   fprintf(stderr, "--------------INSTANCE STATES----------------\n");
   print_instance_state_list(&instance_states, NULL);
   free_instance_state_list(&instance_states);
+
+  get_instance_state(&api, "start", &instance_state);
+  print_instance_state(&instance_state, NULL);
+  free_instance_state(&instance_state);
 
   if (get_instances(&api, &instances) < 0) {
     fprintf(stderr, "Failed to get_instances\n");

@@ -32,6 +32,20 @@ int add_to_transition_list(struct transition **transitions, const char *action,
   return 0;
 }
 
+static void copy_transition_list(struct transition **dst,
+				 struct transition **src)
+{
+  struct transition *curr;
+
+  *dst = NULL;
+
+  curr = *src;
+  while (curr != NULL) {
+    add_to_transition_list(dst, curr->action, curr->to);
+    curr = curr->next;
+  }
+}
+
 void print_transition_list(struct transition **transitions, FILE *stream)
 {
   struct transition *curr;
@@ -95,6 +109,38 @@ int add_to_instance_state_list(struct instance_state **instance_states,
   return 0;
 }
 
+struct instance_state *find_by_name_in_instance_state_list(struct instance_state **instance_states,
+							   const char *name)
+{
+  struct instance_state *curr;
+
+  curr = *instance_states;
+  while (curr != NULL) {
+    if (STREQ(curr->name, name))
+      return curr;
+    curr = curr->next;
+  }
+
+  return NULL;
+}
+
+void copy_instance_state(struct instance_state *dst, struct instance_state *src)
+{
+  dst->name = strdup_or_null(src->name);
+  copy_transition_list(&dst->transitions, &src->transitions);
+  dst->next = NULL;
+}
+
+void print_instance_state(struct instance_state *instance_state,
+			  FILE *stream)
+{
+  if (stream == NULL)
+    stream = stderr;
+
+  fprintf(stream, "Name: %s\n", instance_state->name);
+  print_transition_list(&instance_state->transitions, stream);
+}
+
 void print_instance_state_list(struct instance_state **instance_states,
 			       FILE *stream)
 {
@@ -105,10 +151,15 @@ void print_instance_state_list(struct instance_state **instance_states,
 
   curr = *instance_states;
   while (curr != NULL) {
-    fprintf(stream, "Name: %s\n", curr->name);
-    print_transition_list(&curr->transitions, stream);
+    print_instance_state(curr, NULL);
     curr = curr->next;
   }
+}
+
+void free_instance_state(struct instance_state *instance_state)
+{
+  free(instance_state->name);
+  free_transition_list(&instance_state->transitions);
 }
 
 void free_instance_state_list(struct instance_state **instance_states)
@@ -118,8 +169,7 @@ void free_instance_state_list(struct instance_state **instance_states)
   curr = *instance_states;
   while (curr != NULL) {
     next = curr->next;
-    free(curr->name);
-    free_transition_list(&curr->transitions);
+    free_instance_state(curr);
     free(curr);
     curr = next;
   }
