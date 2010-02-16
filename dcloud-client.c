@@ -355,41 +355,16 @@ static int get_instances(struct deltacloud_api *api,
   return ret;
 }
 
-static int parse_realms_xml(char *xml_string, struct realm **realms)
+static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			   struct realm **realms)
 {
-  xmlDocPtr xml;
-  xmlNodePtr root, cur, realm_cur;
+  xmlNodePtr oldnode, realm_cur;
   int ret = -1;
-  xmlXPathContextPtr ctxt = NULL;
   char *href = NULL, *id = NULL, *name = NULL, *state = NULL, *limit = NULL;
   int listret;
 
-  xml = xmlReadDoc(BAD_CAST xml_string, "realms.xml", NULL,
-		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
-		   XML_PARSE_NOWARNING);
-  if (!xml) {
-    fprintf(stderr, "Failed to parse XML\n");
-    return -1;
-  }
+  oldnode = ctxt->node;
 
-  root = xmlDocGetRootElement(xml);
-  if (root == NULL) {
-    fprintf(stderr, "Failed to get the root element\n");
-    goto cleanup;
-  }
-
-  if (STRNEQ((const char *)root->name, "realms")) {
-    fprintf(stderr, "Root element was not 'realms'\n");
-    goto cleanup;
-  }
-
-  ctxt = xmlXPathNewContext(xml);
-  if (ctxt == NULL) {
-    fprintf(stderr, "Could not initialize XML parsing\n");
-    goto cleanup;
-  }
-
-  cur = root->children;
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "realm")) {
@@ -422,6 +397,51 @@ static int parse_realms_xml(char *xml_string, struct realm **realms)
       }
     }
     cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  ctxt->node = oldnode;
+
+  return ret;
+}
+
+static int parse_realms_xml(char *xml_string, struct realm **realms)
+{
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
+
+  xml = xmlReadDoc(BAD_CAST xml_string, "realms.xml", NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    fprintf(stderr, "Failed to parse XML\n");
+    return -1;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    fprintf(stderr, "Failed to get the root element\n");
+    goto cleanup;
+  }
+
+  if (STRNEQ((const char *)root->name, "realms")) {
+    fprintf(stderr, "Root element was not 'realms'\n");
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    fprintf(stderr, "Could not initialize XML parsing\n");
+    goto cleanup;
+  }
+
+  if (parse_realm_xml(root->children, ctxt, realms) < 0) {
+    fprintf(stderr, "Failed to parse realm XML\n");
+    goto cleanup;
   }
 
   ret = 0;
@@ -463,6 +483,67 @@ static int get_realms(struct deltacloud_api *api, struct realm **realms)
   ret = 0;
 
  cleanup:
+  MY_FREE(data);
+
+  return ret;
+}
+
+static int get_realm_by_id(struct deltacloud_api *api, const char *id,
+			   struct realm *realm)
+{
+  char *url, *data;
+  struct realm *tmprealm = NULL;
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
+
+  if (asprintf(&url, "%s/realms/%s", api->url, id) < 0) {
+    fprintf(stderr, "Failed to allocate memory for url\n");
+    return -1;
+  }
+
+  data = get_url(url, api->user, api->password);
+  if (data == NULL) {
+    fprintf(stderr, "Could not get XML data from url %s\n", url);
+    goto cleanup;
+  }
+
+  xml = xmlReadDoc(BAD_CAST data, "realm.xml", NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    fprintf(stderr, "Failed to parse XML\n");
+    goto cleanup;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    fprintf(stderr, "Failed to get the root element\n");
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    fprintf(stderr, "Could not initialize XML parsing\n");
+    goto cleanup;
+  }
+
+  if (parse_realm_xml(root, ctxt, &tmprealm) < 0) {
+    fprintf(stderr, "Could not parse 'flavor' XML\n");
+    goto cleanup;
+  }
+
+  copy_realm(realm, tmprealm);
+  free_realm_list(&tmprealm);
+
+  ret = 0;
+
+ cleanup:
+  MY_FREE(url);
+  if (ctxt != NULL)
+    xmlXPathFreeContext(ctxt);
+  xmlFreeDoc(xml);
   MY_FREE(data);
 
   return ret;
@@ -699,42 +780,17 @@ static int get_flavor_by_uri(struct deltacloud_api *api, const char *url,
   return ret;
 }
 
-static int parse_images_xml(char *xml_string, struct image **images)
+static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			   struct image **images)
 {
-  xmlDocPtr xml;
-  xmlNodePtr root, cur, image_cur;
-  int ret = -1;
-  xmlXPathContextPtr ctxt = NULL;
+  xmlNodePtr oldnode, image_cur;
   char *href = NULL, *id = NULL, *description = NULL, *architecture = NULL;
   char *owner_id = NULL, *name = NULL;
   int listret;
+  int ret = -1;
 
-  xml = xmlReadDoc(BAD_CAST xml_string, "images.xml", NULL,
-		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
-		   XML_PARSE_NOWARNING);
-  if (!xml) {
-    fprintf(stderr, "Failed to parse XML\n");
-    return -1;
-  }
+  oldnode = ctxt->node;
 
-  root = xmlDocGetRootElement(xml);
-  if (root == NULL) {
-    fprintf(stderr, "Failed to get the root element\n");
-    goto cleanup;
-  }
-
-  if (STRNEQ((const char *)root->name, "images")) {
-    fprintf(stderr, "Root element was not 'images'\n");
-    goto cleanup;
-  }
-
-  ctxt = xmlXPathNewContext(xml);
-  if (ctxt == NULL) {
-    fprintf(stderr, "Could not initialize XML parsing\n");
-    goto cleanup;
-  }
-
-  cur = root->children;
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "image")) {
@@ -776,6 +832,51 @@ static int parse_images_xml(char *xml_string, struct image **images)
   ret = 0;
 
  cleanup:
+  ctxt->node = oldnode;
+
+  return ret;
+}
+
+static int parse_images_xml(char *xml_string, struct image **images)
+{
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
+
+  xml = xmlReadDoc(BAD_CAST xml_string, "images.xml", NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    fprintf(stderr, "Failed to parse XML\n");
+    return -1;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    fprintf(stderr, "Failed to get the root element\n");
+    goto cleanup;
+  }
+
+  if (STRNEQ((const char *)root->name, "images")) {
+    fprintf(stderr, "Root element was not 'images'\n");
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    fprintf(stderr, "Could not initialize XML parsing\n");
+    goto cleanup;
+  }
+
+  if (parse_image_xml(root->children, ctxt, images) < 0) {
+    fprintf(stderr, "Could not parse XML\n");
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
   if (ret < 0)
     free_image_list(images);
   if (ctxt != NULL)
@@ -812,6 +913,67 @@ static int get_images(struct deltacloud_api *api, struct image **images)
   ret = 0;
 
  cleanup:
+  MY_FREE(data);
+
+  return ret;
+}
+
+static int get_image_by_id(struct deltacloud_api *api, const char *id,
+			   struct image *image)
+{
+  char *url, *data;
+  struct image *tmpimage = NULL;
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
+
+  if (asprintf(&url, "%s/images/%s", api->url, id) < 0) {
+    fprintf(stderr, "Failed to allocate memory for url\n");
+    return -1;
+  }
+
+  data = get_url(url, api->user, api->password);
+  if (data == NULL) {
+    fprintf(stderr, "Could not get XML data from url %s\n", url);
+    goto cleanup;
+  }
+
+  xml = xmlReadDoc(BAD_CAST data, "image.xml", NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    fprintf(stderr, "Failed to parse XML\n");
+    goto cleanup;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    fprintf(stderr, "Failed to get the root element\n");
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    fprintf(stderr, "Could not initialize XML parsing\n");
+    goto cleanup;
+  }
+
+  if (parse_image_xml(root, ctxt, &tmpimage) < 0) {
+    fprintf(stderr, "Could not parse 'flavor' XML\n");
+    goto cleanup;
+  }
+
+  copy_image(image, tmpimage);
+  free_image_list(&tmpimage);
+
+  ret = 0;
+
+ cleanup:
+  MY_FREE(url);
+  if (ctxt != NULL)
+    xmlXPathFreeContext(ctxt);
+  xmlFreeDoc(xml);
   MY_FREE(data);
 
   return ret;
@@ -1210,6 +1372,8 @@ int main(int argc, char *argv[])
   struct storage_snapshot *storage_snapshots;
   struct flavor flavor;
   struct instance_state instance_state;
+  struct realm realm;
+  struct image image;
   char *fullurl;
   int ret = 3;
 
@@ -1236,6 +1400,10 @@ int main(int argc, char *argv[])
   fprintf(stderr, "--------------IMAGES-------------------------\n");
   print_image_list(&images, NULL);
   free_image_list(&images);
+
+  get_image_by_id(&api, "img1", &image);
+  print_image(&image, NULL);
+  free_image(&image);
 
   if (get_flavors(&api, &flavors) < 0) {
     fprintf(stderr, "Failed to get_flavors\n");
@@ -1272,6 +1440,10 @@ int main(int argc, char *argv[])
   fprintf(stderr, "--------------REALMS-------------------------\n");
   print_realm_list(&realms, NULL);
   free_realm_list(&realms);
+
+  get_realm_by_id(&api, "us", &realm);
+  print_realm(&realm, NULL);
+  free_realm(&realm);
 
   if (get_instance_states(&api, &instance_states) < 0) {
     fprintf(stderr, "Failed to get_instance_states\n");

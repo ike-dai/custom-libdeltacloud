@@ -37,6 +37,30 @@ int add_to_image_list(struct image **images, const char *href, const char *id,
   return 0;
 }
 
+void copy_image(struct image *dst, struct image *src)
+{
+  dst->href = strdup_or_null(src->href);
+  dst->id = strdup_or_null(src->id);
+  dst->description = strdup_or_null(src->description);
+  dst->architecture = strdup_or_null(src->architecture);
+  dst->owner_id = strdup_or_null(src->owner_id);
+  dst->name = strdup_or_null(src->name);
+  dst->next = NULL;
+}
+
+void print_image(struct image *image, FILE *stream)
+{
+  if (stream == NULL)
+    stream = stderr;
+
+  fprintf(stream, "Href: %s\n", image->href);
+  fprintf(stream, "ID: %s\n", image->id);
+  fprintf(stream, "Description: %s\n", image->description);
+  fprintf(stream, "Architecture: %s\n", image->architecture);
+  fprintf(stream, "Owner ID: %s\n", image->owner_id);
+  fprintf(stream, "Name: %s\n", image->name);
+}
+
 void print_image_list(struct image **images, FILE *stream)
 {
   struct image *curr;
@@ -46,14 +70,19 @@ void print_image_list(struct image **images, FILE *stream)
 
   curr = *images;
   while (curr != NULL) {
-    fprintf(stream, "Href: %s\n", curr->href);
-    fprintf(stream, "ID: %s\n", curr->id);
-    fprintf(stream, "Description: %s\n", curr->description);
-    fprintf(stream, "Architecture: %s\n", curr->architecture);
-    fprintf(stream, "Owner ID: %s\n", curr->owner_id);
-    fprintf(stream, "Name: %s\n", curr->name);
+    print_image(curr, NULL);
     curr = curr->next;
   }
+}
+
+void free_image(struct image *image)
+{
+  free(image->href);
+  free(image->id);
+  free(image->description);
+  free(image->architecture);
+  free(image->owner_id);
+  free(image->name);
 }
 
 void free_image_list(struct image **images)
@@ -63,12 +92,7 @@ void free_image_list(struct image **images)
   curr = *images;
   while (curr != NULL) {
     next = curr->next;
-    free(curr->href);
-    free(curr->id);
-    free(curr->description);
-    free(curr->architecture);
-    free(curr->owner_id);
-    free(curr->name);
+    free_image(curr);
     free(curr);
     curr = next;
   }

@@ -35,22 +35,49 @@ int add_to_realm_list(struct realm **realms, char *href, char *id, char *name,
   return 0;
 }
 
+void copy_realm(struct realm *dst, struct realm *src)
+{
+  dst->href = strdup_or_null(src->href);
+  dst->id = strdup_or_null(src->id);
+  dst->name = strdup_or_null(src->name);
+  dst->state = strdup_or_null(src->state);
+  dst->limit = strdup_or_null(src->limit);
+  dst->next = NULL;
+}
+
+void print_realm(struct realm *realm, FILE *stream)
+{
+  if (stream == NULL)
+    stream = stderr;
+
+  fprintf(stream, "Href: %s\n", realm->href);
+  fprintf(stream, "ID: %s\n", realm->id);
+  fprintf(stream, "Name: %s\n", realm->name);
+  fprintf(stream, "Limit: %s\n", realm->limit);
+  fprintf(stream, "State: %s\n", realm->state);
+}
+
 void print_realm_list(struct realm **realms, FILE *stream)
 {
-  struct realm *now;
+  struct realm *curr;
 
   if (stream == NULL)
     stream = stderr;
 
-  now = *realms;
-  while (now != NULL) {
-    fprintf(stream, "Href: %s\n", now->href);
-    fprintf(stream, "ID: %s\n", now->id);
-    fprintf(stream, "Name: %s\n", now->name);
-    fprintf(stream, "Limit: %s\n", now->limit);
-    fprintf(stream, "State: %s\n", now->state);
-    now = now->next;
+  curr = *realms;
+  while (curr != NULL) {
+    print_realm(curr, stream);
+    curr = curr->next;
   }
+}
+
+void free_realm(struct realm *realm)
+{
+  free(realm->href);
+  free(realm->id);
+  free(realm->name);
+  free(realm->limit);
+  free(realm->state);
 }
 
 void free_realm_list(struct realm **realms)
@@ -60,11 +87,7 @@ void free_realm_list(struct realm **realms)
   curr = *realms;
   while (curr != NULL) {
     next = curr->next;
-    free(curr->href);
-    free(curr->id);
-    free(curr->name);
-    free(curr->limit);
-    free(curr->state);
+    free_realm(curr);
     free(curr);
     curr = next;
   }
