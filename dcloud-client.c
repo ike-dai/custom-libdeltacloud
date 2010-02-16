@@ -1180,43 +1180,17 @@ static int get_instance_state(struct deltacloud_api *api, const char *name,
   return 0;
 }
 
-static int parse_storage_volumes_xml(char *xml_string,
-				     struct storage_volume **storage_volumes)
+static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				    struct storage_volume **storage_volumes)
 {
-  xmlDocPtr xml;
-  xmlNodePtr root, cur, storage_cur;
+  xmlNodePtr oldnode, storage_cur;
   int ret = -1;
-  xmlXPathContextPtr ctxt = NULL;
   char *href = NULL, *id = NULL, *created = NULL, *state = NULL;
   char *capacity = NULL, *device = NULL, *instance_href = NULL;
   int listret;
 
-  xml = xmlReadDoc(BAD_CAST xml_string, "storage_volumes.xml", NULL,
-		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
-		   XML_PARSE_NOWARNING);
-  if (!xml) {
-    fprintf(stderr, "Failed to parse XML\n");
-    return -1;
-  }
+  oldnode = ctxt->node;
 
-  root = xmlDocGetRootElement(xml);
-  if (root == NULL) {
-    fprintf(stderr, "Failed to get the root element\n");
-    goto cleanup;
-  }
-
-  if (STRNEQ((const char *)root->name, "storage-volumes")) {
-    fprintf(stderr, "Root element was not 'storage-volumes'\n");
-    goto cleanup;
-  }
-
-  ctxt = xmlXPathNewContext(xml);
-  if (ctxt == NULL) {
-    fprintf(stderr, "Could not initialize XML parsing\n");
-    goto cleanup;
-  }
-
-  cur = root->children;
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "storage-volume")) {
@@ -1257,6 +1231,52 @@ static int parse_storage_volumes_xml(char *xml_string,
       }
     }
     cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  ctxt->node = oldnode;
+
+  return ret;
+}
+
+static int parse_storage_volumes_xml(char *xml_string,
+				     struct storage_volume **storage_volumes)
+{
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
+
+  xml = xmlReadDoc(BAD_CAST xml_string, "storage_volumes.xml", NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    fprintf(stderr, "Failed to parse XML\n");
+    return -1;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    fprintf(stderr, "Failed to get the root element\n");
+    goto cleanup;
+  }
+
+  if (STRNEQ((const char *)root->name, "storage-volumes")) {
+    fprintf(stderr, "Root element was not 'storage-volumes'\n");
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    fprintf(stderr, "Could not initialize XML parsing\n");
+    goto cleanup;
+  }
+
+  if (parse_storage_volume_xml(root->children, ctxt, storage_volumes) < 0) {
+    fprintf(stderr, "Failed to parse 'storage_volumes' XML\n");
+    goto cleanup;
   }
 
   ret = 0;
@@ -1304,33 +1324,38 @@ static int get_storage_volumes(struct deltacloud_api *api,
   return ret;
 }
 
-static int parse_storage_snapshots_xml(char *xml_string,
-				       struct storage_snapshot **storage_snapshots)
+static int get_storage_volume_by_id(struct deltacloud_api *api, const char *id,
+				    struct storage_volume *storage_volume)
 {
+  char *url, *data;
+  struct storage_volume *tmpstorage_volume = NULL;
   xmlDocPtr xml;
-  xmlNodePtr root, cur, snap_cur;
+  xmlNodePtr root;
   int ret = -1;
   xmlXPathContextPtr ctxt = NULL;
-  char *href = NULL, *id = NULL, *created = NULL, *state = NULL;
-  char *storage_volume_href = NULL;
-  int listret;
 
-  xml = xmlReadDoc(BAD_CAST xml_string, "storage_snapshots.xml", NULL,
+  if (asprintf(&url, "%s/storage_volumes/%s", api->url, id) < 0) {
+    fprintf(stderr, "Failed to allocate memory for url\n");
+    return -1;
+  }
+
+  data = get_url(url, api->user, api->password);
+  if (data == NULL) {
+    fprintf(stderr, "Could not get XML data from url %s\n", url);
+    goto cleanup;
+  }
+
+  xml = xmlReadDoc(BAD_CAST data, "storage_volume.xml", NULL,
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
 		   XML_PARSE_NOWARNING);
   if (!xml) {
     fprintf(stderr, "Failed to parse XML\n");
-    return -1;
+    goto cleanup;
   }
 
   root = xmlDocGetRootElement(xml);
   if (root == NULL) {
     fprintf(stderr, "Failed to get the root element\n");
-    goto cleanup;
-  }
-
-  if (STRNEQ((const char *)root->name, "storage-snapshots")) {
-    fprintf(stderr, "Root element was not 'storage-snapshots'\n");
     goto cleanup;
   }
 
@@ -1340,7 +1365,37 @@ static int parse_storage_snapshots_xml(char *xml_string,
     goto cleanup;
   }
 
-  cur = root->children;
+  if (parse_storage_volume_xml(root, ctxt, &tmpstorage_volume) < 0) {
+    fprintf(stderr, "Could not parse 'instance' XML\n");
+    goto cleanup;
+  }
+
+  copy_storage_volume(storage_volume, tmpstorage_volume);
+  free_storage_volume_list(&tmpstorage_volume);
+
+  ret = 0;
+
+ cleanup:
+  MY_FREE(url);
+  if (ctxt != NULL)
+    xmlXPathFreeContext(ctxt);
+  xmlFreeDoc(xml);
+  MY_FREE(data);
+
+  return ret;
+}
+
+static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				      struct storage_snapshot **storage_snapshots)
+{
+  int ret = -1;
+  xmlNodePtr oldnode, snap_cur;
+  char *href = NULL, *id = NULL, *created = NULL, *state = NULL;
+  char *storage_volume_href = NULL;
+  int listret;
+
+  oldnode = ctxt->node;
+
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "storage-snapshot")) {
@@ -1375,6 +1430,52 @@ static int parse_storage_snapshots_xml(char *xml_string,
       }
     }
     cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  ctxt->node = oldnode;
+
+  return ret;
+}
+
+static int parse_storage_snapshots_xml(char *xml_string,
+				       struct storage_snapshot **storage_snapshots)
+{
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
+
+  xml = xmlReadDoc(BAD_CAST xml_string, "storage_snapshots.xml", NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    fprintf(stderr, "Failed to parse XML\n");
+    return -1;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    fprintf(stderr, "Failed to get the root element\n");
+    goto cleanup;
+  }
+
+  if (STRNEQ((const char *)root->name, "storage-snapshots")) {
+    fprintf(stderr, "Root element was not 'storage-snapshots'\n");
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    fprintf(stderr, "Could not initialize XML parsing\n");
+    goto cleanup;
+  }
+
+  if (parse_storage_snapshot_xml(root->children, ctxt, storage_snapshots) < 0) {
+    fprintf(stderr, "Could not parse 'storage-snapshot' XML\n");
+    goto cleanup;
   }
 
   ret = 0;
@@ -1422,6 +1523,68 @@ static int get_storage_snapshots(struct deltacloud_api *api,
   return ret;
 }
 
+static int get_storage_snapshot_by_id(struct deltacloud_api *api,
+				      const char *id,
+				      struct storage_snapshot *storage_snapshot)
+{
+  char *url, *data;
+  struct storage_snapshot *tmpstorage_snapshot = NULL;
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
+
+  if (asprintf(&url, "%s/storage_snapshots/%s", api->url, id) < 0) {
+    fprintf(stderr, "Failed to allocate memory for url\n");
+    return -1;
+  }
+
+  data = get_url(url, api->user, api->password);
+  if (data == NULL) {
+    fprintf(stderr, "Could not get XML data from url %s\n", url);
+    goto cleanup;
+  }
+
+  xml = xmlReadDoc(BAD_CAST data, "storage_snapshot.xml", NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    fprintf(stderr, "Failed to parse XML\n");
+    goto cleanup;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    fprintf(stderr, "Failed to get the root element\n");
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    fprintf(stderr, "Could not initialize XML parsing\n");
+    goto cleanup;
+  }
+
+  if (parse_storage_snapshot_xml(root, ctxt, &tmpstorage_snapshot) < 0) {
+    fprintf(stderr, "Could not parse 'storage_snapshot' XML\n");
+    goto cleanup;
+  }
+
+  copy_storage_snapshot(storage_snapshot, tmpstorage_snapshot);
+  free_storage_snapshot_list(&tmpstorage_snapshot);
+
+  ret = 0;
+
+ cleanup:
+  MY_FREE(url);
+  if (ctxt != NULL)
+    xmlXPathFreeContext(ctxt);
+  xmlFreeDoc(xml);
+  MY_FREE(data);
+
+  return ret;
+}
+
 static int create_instance(struct deltacloud_api *api)
 {
   struct link *thislink;
@@ -1456,6 +1619,8 @@ int main(int argc, char *argv[])
   struct realm realm;
   struct image image;
   struct instance instance;
+  struct storage_volume storage_volume;
+  struct storage_snapshot storage_snapshot;
   char *fullurl;
   int ret = 3;
 
@@ -1559,6 +1724,10 @@ int main(int argc, char *argv[])
   print_storage_volume_list(&storage_volumes, NULL);
   free_storage_volume_list(&storage_volumes);
 
+  get_storage_volume_by_id(&api, "vol3", &storage_volume);
+  print_storage_volume(&storage_volume, NULL);
+  free_storage_volume(&storage_volume);
+
   if (get_storage_snapshots(&api, &storage_snapshots) < 0) {
     fprintf(stderr, "Failed to get_storage_snapshots\n");
     goto cleanup;
@@ -1566,6 +1735,10 @@ int main(int argc, char *argv[])
   fprintf(stderr, "--------------STORAGE SNAPSHOTS-------------\n");
   print_storage_snapshot_list(&storage_snapshots, NULL);
   free_storage_snapshot_list(&storage_snapshots);
+
+  get_storage_snapshot_by_id(&api, "snap2", &storage_snapshot);
+  print_storage_snapshot(&storage_snapshot, NULL);
+  free_storage_snapshot(&storage_snapshot);
 
   fprintf(stderr, "--------------CREATE INSTANCE---------------\n");
   if (create_instance(&api) < 0) {

@@ -40,6 +40,32 @@ int add_to_storage_volume_list(struct storage_volume **storage_volumes,
   return 0;
 }
 
+void copy_storage_volume(struct storage_volume *dst, struct storage_volume *src)
+{
+  dst->href = strdup_or_null(src->href);
+  dst->id = strdup_or_null(src->id);
+  dst->created = strdup_or_null(src->created);
+  dst->state = strdup_or_null(src->state);
+  dst->capacity = strdup_or_null(src->capacity);
+  dst->device = strdup_or_null(src->device);
+  dst->instance_href = strdup_or_null(src->instance_href);
+  dst->next = NULL;
+}
+
+void print_storage_volume(struct storage_volume *storage_volume, FILE *stream)
+{
+  if (stream == NULL)
+    stream = stderr;
+
+  fprintf(stream, "Href: %s\n", storage_volume->href);
+  fprintf(stream, "ID: %s\n", storage_volume->id);
+  fprintf(stream, "Created: %s\n", storage_volume->created);
+  fprintf(stream, "State: %s\n", storage_volume->state);
+  fprintf(stream, "Capacity: %s\n", storage_volume->capacity);
+  fprintf(stream, "Device: %s\n", storage_volume->device);
+  fprintf(stream, "Instance Href: %s\n", storage_volume->instance_href);
+}
+
 void print_storage_volume_list(struct storage_volume **storage_volumes,
 			       FILE *stream)
 {
@@ -50,15 +76,20 @@ void print_storage_volume_list(struct storage_volume **storage_volumes,
 
   curr = *storage_volumes;
   while (curr != NULL) {
-    fprintf(stream, "Href: %s\n", curr->href);
-    fprintf(stream, "ID: %s\n", curr->id);
-    fprintf(stream, "Created: %s\n", curr->created);
-    fprintf(stream, "State: %s\n", curr->state);
-    fprintf(stream, "Capacity: %s\n", curr->capacity);
-    fprintf(stream, "Device: %s\n", curr->device);
-    fprintf(stream, "Instance Href: %s\n", curr->instance_href);
+    print_storage_volume(curr, stream);
     curr = curr->next;
   }
+}
+
+void free_storage_volume(struct storage_volume *storage_volume)
+{
+  free(storage_volume->href);
+  free(storage_volume->id);
+  free(storage_volume->created);
+  free(storage_volume->state);
+  free(storage_volume->capacity);
+  free(storage_volume->device);
+  free(storage_volume->instance_href);
 }
 
 void free_storage_volume_list(struct storage_volume **storage_volumes)
@@ -68,13 +99,7 @@ void free_storage_volume_list(struct storage_volume **storage_volumes)
   curr = *storage_volumes;
   while (curr != NULL) {
     next = curr->next;
-    free(curr->href);
-    free(curr->id);
-    free(curr->created);
-    free(curr->state);
-    free(curr->capacity);
-    free(curr->device);
-    free(curr->instance_href);
+    free_storage_volume(curr);
     free(curr);
     curr = next;
   }

@@ -37,6 +37,31 @@ int add_to_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
   return 0;
 }
 
+void copy_storage_snapshot(struct storage_snapshot *dst,
+			   struct storage_snapshot *src)
+{
+  dst->href = strdup_or_null(src->href);
+  dst->id = strdup_or_null(src->id);
+  dst->created = strdup_or_null(src->created);
+  dst->state = strdup_or_null(src->state);
+  dst->storage_volume_href = strdup_or_null(src->storage_volume_href);
+  dst->next = NULL;
+}
+
+void print_storage_snapshot(struct storage_snapshot *storage_snapshot,
+			    FILE *stream)
+{
+  if (stream == NULL)
+    stream = stderr;
+
+  fprintf(stream, "Href: %s\n", storage_snapshot->href);
+  fprintf(stream, "ID: %s\n", storage_snapshot->id);
+  fprintf(stream, "Created: %s\n", storage_snapshot->created);
+  fprintf(stream, "State: %s\n", storage_snapshot->state);
+  fprintf(stream, "Storage Volume Href: %s\n",
+	  storage_snapshot->storage_volume_href);
+}
+
 void print_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
 				 FILE *stream)
 {
@@ -47,13 +72,18 @@ void print_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
 
   curr = *storage_snapshots;
   while (curr != NULL) {
-    fprintf(stream, "Href: %s\n", curr->href);
-    fprintf(stream, "ID: %s\n", curr->id);
-    fprintf(stream, "Created: %s\n", curr->created);
-    fprintf(stream, "State: %s\n", curr->state);
-    fprintf(stream, "Storage Volume Href: %s\n", curr->storage_volume_href);
+    print_storage_snapshot(curr, NULL);
     curr = curr->next;
   }
+}
+
+void free_storage_snapshot(struct storage_snapshot *storage_snapshot)
+{
+  free(storage_snapshot->href);
+  free(storage_snapshot->id);
+  free(storage_snapshot->created);
+  free(storage_snapshot->state);
+  free(storage_snapshot->storage_volume_href);
 }
 
 void free_storage_snapshot_list(struct storage_snapshot **storage_snapshots)
@@ -63,11 +93,7 @@ void free_storage_snapshot_list(struct storage_snapshot **storage_snapshots)
   curr = *storage_snapshots;
   while (curr != NULL) {
     next = curr->next;
-    free(curr->href);
-    free(curr->id);
-    free(curr->created);
-    free(curr->state);
-    free(curr->storage_volume_href);
+    free_storage_snapshot(curr);
     free(curr);
     curr = next;
   }

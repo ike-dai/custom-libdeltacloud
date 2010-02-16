@@ -15,8 +15,13 @@ int add_to_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
 				 const char *href, const char *id,
 				 const char *created, const char *state,
 				 const char *storage_volume_href);
+void copy_storage_snapshot(struct storage_snapshot *dst,
+			   struct storage_snapshot *src);
+void print_storage_snapshot(struct storage_snapshot *storage_snapshot,
+			    FILE *stream);
 void print_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
 				 FILE *stream);
+void free_storage_snapshot(struct storage_snapshot *storage_snapshot);
 void free_storage_snapshot_list(struct storage_snapshot **storage_snapshots);
 
 #endif
