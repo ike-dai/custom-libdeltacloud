@@ -15,11 +15,18 @@ int add_to_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
   if (onestorage_snapshot == NULL)
     return -1;
 
-  onestorage_snapshot->href = strdup_or_null(href);
-  onestorage_snapshot->id = strdup_or_null(id);
-  onestorage_snapshot->created = strdup_or_null(created);
-  onestorage_snapshot->state = strdup_or_null(state);
-  onestorage_snapshot->storage_volume_href = strdup_or_null(storage_volume_href);
+  memset(onestorage_snapshot, 0, sizeof(struct storage_snapshot));
+
+  if (strdup_or_null(&onestorage_snapshot->href, href) < 0)
+    goto error;
+  if (strdup_or_null(&onestorage_snapshot->id, id) < 0)
+    goto error;
+  if (strdup_or_null(&onestorage_snapshot->created, created) < 0)
+    goto error;
+  if (strdup_or_null(&onestorage_snapshot->state, state) < 0)
+    goto error;
+  if (strdup_or_null(&onestorage_snapshot->storage_volume_href, storage_volume_href) < 0)
+    goto error;
   onestorage_snapshot->next = NULL;
 
   if (*storage_snapshots == NULL)
@@ -35,17 +42,35 @@ int add_to_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
   }
 
   return 0;
+
+ error:
+  free_storage_snapshot(onestorage_snapshot);
+  MY_FREE(onestorage_snapshot);
+  return -1;
 }
 
-void copy_storage_snapshot(struct storage_snapshot *dst,
-			   struct storage_snapshot *src)
+int copy_storage_snapshot(struct storage_snapshot *dst,
+			  struct storage_snapshot *src)
 {
-  dst->href = strdup_or_null(src->href);
-  dst->id = strdup_or_null(src->id);
-  dst->created = strdup_or_null(src->created);
-  dst->state = strdup_or_null(src->state);
-  dst->storage_volume_href = strdup_or_null(src->storage_volume_href);
+  memset(dst, 0, sizeof(struct storage_snapshot));
+
+  if (strdup_or_null(&dst->href, src->href) < 0)
+    goto error;
+  if (strdup_or_null(&dst->id, src->id) < 0)
+    goto error;
+  if (strdup_or_null(&dst->created, src->created) < 0)
+    goto error;
+  if (strdup_or_null(&dst->state, src->state) < 0)
+    goto error;
+  if (strdup_or_null(&dst->storage_volume_href, src->storage_volume_href) < 0)
+    goto error;
   dst->next = NULL;
+
+  return 0;
+
+ error:
+  free_storage_snapshot(dst);
+  return -1;
 }
 
 void print_storage_snapshot(struct storage_snapshot *storage_snapshot,

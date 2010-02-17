@@ -4,6 +4,11 @@
 #include "common.h"
 #include "instance.h"
 
+static void free_address(struct address *addr)
+{
+  MY_FREE(addr->address);
+}
+
 int add_to_address_list(struct address **addresses, char *address)
 {
   struct address *oneaddress, *curr, *last;
@@ -12,7 +17,10 @@ int add_to_address_list(struct address **addresses, char *address)
   if (oneaddress == NULL)
     return -1;
 
-  oneaddress->address = strdup_or_null(address);
+  memset(oneaddress, 0, sizeof(struct address));
+
+  if (strdup_or_null(&oneaddress->address, address) < 0)
+    goto error;
   oneaddress->next = NULL;
 
   if (*addresses == NULL)
@@ -28,9 +36,14 @@ int add_to_address_list(struct address **addresses, char *address)
   }
 
   return 0;
+
+ error:
+  free_address(oneaddress);
+  MY_FREE(oneaddress);
+  return -1;
 }
 
-static void copy_address_list(struct address **dst, struct address **src)
+static int copy_address_list(struct address **dst, struct address **src)
 {
   struct address *curr;
 
@@ -38,9 +51,16 @@ static void copy_address_list(struct address **dst, struct address **src)
 
   curr = *src;
   while (curr != NULL) {
-    add_to_address_list(dst, curr->address);
+    if (add_to_address_list(dst, curr->address) < 0)
+      goto error;
     curr = curr->next;
   }
+
+  return 0;
+
+ error:
+  free_address_list(dst);
+  return -1;
 }
 
 void print_address_list(struct address **addresses, FILE *stream)
@@ -64,12 +84,18 @@ void free_address_list(struct address **addresses)
   curr = *addresses;
   while (curr != NULL) {
     next = curr->next;
-    MY_FREE(curr->address);
+    free_address(curr);
     MY_FREE(curr);
     curr = next;
   }
 
   *addresses = NULL;
+}
+
+static void free_action(struct action *action)
+{
+  MY_FREE(action->rel);
+  MY_FREE(action->href);
 }
 
 int add_to_action_list(struct action **actions, char *rel, char *href)
@@ -80,8 +106,12 @@ int add_to_action_list(struct action **actions, char *rel, char *href)
   if (oneaction == NULL)
     return -1;
 
-  oneaction->rel = strdup_or_null(rel);
-  oneaction->href = strdup_or_null(href);
+  memset(oneaction, 0, sizeof(struct action));
+
+  if (strdup_or_null(&oneaction->rel, rel) < 0)
+    goto error;
+  if (strdup_or_null(&oneaction->href, href) < 0)
+    goto error;
   oneaction->next = NULL;
 
   if (*actions == NULL)
@@ -97,9 +127,14 @@ int add_to_action_list(struct action **actions, char *rel, char *href)
   }
 
   return 0;
+
+ error:
+  free_action(oneaction);
+  MY_FREE(oneaction);
+  return -1;
 }
 
-static void copy_action_list(struct action **dst, struct action **src)
+static int copy_action_list(struct action **dst, struct action **src)
 {
   struct action *curr;
 
@@ -107,9 +142,16 @@ static void copy_action_list(struct action **dst, struct action **src)
 
   curr = *src;
   while (curr != NULL) {
-    add_to_action_list(dst, curr->rel, curr->href);
+    if (add_to_action_list(dst, curr->rel, curr->href) < 0)
+      goto error;
     curr = curr->next;
   }
+
+  return 0;
+
+ error:
+  free_action_list(dst);
+  return -1;
 }
 
 void print_action_list(struct action **actions, FILE *stream)
@@ -134,8 +176,7 @@ void free_action_list(struct action **actions)
   curr = *actions;
   while (curr != NULL) {
     next = curr->next;
-    MY_FREE(curr->rel);
-    MY_FREE(curr->href);
+    free_action(curr);
     MY_FREE(curr);
     curr = next;
   }
@@ -157,13 +198,22 @@ int add_to_instance_list(struct instance **instances, const char *id,
   if (oneinstance == NULL)
     return -1;
 
-  oneinstance->id = strdup_or_null(id);
-  oneinstance->name = strdup_or_null(name);
-  oneinstance->owner_id = strdup_or_null(owner_id);
-  oneinstance->image_href = strdup_or_null(image_href);
-  oneinstance->flavor_href = strdup_or_null(flavor_href);
-  oneinstance->realm_href = strdup_or_null(realm_href);
-  oneinstance->state = strdup_or_null(state);
+  memset(oneinstance, 0, sizeof(struct instance));
+
+  if (strdup_or_null(&oneinstance->id, id) < 0)
+    goto error;
+  if (strdup_or_null(&oneinstance->name, name) < 0)
+    goto error;
+  if (strdup_or_null(&oneinstance->owner_id, owner_id) < 0)
+    goto error;
+  if (strdup_or_null(&oneinstance->image_href, image_href) < 0)
+    goto error;
+  if (strdup_or_null(&oneinstance->flavor_href, flavor_href) < 0)
+    goto error;
+  if (strdup_or_null(&oneinstance->realm_href, realm_href) < 0)
+    goto error;
+  if (strdup_or_null(&oneinstance->state, state) < 0)
+    goto error;
   oneinstance->actions = actions;
   oneinstance->public_addresses = public_addresses;
   oneinstance->private_addresses = private_addresses;
@@ -182,21 +232,41 @@ int add_to_instance_list(struct instance **instances, const char *id,
   }
 
   return 0;
+
+ error:
+  free_instance(oneinstance);
+  MY_FREE(oneinstance);
+  return -1;
 }
 
-void copy_instance(struct instance *dst, struct instance *src)
+int copy_instance(struct instance *dst, struct instance *src)
 {
-  dst->id = strdup_or_null(src->id);
-  dst->name = strdup_or_null(src->name);
-  dst->owner_id = strdup_or_null(src->owner_id);
-  dst->image_href = strdup_or_null(src->image_href);
-  dst->flavor_href = strdup_or_null(src->flavor_href);
-  dst->realm_href = strdup_or_null(src->realm_href);
-  dst->state = strdup_or_null(src->state);
+  memset(dst, 0, sizeof(struct instance));
+
+  if (strdup_or_null(&dst->id, src->id) < 0)
+    goto error;
+  if (strdup_or_null(&dst->name, src->name) < 0)
+    goto error;
+  if (strdup_or_null(&dst->owner_id, src->owner_id) < 0)
+    goto error;
+  if (strdup_or_null(&dst->image_href, src->image_href) < 0)
+    goto error;
+  if (strdup_or_null(&dst->flavor_href, src->flavor_href) < 0)
+    goto error;
+  if (strdup_or_null(&dst->realm_href, src->realm_href) < 0)
+    goto error;
+  if (strdup_or_null(&dst->state, src->state) < 0)
+    goto error;
   copy_action_list(&dst->actions, &src->actions);
   copy_address_list(&dst->public_addresses, &src->public_addresses);
   copy_address_list(&dst->private_addresses, &src->private_addresses);
   dst->next = NULL;
+
+  return 0;
+
+ error:
+  free_instance(dst);
+  return -1;
 }
 
 void print_instance(struct instance *instance, FILE *stream)

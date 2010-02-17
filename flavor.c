@@ -4,14 +4,27 @@
 #include "common.h"
 #include "flavor.h"
 
-void copy_flavor(struct flavor *dst, struct flavor *src)
+int copy_flavor(struct flavor *dst, struct flavor *src)
 {
-  dst->href = strdup_or_null(src->href);
-  dst->id = strdup_or_null(src->id);
-  dst->memory = strdup_or_null(src->memory);
-  dst->storage = strdup_or_null(src->storage);
-  dst->architecture = strdup_or_null(src->architecture);
+  memset(dst, 0, sizeof(struct flavor));
+
+  if (strdup_or_null(&dst->href, src->href) < 0)
+    return -1;
+  if (strdup_or_null(&dst->id, src->id) < 0)
+    goto error;
+  if (strdup_or_null(&dst->memory, src->memory) < 0)
+    goto error;
+  if (strdup_or_null(&dst->storage, src->storage) < 0)
+    goto error;
+  if (strdup_or_null(&dst->architecture, src->architecture) < 0)
+    goto error;
   dst->next = NULL;
+
+  return 0;
+
+ error:
+  free_flavor(dst);
+  return -1;
 }
 
 int add_to_flavor_list(struct flavor **flavors, const char *href,
@@ -24,11 +37,18 @@ int add_to_flavor_list(struct flavor **flavors, const char *href,
   if (oneflavor == NULL)
     return -1;
 
-  oneflavor->href = strdup_or_null(href);
-  oneflavor->id = strdup_or_null(id);
-  oneflavor->memory = strdup_or_null(memory);
-  oneflavor->storage = strdup_or_null(storage);
-  oneflavor->architecture = strdup_or_null(architecture);
+  memset(oneflavor, 0, sizeof(struct flavor));
+
+  if (strdup_or_null(&oneflavor->href, href) < 0)
+    goto error;
+  if (strdup_or_null(&oneflavor->id, id) < 0)
+    goto error;
+  if (strdup_or_null(&oneflavor->memory, memory) < 0)
+    goto error;
+  if (strdup_or_null(&oneflavor->storage, storage) < 0)
+    goto error;
+  if (strdup_or_null(&oneflavor->architecture, architecture) < 0)
+    goto error;
   oneflavor->next = NULL;
 
   if (*flavors == NULL)
@@ -44,6 +64,11 @@ int add_to_flavor_list(struct flavor **flavors, const char *href,
   }
 
   return 0;
+
+ error:
+  free_flavor(oneflavor);
+  MY_FREE(oneflavor);
+  return -1;
 }
 
 void print_flavor(struct flavor *flavor, FILE *stream)

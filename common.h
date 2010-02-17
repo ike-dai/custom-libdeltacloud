@@ -4,7 +4,7 @@
 #define STREQ(a,b) (strcmp(a,b) == 0)
 #define STRNEQ(a,b) (strcmp(a,b) != 0)
 
-char *strdup_or_null(const char *data);
+int strdup_or_null(char **out, const char *in);
 
 #define MY_FREE(ptr) free_and_null(&(ptr))
 void free_and_null(void *ptrptr);
@@ -36,6 +36,9 @@ void *malloc_sometimes_fail(size_t size);
 
 #define realloc realloc_sometimes_fail
 void *realloc_sometimes_fail(void *ptr, size_t size);
+
+#define strdup strdup_sometimes_fail
+char *strdup_sometimes_fail(const char *s);
 
 #include <curl/curl.h>
 #define curl_easy_init curl_easy_init_sometimes_fail

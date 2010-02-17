@@ -4,6 +4,12 @@
 #include "common.h"
 #include "link.h"
 
+static void free_link(struct link *link)
+{
+  MY_FREE(link->href);
+  MY_FREE(link->rel);
+}
+
 int add_to_link_list(struct link **links, char *href, char *rel)
 {
   struct link *onelink, *curr, *last;
@@ -12,8 +18,12 @@ int add_to_link_list(struct link **links, char *href, char *rel)
   if (onelink == NULL)
     return -1;
 
-  onelink->href = strdup_or_null(href);
-  onelink->rel = strdup_or_null(rel);
+  memset(onelink, 0, sizeof(struct link));
+
+  if (strdup_or_null(&onelink->href, href) < 0)
+    goto error;
+  if (strdup_or_null(&onelink->rel, rel) < 0)
+    goto error;
   onelink->next = NULL;
 
   if (*links == NULL)
@@ -29,6 +39,11 @@ int add_to_link_list(struct link **links, char *href, char *rel)
   }
 
   return 0;
+
+ error:
+  free_link(onelink);
+  MY_FREE(onelink);
+  return -1;
 }
 
 void print_link_list(struct link **links, FILE *stream)
@@ -66,8 +81,7 @@ void free_link_list(struct link **links)
   curr = *links;
   while (curr != NULL) {
     next = curr->next;
-    MY_FREE(curr->href);
-    MY_FREE(curr->rel);
+    free_link(curr);
     MY_FREE(curr);
     curr = next;
   }

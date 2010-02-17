@@ -16,13 +16,22 @@ int add_to_storage_volume_list(struct storage_volume **storage_volumes,
   if (onestorage_volume == NULL)
     return -1;
 
-  onestorage_volume->href = strdup_or_null(href);
-  onestorage_volume->id = strdup_or_null(id);
-  onestorage_volume->created = strdup_or_null(created);
-  onestorage_volume->state = strdup_or_null(state);
-  onestorage_volume->capacity = strdup_or_null(capacity);
-  onestorage_volume->device = strdup_or_null(device);
-  onestorage_volume->instance_href = strdup_or_null(instance_href);
+  memset(onestorage_volume, 0, sizeof(struct storage_volume));
+
+  if (strdup_or_null(&onestorage_volume->href, href) < 0)
+    goto error;
+  if (strdup_or_null(&onestorage_volume->id, id) < 0)
+    goto error;
+  if (strdup_or_null(&onestorage_volume->created, created) < 0)
+    goto error;
+  if (strdup_or_null(&onestorage_volume->state, state) < 0)
+    goto error;
+  if (strdup_or_null(&onestorage_volume->capacity, capacity) < 0)
+    goto error;
+  if (strdup_or_null(&onestorage_volume->device, device) < 0)
+    goto error;
+  if (strdup_or_null(&onestorage_volume->instance_href, instance_href) < 0)
+    goto error;
   onestorage_volume->next = NULL;
 
   if (*storage_volumes == NULL)
@@ -38,18 +47,38 @@ int add_to_storage_volume_list(struct storage_volume **storage_volumes,
   }
 
   return 0;
+
+ error:
+  free_storage_volume(onestorage_volume);
+  MY_FREE(onestorage_volume);
+  return -1;
 }
 
-void copy_storage_volume(struct storage_volume *dst, struct storage_volume *src)
+int copy_storage_volume(struct storage_volume *dst, struct storage_volume *src)
 {
-  dst->href = strdup_or_null(src->href);
-  dst->id = strdup_or_null(src->id);
-  dst->created = strdup_or_null(src->created);
-  dst->state = strdup_or_null(src->state);
-  dst->capacity = strdup_or_null(src->capacity);
-  dst->device = strdup_or_null(src->device);
-  dst->instance_href = strdup_or_null(src->instance_href);
+  memset(dst, 0, sizeof(struct storage_volume));
+
+  if (strdup_or_null(&dst->href, src->href) < 0)
+    goto error;
+  if (strdup_or_null(&dst->id, src->id) < 0)
+    goto error;
+  if (strdup_or_null(&dst->created, src->created) < 0)
+    goto error;
+  if (strdup_or_null(&dst->state, src->state) < 0)
+    goto error;
+  if (strdup_or_null(&dst->capacity, src->capacity) < 0)
+    goto error;
+  if (strdup_or_null(&dst->device, src->device) < 0)
+    goto error;
+  if (strdup_or_null(&dst->instance_href, src->instance_href) < 0)
+    goto error;
   dst->next = NULL;
+
+  return 0;
+
+ error:
+  free_storage_volume(dst);
+  return -1;
 }
 
 void print_storage_volume(struct storage_volume *storage_volume, FILE *stream)

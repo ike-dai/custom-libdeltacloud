@@ -10,12 +10,19 @@ void free_and_null(void *ptrptr)
   *(void**)ptrptr = NULL;
 }
 
-char *strdup_or_null(const char *data)
+int strdup_or_null(char **out, const char *in)
 {
-  if (data != NULL)
-    return strdup(data);
+  if (in == NULL) {
+    *out = NULL;
+    return 0;
+  }
 
-  return NULL;
+  *out = strdup(in);
+
+  if (*out == NULL)
+    return -1;
+
+  return 0;
 }
 
 #ifdef DEBUG
@@ -154,4 +161,15 @@ CURLcode curl_easy_perform_sometimes_fail(CURL *handle)
     return -1;
 }
 
-#endif
+#undef strdup
+char *strdup_sometimes_fail(const char *s)
+{
+  seed_random();
+
+  if (rand() % FAILRATE)
+    return strdup(s);
+  else
+    return NULL;
+}
+
+#endif /* DEBUG */

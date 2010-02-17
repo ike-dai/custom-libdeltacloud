@@ -4,6 +4,12 @@
 #include "common.h"
 #include "instance_state.h"
 
+static void free_transition(struct transition *transition)
+{
+  MY_FREE(transition->action);
+  MY_FREE(transition->to);
+}
+
 int add_to_transition_list(struct transition **transitions, const char *action,
 			   const char *to)
 {
@@ -13,8 +19,12 @@ int add_to_transition_list(struct transition **transitions, const char *action,
   if (onetransition == NULL)
     return -1;
 
-  onetransition->action = strdup_or_null(action);
-  onetransition->to = strdup(to);
+  memset(onetransition, 0, sizeof(struct transition));
+
+  if (strdup_or_null(&onetransition->action, action) < 0)
+    goto error;
+  if (strdup_or_null(&onetransition->to, to) < 0)
+    goto error;
   onetransition->next = NULL;
 
   if (*transitions == NULL)
@@ -30,9 +40,14 @@ int add_to_transition_list(struct transition **transitions, const char *action,
   }
 
   return 0;
+
+ error:
+  free_transition(onetransition);
+  MY_FREE(onetransition);
+  return -1;
 }
 
-static void copy_transition_list(struct transition **dst,
+static int copy_transition_list(struct transition **dst,
 				 struct transition **src)
 {
   struct transition *curr;
@@ -41,9 +56,16 @@ static void copy_transition_list(struct transition **dst,
 
   curr = *src;
   while (curr != NULL) {
-    add_to_transition_list(dst, curr->action, curr->to);
+    if (add_to_transition_list(dst, curr->action, curr->to) < 0)
+      goto error;
     curr = curr->next;
   }
+
+  return 0;
+
+ error:
+  free_transition_list(dst);
+  return -1;
 }
 
 void print_transition_list(struct transition **transitions, FILE *stream)
@@ -68,8 +90,7 @@ void free_transition_list(struct transition **transitions)
   curr = *transitions;
   while (curr != NULL) {
     next = curr->next;
-    MY_FREE(curr->action);
-    MY_FREE(curr->to);
+    free_transition(curr);
     MY_FREE(curr);
     curr = next;
   }
@@ -87,7 +108,10 @@ int add_to_instance_state_list(struct instance_state **instance_states,
   if (oneinstance_state == NULL)
     return -1;
 
-  oneinstance_state->name = strdup(name);
+  memset(oneinstance_state, 0, sizeof(struct instance_state));
+
+  if (strdup_or_null(&oneinstance_state->name, name) < 0)
+    goto error;
   if (transitions)
     oneinstance_state->transitions = transitions;
   else
@@ -107,6 +131,11 @@ int add_to_instance_state_list(struct instance_state **instance_states,
   }
 
   return 0;
+
+ error:
+  free_instance_state(oneinstance_state);
+  MY_FREE(oneinstance_state);
+  return -1;
 }
 
 struct instance_state *find_by_name_in_instance_state_list(struct instance_state **instance_states,
@@ -124,11 +153,21 @@ struct instance_state *find_by_name_in_instance_state_list(struct instance_state
   return NULL;
 }
 
-void copy_instance_state(struct instance_state *dst, struct instance_state *src)
+int copy_instance_state(struct instance_state *dst, struct instance_state *src)
 {
-  dst->name = strdup_or_null(src->name);
-  copy_transition_list(&dst->transitions, &src->transitions);
+  memset(dst, 0, sizeof(struct instance_state));
+
+  if (strdup_or_null(&dst->name, src->name) < 0)
+    goto error;
+  if (copy_transition_list(&dst->transitions, &src->transitions) < 0)
+    goto error;
   dst->next = NULL;
+
+  return 0;
+
+ error:
+  free_instance_state(dst);
+  return -1;
 }
 
 void print_instance_state(struct instance_state *instance_state,

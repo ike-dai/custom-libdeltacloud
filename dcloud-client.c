@@ -364,7 +364,7 @@ static int get_instance_by_id(struct deltacloud_api *api, const char *id,
 {
   char *url, *data;
   struct instance *tmpinstance = NULL;
-  xmlDocPtr xml;
+  xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
   xmlXPathContextPtr ctxt = NULL;
@@ -414,7 +414,8 @@ static int get_instance_by_id(struct deltacloud_api *api, const char *id,
   MY_FREE(url);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
-  xmlFreeDoc(xml);
+  if (xml)
+    xmlFreeDoc(xml);
   MY_FREE(data);
 
   return ret;
@@ -513,7 +514,7 @@ static int get_realm_by_id(struct deltacloud_api *api, const char *id,
 {
   char *url, *data;
   struct realm *tmprealm = NULL;
-  xmlDocPtr xml;
+  xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
   xmlXPathContextPtr ctxt = NULL;
@@ -563,7 +564,8 @@ static int get_realm_by_id(struct deltacloud_api *api, const char *id,
   MY_FREE(url);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
-  xmlFreeDoc(xml);
+  if (xml)
+    xmlFreeDoc(xml);
   MY_FREE(data);
 
   return ret;
@@ -705,7 +707,7 @@ static int get_flavor_by_uri(struct deltacloud_api *api, const char *url,
 {
   char *data;
   struct flavor *tmpflavor = NULL;
-  xmlDocPtr xml;
+  xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
   xmlXPathContextPtr ctxt = NULL;
@@ -749,7 +751,8 @@ static int get_flavor_by_uri(struct deltacloud_api *api, const char *url,
  cleanup:
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
-  xmlFreeDoc(xml);
+  if (xml)
+    xmlFreeDoc(xml);
   MY_FREE(data);
 
   return ret;
@@ -853,7 +856,7 @@ static int get_image_by_id(struct deltacloud_api *api, const char *id,
 {
   char *url, *data;
   struct image *tmpimage = NULL;
-  xmlDocPtr xml;
+  xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
   xmlXPathContextPtr ctxt = NULL;
@@ -900,11 +903,12 @@ static int get_image_by_id(struct deltacloud_api *api, const char *id,
   ret = 0;
 
  cleanup:
-  MY_FREE(url);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
-  xmlFreeDoc(xml);
+  if (xml)
+    xmlFreeDoc(xml);
   MY_FREE(data);
+  MY_FREE(url);
 
   return ret;
 }
@@ -1111,7 +1115,7 @@ static int get_storage_volume_by_id(struct deltacloud_api *api, const char *id,
 {
   char *url, *data;
   struct storage_volume *tmpstorage_volume = NULL;
-  xmlDocPtr xml;
+  xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
   xmlXPathContextPtr ctxt = NULL;
@@ -1161,7 +1165,8 @@ static int get_storage_volume_by_id(struct deltacloud_api *api, const char *id,
   MY_FREE(url);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
-  xmlFreeDoc(xml);
+  if (xml)
+    xmlFreeDoc(xml);
   MY_FREE(data);
 
   return ret;
@@ -1265,7 +1270,7 @@ static int get_storage_snapshot_by_id(struct deltacloud_api *api,
 {
   char *url, *data;
   struct storage_snapshot *tmpstorage_snapshot = NULL;
-  xmlDocPtr xml;
+  xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
   xmlXPathContextPtr ctxt = NULL;
@@ -1315,7 +1320,8 @@ static int get_storage_snapshot_by_id(struct deltacloud_api *api,
   MY_FREE(url);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
-  xmlFreeDoc(xml);
+  if (xml)
+    xmlFreeDoc(xml);
   MY_FREE(data);
 
   return ret;
@@ -1331,7 +1337,7 @@ static struct instance *create_instance(struct deltacloud_api *api,
   size_t param_size;
   FILE *paramfp;
   struct instance *newinstance = NULL;
-  xmlDocPtr xml;
+  xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
   xmlXPathContextPtr ctxt = NULL;
@@ -1399,7 +1405,8 @@ static struct instance *create_instance(struct deltacloud_api *api,
  cleanup:
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
-  xmlFreeDoc(xml);
+  if (xml)
+    xmlFreeDoc(xml);
 
   MY_FREE(data);
 

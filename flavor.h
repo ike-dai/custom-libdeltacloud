@@ -11,7 +11,7 @@ struct flavor {
   struct flavor *next;
 };
 
-void copy_flavor(struct flavor *dst, struct flavor *src);
+int copy_flavor(struct flavor *dst, struct flavor *src);
 int add_to_flavor_list(struct flavor **flavors, const char *href,
 		       const char *id, const char *memory, const char *storage,
 		       const char *architecture);

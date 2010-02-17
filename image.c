@@ -14,12 +14,20 @@ int add_to_image_list(struct image **images, const char *href, const char *id,
   if (oneimage == NULL)
     return -1;
 
-  oneimage->href = strdup_or_null(href);
-  oneimage->id = strdup_or_null(id);
-  oneimage->description = strdup_or_null(description);
-  oneimage->architecture = strdup_or_null(architecture);
-  oneimage->owner_id = strdup_or_null(owner_id);
-  oneimage->name = strdup_or_null(name);
+  memset(oneimage, 0, sizeof(struct image));
+
+  if (strdup_or_null(&oneimage->href, href) < 0)
+    goto error;
+  if (strdup_or_null(&oneimage->id, id) < 0)
+    goto error;
+  if (strdup_or_null(&oneimage->description, description) < 0)
+    goto error;
+  if (strdup_or_null(&oneimage->architecture, architecture) < 0)
+    goto error;
+  if (strdup_or_null(&oneimage->owner_id, owner_id) < 0)
+    goto error;
+  if (strdup_or_null(&oneimage->name, name) < 0)
+    goto error;
   oneimage->next = NULL;
 
   if (*images == NULL)
@@ -35,17 +43,36 @@ int add_to_image_list(struct image **images, const char *href, const char *id,
   }
 
   return 0;
+
+ error:
+  free_image(oneimage);
+  MY_FREE(oneimage);
+  return -1;
 }
 
-void copy_image(struct image *dst, struct image *src)
+int copy_image(struct image *dst, struct image *src)
 {
-  dst->href = strdup_or_null(src->href);
-  dst->id = strdup_or_null(src->id);
-  dst->description = strdup_or_null(src->description);
-  dst->architecture = strdup_or_null(src->architecture);
-  dst->owner_id = strdup_or_null(src->owner_id);
-  dst->name = strdup_or_null(src->name);
+  memset(dst, 0, sizeof(struct image));
+
+  if (strdup_or_null(&dst->href, src->href) < 0)
+    goto error;
+  if (strdup_or_null(&dst->id, src->id) < 0)
+    goto error;
+  if (strdup_or_null(&dst->description, src->description) < 0)
+    goto error;
+  if (strdup_or_null(&dst->architecture, src->architecture) < 0)
+    goto error;
+  if (strdup_or_null(&dst->owner_id, src->owner_id) < 0)
+    goto error;
+  if (strdup_or_null(&dst->name, src->name) < 0)
+    goto error;
   dst->next = NULL;
+
+  return 0;
+
+ error:
+  free_image(dst);
+  return -1;
 }
 
 void print_image(struct image *image, FILE *stream)
