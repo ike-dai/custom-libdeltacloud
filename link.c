@@ -66,9 +66,9 @@ void free_link_list(struct link **links)
   curr = *links;
   while (curr != NULL) {
     next = curr->next;
-    free(curr->href);
-    free(curr->rel);
-    free(curr);
+    MY_FREE(curr->href);
+    MY_FREE(curr->rel);
+    MY_FREE(curr);
     curr = next;
   }
 

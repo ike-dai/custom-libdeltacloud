@@ -64,8 +64,8 @@ void free_address_list(struct address **addresses)
   curr = *addresses;
   while (curr != NULL) {
     next = curr->next;
-    free(curr->address);
-    free(curr);
+    MY_FREE(curr->address);
+    MY_FREE(curr);
     curr = next;
   }
 
@@ -134,9 +134,9 @@ void free_action_list(struct action **actions)
   curr = *actions;
   while (curr != NULL) {
     next = curr->next;
-    free(curr->rel);
-    free(curr->href);
-    free(curr);
+    MY_FREE(curr->rel);
+    MY_FREE(curr->href);
+    MY_FREE(curr);
     curr = next;
   }
 
@@ -232,13 +232,13 @@ void print_instance_list(struct instance **instances, FILE *stream)
 
 void free_instance(struct instance *instance)
 {
-  free(instance->id);
-  free(instance->name);
-  free(instance->owner_id);
-  free(instance->image_href);
-  free(instance->flavor_href);
-  free(instance->realm_href);
-  free(instance->state);
+  MY_FREE(instance->id);
+  MY_FREE(instance->name);
+  MY_FREE(instance->owner_id);
+  MY_FREE(instance->image_href);
+  MY_FREE(instance->flavor_href);
+  MY_FREE(instance->realm_href);
+  MY_FREE(instance->state);
   free_action_list(&instance->actions);
   free_address_list(&instance->public_addresses);
   free_address_list(&instance->private_addresses);
@@ -252,7 +252,7 @@ void free_instance_list(struct instance **instances)
   while (curr != NULL) {
     next = curr->next;
     free_instance(curr);
-    free(curr);
+    MY_FREE(curr);
     curr = next;
   }
 

@@ -68,9 +68,9 @@ void free_transition_list(struct transition **transitions)
   curr = *transitions;
   while (curr != NULL) {
     next = curr->next;
-    free(curr->action);
-    free(curr->to);
-    free(curr);
+    MY_FREE(curr->action);
+    MY_FREE(curr->to);
+    MY_FREE(curr);
     curr = next;
   }
 
@@ -158,7 +158,7 @@ void print_instance_state_list(struct instance_state **instance_states,
 
 void free_instance_state(struct instance_state *instance_state)
 {
-  free(instance_state->name);
+  MY_FREE(instance_state->name);
   free_transition_list(&instance_state->transitions);
 }
 
@@ -170,7 +170,7 @@ void free_instance_state_list(struct instance_state **instance_states)
   while (curr != NULL) {
     next = curr->next;
     free_instance_state(curr);
-    free(curr);
+    MY_FREE(curr);
     curr = next;
   }
 

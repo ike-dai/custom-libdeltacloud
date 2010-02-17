@@ -73,11 +73,11 @@ void print_realm_list(struct realm **realms, FILE *stream)
 
 void free_realm(struct realm *realm)
 {
-  free(realm->href);
-  free(realm->id);
-  free(realm->name);
-  free(realm->limit);
-  free(realm->state);
+  MY_FREE(realm->href);
+  MY_FREE(realm->id);
+  MY_FREE(realm->name);
+  MY_FREE(realm->limit);
+  MY_FREE(realm->state);
 }
 
 void free_realm_list(struct realm **realms)
@@ -88,7 +88,7 @@ void free_realm_list(struct realm **realms)
   while (curr != NULL) {
     next = curr->next;
     free_realm(curr);
-    free(curr);
+    MY_FREE(curr);
     curr = next;
   }
 

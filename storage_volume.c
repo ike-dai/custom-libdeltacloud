@@ -83,13 +83,13 @@ void print_storage_volume_list(struct storage_volume **storage_volumes,
 
 void free_storage_volume(struct storage_volume *storage_volume)
 {
-  free(storage_volume->href);
-  free(storage_volume->id);
-  free(storage_volume->created);
-  free(storage_volume->state);
-  free(storage_volume->capacity);
-  free(storage_volume->device);
-  free(storage_volume->instance_href);
+  MY_FREE(storage_volume->href);
+  MY_FREE(storage_volume->id);
+  MY_FREE(storage_volume->created);
+  MY_FREE(storage_volume->state);
+  MY_FREE(storage_volume->capacity);
+  MY_FREE(storage_volume->device);
+  MY_FREE(storage_volume->instance_href);
 }
 
 void free_storage_volume_list(struct storage_volume **storage_volumes)
@@ -100,7 +100,7 @@ void free_storage_volume_list(struct storage_volume **storage_volumes)
   while (curr != NULL) {
     next = curr->next;
     free_storage_volume(curr);
-    free(curr);
+    MY_FREE(curr);
     curr = next;
   }
 

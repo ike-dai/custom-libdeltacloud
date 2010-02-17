@@ -74,11 +74,11 @@ void print_flavor_list(struct flavor **flavors, FILE *stream)
 
 void free_flavor(struct flavor *flavor)
 {
-  free(flavor->href);
-  free(flavor->id);
-  free(flavor->memory);
-  free(flavor->storage);
-  free(flavor->architecture);
+  MY_FREE(flavor->href);
+  MY_FREE(flavor->id);
+  MY_FREE(flavor->memory);
+  MY_FREE(flavor->storage);
+  MY_FREE(flavor->architecture);
 }
 
 void free_flavor_list(struct flavor **flavors)
@@ -89,7 +89,7 @@ void free_flavor_list(struct flavor **flavors)
   while (curr != NULL) {
     next = curr->next;
     free_flavor(curr);
-    free(curr);
+    MY_FREE(curr);
     curr = next;
   }
 

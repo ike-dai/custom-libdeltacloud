@@ -77,12 +77,12 @@ void print_image_list(struct image **images, FILE *stream)
 
 void free_image(struct image *image)
 {
-  free(image->href);
-  free(image->id);
-  free(image->description);
-  free(image->architecture);
-  free(image->owner_id);
-  free(image->name);
+  MY_FREE(image->href);
+  MY_FREE(image->id);
+  MY_FREE(image->description);
+  MY_FREE(image->architecture);
+  MY_FREE(image->owner_id);
+  MY_FREE(image->name);
 }
 
 void free_image_list(struct image **images)
@@ -93,7 +93,7 @@ void free_image_list(struct image **images)
   while (curr != NULL) {
     next = curr->next;
     free_image(curr);
-    free(curr);
+    MY_FREE(curr);
     curr = next;
   }
 

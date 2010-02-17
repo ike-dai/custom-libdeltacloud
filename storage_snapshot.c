@@ -79,11 +79,11 @@ void print_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
 
 void free_storage_snapshot(struct storage_snapshot *storage_snapshot)
 {
-  free(storage_snapshot->href);
-  free(storage_snapshot->id);
-  free(storage_snapshot->created);
-  free(storage_snapshot->state);
-  free(storage_snapshot->storage_volume_href);
+  MY_FREE(storage_snapshot->href);
+  MY_FREE(storage_snapshot->id);
+  MY_FREE(storage_snapshot->created);
+  MY_FREE(storage_snapshot->state);
+  MY_FREE(storage_snapshot->storage_volume_href);
 }
 
 void free_storage_snapshot_list(struct storage_snapshot **storage_snapshots)
@@ -94,7 +94,7 @@ void free_storage_snapshot_list(struct storage_snapshot **storage_snapshots)
   while (curr != NULL) {
     next = curr->next;
     free_storage_snapshot(curr);
-    free(curr);
+    MY_FREE(curr);
     curr = next;
   }
 
