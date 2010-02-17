@@ -214,9 +214,12 @@ int add_to_instance_list(struct instance **instances, const char *id,
     goto error;
   if (strdup_or_null(&oneinstance->state, state) < 0)
     goto error;
-  oneinstance->actions = actions;
-  oneinstance->public_addresses = public_addresses;
-  oneinstance->private_addresses = private_addresses;
+  if (copy_action_list(&oneinstance->actions, &actions) < 0)
+    goto error;
+  if (copy_address_list(&oneinstance->public_addresses, &public_addresses) < 0)
+    goto error;
+  if (copy_address_list(&oneinstance->private_addresses, &private_addresses) < 0)
+    goto error;
   oneinstance->next = NULL;
 
   if (*instances == NULL)

@@ -301,16 +301,13 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       MY_FREE(flavor_href);
       MY_FREE(realm_href);
       MY_FREE(state);
+      free_address_list(&public_addresses);
+      free_address_list(&private_addresses);
+      free_action_list(&actions);
       if (listret < 0) {
-	free_address_list(&public_addresses);
-	free_address_list(&private_addresses);
-	free_action_list(&actions);
 	fprintf(stderr, "Failed to add new instance to list\n");
 	goto cleanup;
       }
-      actions = NULL;
-      public_addresses = NULL;
-      private_addresses = NULL;
     }
     cur = cur->next;
   }
@@ -405,18 +402,21 @@ static int get_instance_by_id(struct deltacloud_api *api, const char *id,
     goto cleanup;
   }
 
-  copy_instance(instance, tmpinstance);
-  free_instance_list(&tmpinstance);
+  if (copy_instance(instance, tmpinstance) < 0) {
+    fprintf(stderr, "Could not copy instance structure\n");
+    goto cleanup;
+  }
 
   ret = 0;
 
  cleanup:
-  MY_FREE(url);
+  free_instance_list(&tmpinstance);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   if (xml)
     xmlFreeDoc(xml);
   MY_FREE(data);
+  MY_FREE(url);
 
   return ret;
 }
@@ -555,18 +555,21 @@ static int get_realm_by_id(struct deltacloud_api *api, const char *id,
     goto cleanup;
   }
 
-  copy_realm(realm, tmprealm);
-  free_realm_list(&tmprealm);
+  if (copy_realm(realm, tmprealm) < 0) {
+    fprintf(stderr, "Could not copy realm structure\n");
+    goto cleanup;
+  }
 
   ret = 0;
 
  cleanup:
-  MY_FREE(url);
+  free_realm_list(&tmprealm);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   if (xml)
     xmlFreeDoc(xml);
   MY_FREE(data);
+  MY_FREE(url);
 
   return ret;
 }
@@ -690,14 +693,17 @@ static int get_flavor_by_id(struct deltacloud_api *api, const char *id,
     goto cleanup;
   }
 
-  copy_flavor(flavor, tmpflavor);
-  free_flavor_list(&tmpflavor);
+  if (copy_flavor(flavor, tmpflavor) < 0) {
+    fprintf(stderr, "Could not copy flavor structure\n");
+    goto cleanup;
+  }
 
   ret = 0;
 
  cleanup:
-  MY_FREE(fullurl);
+  free_flavor_list(&tmpflavor);
   MY_FREE(data);
+  MY_FREE(fullurl);
 
   return ret;
 }
@@ -743,12 +749,15 @@ static int get_flavor_by_uri(struct deltacloud_api *api, const char *url,
     goto cleanup;
   }
 
-  copy_flavor(flavor, tmpflavor);
-  free_flavor_list(&tmpflavor);
+  if (copy_flavor(flavor, tmpflavor) < 0) {
+    fprintf(stderr, "Could not copy flavor structure\n");
+    goto cleanup;
+  }
 
   ret = 0;
 
  cleanup:
+  free_flavor_list(&tmpflavor);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   if (xml)
@@ -897,12 +906,15 @@ static int get_image_by_id(struct deltacloud_api *api, const char *id,
     goto cleanup;
   }
 
-  copy_image(image, tmpimage);
-  free_image_list(&tmpimage);
+  if (copy_image(image, tmpimage) < 0) {
+    fprintf(stderr, "Could not copy image structure\n");
+    goto cleanup;
+  }
 
   ret = 0;
 
  cleanup:
+  free_image_list(&tmpimage);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   if (xml)
@@ -942,9 +954,9 @@ static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       }
       listret = add_to_instance_state_list(instance_states, name, transitions);
       MY_FREE(name);
+      free_transition_list(&transitions);
       if (listret < 0) {
 	fprintf(stderr, "Could not add new instance_state to list\n");
-	free_transition_list(&transitions);
 	goto cleanup;
       }
       transitions = NULL;
@@ -1000,16 +1012,27 @@ static int get_instance_state(struct deltacloud_api *api, const char *name,
 {
   struct instance_state *statelist = NULL;
   struct instance_state *found;
+  int ret = -1;
 
   if (get_instance_states(api, &statelist) < 0) {
     fprintf(stderr, "Failed to get instance_states\n");
     return -1;
   }
   found = find_by_name_in_instance_state_list(&statelist, name);
-  copy_instance_state(instance_state, found);
-  free_instance_state_list(&statelist);
+  if (found == NULL) {
+    fprintf(stderr, "Could not find %s in instance state list\n", name);
+    goto cleanup;
+  }
+  if (copy_instance_state(instance_state, found) < 0) {
+    fprintf(stderr, "Could not copy instance_state structure\n");
+    goto cleanup;
+  }
 
-  return 0;
+  ret = 0;
+
+ cleanup:
+  free_instance_state_list(&statelist);
+  return ret;
 }
 
 static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
@@ -1156,18 +1179,21 @@ static int get_storage_volume_by_id(struct deltacloud_api *api, const char *id,
     goto cleanup;
   }
 
-  copy_storage_volume(storage_volume, tmpstorage_volume);
-  free_storage_volume_list(&tmpstorage_volume);
+  if (copy_storage_volume(storage_volume, tmpstorage_volume) < 0) {
+    fprintf(stderr, "Could not copy storage_volume structure\n");
+    goto cleanup;
+  }
 
   ret = 0;
 
  cleanup:
-  MY_FREE(url);
+  free_storage_volume_list(&tmpstorage_volume);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   if (xml)
     xmlFreeDoc(xml);
   MY_FREE(data);
+  MY_FREE(url);
 
   return ret;
 }
@@ -1311,18 +1337,21 @@ static int get_storage_snapshot_by_id(struct deltacloud_api *api,
     goto cleanup;
   }
 
-  copy_storage_snapshot(storage_snapshot, tmpstorage_snapshot);
-  free_storage_snapshot_list(&tmpstorage_snapshot);
+  if (copy_storage_snapshot(storage_snapshot, tmpstorage_snapshot) < 0) {
+    fprintf(stderr, "Could not copy storage_snapshot structure\n");
+    goto cleanup;
+  }
 
   ret = 0;
 
  cleanup:
-  MY_FREE(url);
+  free_storage_snapshot_list(&tmpstorage_snapshot);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   if (xml)
     xmlFreeDoc(xml);
   MY_FREE(data);
+  MY_FREE(url);
 
   return ret;
 }

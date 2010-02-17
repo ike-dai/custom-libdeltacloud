@@ -112,10 +112,8 @@ int add_to_instance_state_list(struct instance_state **instance_states,
 
   if (strdup_or_null(&oneinstance_state->name, name) < 0)
     goto error;
-  if (transitions)
-    oneinstance_state->transitions = transitions;
-  else
-    oneinstance_state->transitions = NULL;
+  if (copy_transition_list(&oneinstance_state->transitions, &transitions) < 0)
+    goto error;
   oneinstance_state->next = NULL;
 
   if (*instance_states == NULL)
