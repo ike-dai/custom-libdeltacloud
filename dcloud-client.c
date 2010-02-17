@@ -1323,30 +1323,36 @@ static int get_storage_snapshot_by_id(struct deltacloud_api *api,
   return ret;
 }
 
-static int create_instance(struct deltacloud_api *api, const char *image_id,
-			   const char *name, const char *realm_id,
-			   const char *flavor_id)
+static struct instance *create_instance(struct deltacloud_api *api,
+					const char *image_id, const char *name,
+					const char *realm_id,
+					const char *flavor_id)
 {
   struct link *thislink;
   char *data, *params;
   size_t param_size;
   FILE *paramfp;
+  struct instance *newinstance = NULL;
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
 
   if (image_id == NULL) {
     fprintf(stderr, "Image ID cannot be NULL\n");
-    return -1;
+    return NULL;
   }
 
   thislink = find_by_rel_in_link_list(&api->links, "instances");
   if (thislink == NULL) {
     fprintf(stderr, "Could not find the link for 'instances'\n");
-    return -1;
+    return NULL;
   }
 
   paramfp = open_memstream(&params, &param_size);
   if (paramfp == NULL) {
     fprintf(stderr, "Could not allocate memory for parameters\n");
-    return -1;
+    return NULL;
   }
 
   fprintf(paramfp, "image_id=%s", image_id);
@@ -1359,12 +1365,49 @@ static int create_instance(struct deltacloud_api *api, const char *image_id,
   fclose(paramfp);
 
   data = post_url(thislink->href, api->user, api->password, params, param_size);
+  MY_FREE(params);
+  if (data == NULL) {
+    fprintf(stderr, "Failed to post instance data\n");
+    return NULL;
+  }
 
   fprintf(stderr, "After create_instance: %s\n", data);
-  MY_FREE(data);
-  MY_FREE(params);
 
-  return 0;
+  xml = xmlReadDoc(BAD_CAST data, "instance.xml", NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    fprintf(stderr, "Failed to parse XML\n");
+    goto cleanup;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    fprintf(stderr, "Failed to get the root element\n");
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    fprintf(stderr, "Could not initialize XML parsing\n");
+    goto cleanup;
+  }
+
+  if (parse_instance_xml(root, ctxt, (void **)&newinstance) < 0) {
+    fprintf(stderr, "Could not parse 'instance' XML\n");
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  if (ctxt != NULL)
+    xmlXPathFreeContext(ctxt);
+  xmlFreeDoc(xml);
+
+  MY_FREE(data);
+
+  return newinstance;
 }
 
 int main(int argc, char *argv[])
@@ -1384,6 +1427,7 @@ int main(int argc, char *argv[])
   struct instance instance;
   struct storage_volume storage_volume;
   struct storage_snapshot storage_snapshot;
+  struct instance *newinstance;
   char *fullurl;
   int ret = 3;
 
@@ -1522,10 +1566,14 @@ int main(int argc, char *argv[])
   free_storage_snapshot(&storage_snapshot);
 
   fprintf(stderr, "--------------CREATE INSTANCE---------------\n");
-  if (create_instance(&api, "img3", NULL, NULL, NULL) < 0) {
+  newinstance = create_instance(&api, "img3", NULL, NULL, NULL);
+  if (newinstance == NULL) {
     fprintf(stderr, "Failed to create_instance\n");
     goto cleanup;
   }
+  print_instance(newinstance, NULL);
+  free_instance(newinstance);
+  MY_FREE(newinstance);
 
   ret = 0;
 
