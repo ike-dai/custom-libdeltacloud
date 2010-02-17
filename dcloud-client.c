@@ -569,8 +569,6 @@ static int get_realm_by_id(struct deltacloud_api *api, const char *id,
   return ret;
 }
 
-//static int parse_flavor_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
-//			    struct flavor **flavors)
 static int parse_flavor_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			    void **data)
 {
@@ -1370,8 +1368,6 @@ static struct instance *create_instance(struct deltacloud_api *api,
     fprintf(stderr, "Failed to post instance data\n");
     return NULL;
   }
-
-  fprintf(stderr, "After create_instance: %s\n", data);
 
   xml = xmlReadDoc(BAD_CAST data, "instance.xml", NULL,
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
