@@ -20,15 +20,27 @@ char *strdup_or_null(const char *data)
 
 #ifdef DEBUG
 
+#define FAILRATE 25
+static void seed_random(void)
+{
+  static int done = 0;
+
+  if (done)
+    return;
+
+  srand(time(NULL));
+  done = 1;
+}
+
 #undef xmlReadDoc
 xmlDocPtr xmlReadDoc_sometimes_fail(const xmlChar *cur,
 				    const char *URL,
 				    const char *encoding,
 				    int options)
 {
-  srand(time(NULL));
+  seed_random();
 
-  if (rand() % 2)
+  if (rand() % FAILRATE)
     return xmlReadDoc(cur, URL, encoding, options);
   else
     return NULL;
@@ -37,9 +49,9 @@ xmlDocPtr xmlReadDoc_sometimes_fail(const xmlChar *cur,
 #undef xmlDocGetRootElement
 xmlNodePtr xmlDocGetRootElement_sometimes_fail(xmlDocPtr doc)
 {
-  srand(time(NULL));
+  seed_random();
 
-  if (rand() % 2)
+  if (rand() % FAILRATE)
     return xmlDocGetRootElement(doc);
   else
     return NULL;
@@ -48,9 +60,9 @@ xmlNodePtr xmlDocGetRootElement_sometimes_fail(xmlDocPtr doc)
 #undef xmlXPathNewContext
 xmlXPathContextPtr xmlXPathNewContext_sometimes_fail(xmlDocPtr doc)
 {
-  srand(time(NULL));
+  seed_random();
 
-  if (rand() % 2)
+  if (rand() % FAILRATE)
     return xmlXPathNewContext(doc);
   else
     return NULL;
@@ -60,9 +72,9 @@ xmlXPathContextPtr xmlXPathNewContext_sometimes_fail(xmlDocPtr doc)
 xmlXPathObjectPtr xmlXPathEval_sometimes_fail(const xmlChar *str,
 					      xmlXPathContextPtr ctx)
 {
-  srand(time(NULL));
+  seed_random();
 
-  if (rand() % 2)
+  if (rand() % FAILRATE)
     return xmlXPathEval(str, ctx);
   else
     return NULL;
@@ -74,9 +86,9 @@ int asprintf_sometimes_fail(char **strp, const char *fmt, ...)
   va_list ap;
   int ret;
 
-  srand(time(NULL));
+  seed_random();
 
-  if (rand() % 2) {
+  if (rand() % FAILRATE) {
     va_start(ap, fmt);
     ret = vasprintf(strp, fmt, ap);
     va_end(ap);
@@ -89,12 +101,57 @@ int asprintf_sometimes_fail(char **strp, const char *fmt, ...)
 #undef malloc
 void *malloc_sometimes_fail(size_t size)
 {
-  srand(time(NULL));
+  seed_random();
 
-  if (rand() % 2)
+  if (rand() % FAILRATE)
     return malloc(size);
   else
     return NULL;
+}
+
+#undef realloc
+void *realloc_sometimes_fail(void *ptr, size_t size)
+{
+  seed_random();
+
+  if (rand() % FAILRATE)
+    return realloc(ptr, size);
+  else
+    return NULL;
+}
+
+#undef curl_easy_init
+CURL *curl_easy_init_sometimes_fail(void)
+{
+  seed_random();
+
+  if (rand() % FAILRATE)
+    return curl_easy_init();
+  else
+    return NULL;
+}
+
+#undef curl_slist_append
+struct curl_slist *curl_slist_append_sometimes_fail(struct curl_slist *list,
+						    const char *string)
+{
+  seed_random();
+
+  if (rand() % FAILRATE)
+    return curl_slist_append(list, string);
+  else
+    return NULL;
+}
+
+#undef curl_easy_perform
+CURLcode curl_easy_perform_sometimes_fail(CURL *handle)
+{
+  seed_random();
+
+  if (rand() % FAILRATE)
+    return curl_easy_perform(handle);
+  else
+    return -1;
 }
 
 #endif

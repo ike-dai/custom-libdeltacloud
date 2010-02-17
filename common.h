@@ -34,6 +34,20 @@ int asprintf_sometimes_fail(char **strp, const char *fmt, ...);
 #define malloc malloc_sometimes_fail
 void *malloc_sometimes_fail(size_t size);
 
+#define realloc realloc_sometimes_fail
+void *realloc_sometimes_fail(void *ptr, size_t size);
+
+#include <curl/curl.h>
+#define curl_easy_init curl_easy_init_sometimes_fail
+CURL *curl_easy_init_sometimes_fail(void);
+
+#define curl_slist_append curl_slist_append_sometimes_fail
+struct curl_slist *curl_slist_append_sometimes_fail(struct curl_slist *list,
+						    const char *string);
+
+#define curl_easy_perform curl_easy_perform_sometimes_fail
+CURLcode curl_easy_perform_sometimes_fail(CURL *handle);
+
 #endif
 
 #endif
