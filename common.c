@@ -27,7 +27,7 @@ int strdup_or_null(char **out, const char *in)
 
 #ifdef DEBUG
 
-#define FAILRATE 25
+#define FAILRATE 1000
 static void seed_random(void)
 {
   static int done = 0;

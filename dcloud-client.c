@@ -214,7 +214,7 @@ static struct action *parse_actions_xml(xmlNodePtr instance)
   xmlNodePtr cur;
   struct action *actions = NULL;
   char *rel = NULL, *href = NULL;
-  int failed = 0;
+  int failed = 1;
   int listret;
 
   cur = instance->children;

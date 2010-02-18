@@ -12,13 +12,16 @@ static size_t memory_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
   size_t realsize = size * nmemb;
   struct memory *mem = (struct memory *)data;
+  char *tmp;
 
   if (realsize == 0)
     return 0;
 
-  mem->data = realloc(mem->data, mem->size + realsize + 1);
-  if (mem->data == NULL)
+  tmp = realloc(mem->data, mem->size + realsize + 1);
+  if (tmp == NULL)
     return 0;
+
+  mem->data = tmp;
 
   memcpy(mem->data + mem->size, ptr, realsize);
   mem->size += realsize;
