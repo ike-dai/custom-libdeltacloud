@@ -4,7 +4,7 @@
 #include <string.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
-#include "dcloud_api.h"
+#include "dcloudapi.h"
 
 typedef int (*parse_xml_callback)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data);
 

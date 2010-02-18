@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "dcloud_api.h"
+#include "dcloudapi.h"
 
 int main(int argc, char *argv[])
 {
