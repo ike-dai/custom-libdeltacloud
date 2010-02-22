@@ -29,7 +29,7 @@ static void free_address(struct address *addr)
   MY_FREE(addr->address);
 }
 
-int add_to_address_list(struct address **addresses, char *address)
+int add_to_address_list(struct address **addresses, const char *address)
 {
   struct address *oneaddress, *curr, *last;
 
@@ -118,7 +118,8 @@ static void free_action(struct action *action)
   MY_FREE(action->href);
 }
 
-int add_to_action_list(struct action **actions, char *rel, char *href)
+int add_to_action_list(struct action **actions, const char *rel,
+		       const char *href)
 {
   struct action *oneaction, *curr, *last;
 
@@ -152,6 +153,21 @@ int add_to_action_list(struct action **actions, char *rel, char *href)
   free_action(oneaction);
   MY_FREE(oneaction);
   return -1;
+}
+
+struct action *find_by_rel_in_action_list(struct action **actions,
+					  const char *rel)
+{
+  struct action *curr;
+
+  curr = *actions;
+  while (curr != NULL) {
+    if (STREQ(curr->rel, rel))
+      return curr;
+    curr = curr->next;
+  }
+
+  return NULL;
 }
 
 static int copy_action_list(struct action **dst, struct action **src)

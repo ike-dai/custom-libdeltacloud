@@ -50,7 +50,7 @@ static size_t memory_callback(void *ptr, size_t size, size_t nmemb, void *data)
   return realsize;
 }
 
-char *do_curl(const char *url, const char *user, const char *password,
+char *do_curl(const char *url, const char *user, const char *password, int post,
 	      char *data, int datalen)
 {
   CURL *curl;
@@ -117,8 +117,10 @@ char *do_curl(const char *url, const char *user, const char *password,
     goto cleanup;
   }
 
-  if (data != NULL) {
-    /* in this case, we want to do a POST, so add a few extra fields */
+  if (post) {
+    /* in this case, we want to do a POST; note, however, that it is possible
+     * for us to do a POST with no data
+     */
     res = curl_easy_setopt(curl, CURLOPT_POST, 1);
     if (res != CURLE_OK) {
       fprintf(stderr, "Failed to set header POST: %s\n",
@@ -126,18 +128,22 @@ char *do_curl(const char *url, const char *user, const char *password,
       goto cleanup;
     }
 
-    res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
-    if (res != CURLE_OK) {
-      fprintf(stderr, "Failed to set header post fields: %s\n",
-	      curl_easy_strerror(res));
-      goto cleanup;
-    }
-
+    /* it is imperative to set POSTFIELDSIZE so that 0-size POST transfers
+     * will work
+     */
     res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, datalen);
     if (res != CURLE_OK) {
       fprintf(stderr, "Failed to set post field size: %s\n",
 	      curl_easy_strerror(res));
       goto cleanup;
+    }
+    if (data != NULL) {
+      res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+      if (res != CURLE_OK) {
+	fprintf(stderr, "Failed to set header post fields: %s\n",
+		curl_easy_strerror(res));
+	goto cleanup;
+      }
     }
   }
 

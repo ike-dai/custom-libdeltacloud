@@ -184,6 +184,15 @@ int main(int argc, char *argv[])
     goto cleanup;
   }
   print_instance(newinstance, NULL);
+  if (deltacloud_instance_stop(&api, newinstance) < 0)
+    fprintf(stderr, "Failed to stop instance\n");
+  print_instance(newinstance, NULL);
+  if (deltacloud_instance_start(&api, newinstance) < 0)
+    fprintf(stderr, "Failed to start instance\n");
+  print_instance(newinstance, NULL);
+  if (deltacloud_instance_reboot(&api, newinstance) < 0)
+    fprintf(stderr, "Failed to reboot instance\n");
+  print_instance(newinstance, NULL);
   free_instance(newinstance);
   MY_FREE(newinstance);
 

@@ -310,6 +310,56 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
+static int parse_one_instance(const char *data, struct instance *newinstance)
+{
+  xmlDocPtr xml = NULL;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
+  struct instance *tmpinstance = NULL;
+
+  xml = xmlReadDoc(BAD_CAST data, "instance.xml", NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    fprintf(stderr, "Failed to parse XML\n");
+    goto cleanup;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    fprintf(stderr, "Failed to get the root element\n");
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    fprintf(stderr, "Could not initialize XML parsing\n");
+    goto cleanup;
+  }
+
+  if (parse_instance_xml(root, ctxt, (void **)&tmpinstance) < 0) {
+    fprintf(stderr, "Could not parse 'instance' XML\n");
+    goto cleanup;
+  }
+
+  if (copy_instance(newinstance, tmpinstance) < 0) {
+    fprintf(stderr, "Could not copy instance structure\n");
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  free_instance_list(&tmpinstance);
+  if (ctxt != NULL)
+    xmlXPathFreeContext(ctxt);
+  if (xml)
+    xmlFreeDoc(xml);
+
+  return ret;
+}
+
 int deltacloud_get_instances(struct deltacloud_api *api,
 			     struct instance **instances)
 {
@@ -348,11 +398,7 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
 				  struct instance *instance)
 {
   char *url, *data;
-  struct instance *tmpinstance = NULL;
-  xmlDocPtr xml = NULL;
-  xmlNodePtr root;
   int ret = -1;
-  xmlXPathContextPtr ctxt = NULL;
 
   if (asprintf(&url, "%s/instances/%s", api->url, id) < 0) {
     fprintf(stderr, "Failed to allocate memory for url\n");
@@ -365,44 +411,14 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
     goto cleanup;
   }
 
-  xml = xmlReadDoc(BAD_CAST data, "instance.xml", NULL,
-		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
-		   XML_PARSE_NOWARNING);
-  if (!xml) {
-    fprintf(stderr, "Failed to parse XML\n");
-    goto cleanup;
-  }
-
-  root = xmlDocGetRootElement(xml);
-  if (root == NULL) {
-    fprintf(stderr, "Failed to get the root element\n");
-    goto cleanup;
-  }
-
-  ctxt = xmlXPathNewContext(xml);
-  if (ctxt == NULL) {
-    fprintf(stderr, "Could not initialize XML parsing\n");
-    goto cleanup;
-  }
-
-  if (parse_instance_xml(root, ctxt, (void **)&tmpinstance) < 0) {
-    fprintf(stderr, "Could not parse 'instance' XML\n");
-    goto cleanup;
-  }
-
-  if (copy_instance(instance, tmpinstance) < 0) {
-    fprintf(stderr, "Could not copy instance structure\n");
+  if (parse_one_instance(data, instance) < 0) {
+    fprintf(stderr, "Could not parse single instance\n");
     goto cleanup;
   }
 
   ret = 0;
 
  cleanup:
-  free_instance_list(&tmpinstance);
-  if (ctxt != NULL)
-    xmlXPathFreeContext(ctxt);
-  if (xml)
-    xmlFreeDoc(xml);
   MY_FREE(data);
   MY_FREE(url);
 
@@ -1357,10 +1373,7 @@ struct instance *deltacloud_create_instance(struct deltacloud_api *api,
   size_t param_size;
   FILE *paramfp;
   struct instance *newinstance = NULL;
-  xmlDocPtr xml = NULL;
-  xmlNodePtr root;
   int ret = -1;
-  xmlXPathContextPtr ctxt = NULL;
 
   if (image_id == NULL) {
     fprintf(stderr, "Image ID cannot be NULL\n");
@@ -1395,42 +1408,82 @@ struct instance *deltacloud_create_instance(struct deltacloud_api *api,
     return NULL;
   }
 
-  xml = xmlReadDoc(BAD_CAST data, "instance.xml", NULL,
-		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
-		   XML_PARSE_NOWARNING);
-  if (!xml) {
-    fprintf(stderr, "Failed to parse XML\n");
+  newinstance = malloc(sizeof(struct instance));
+  if (newinstance == NULL) {
+    fprintf(stderr, "Failed to allocate memory\n");
     goto cleanup;
   }
 
-  root = xmlDocGetRootElement(xml);
-  if (root == NULL) {
-    fprintf(stderr, "Failed to get the root element\n");
-    goto cleanup;
-  }
-
-  ctxt = xmlXPathNewContext(xml);
-  if (ctxt == NULL) {
-    fprintf(stderr, "Could not initialize XML parsing\n");
-    goto cleanup;
-  }
-
-  if (parse_instance_xml(root, ctxt, (void **)&newinstance) < 0) {
-    fprintf(stderr, "Could not parse 'instance' XML\n");
+  if (parse_one_instance(data, newinstance) < 0) {
+    fprintf(stderr, "Could not parse single instance data\n");
     goto cleanup;
   }
 
   ret = 0;
 
  cleanup:
-  if (ctxt != NULL)
-    xmlXPathFreeContext(ctxt);
-  if (xml)
-    xmlFreeDoc(xml);
-
+  if (ret < 0)
+    MY_FREE(newinstance);
   MY_FREE(data);
 
   return newinstance;
+}
+
+static int instance_action(struct deltacloud_api *api,
+			   struct instance *instance,
+			   const char *action_name)
+{
+  struct action *act;
+  char *data;
+  xmlDocPtr xml = NULL;
+  xmlNodePtr root;
+  int ret = -1;
+  xmlXPathContextPtr ctxt = NULL;
+  struct instance *tmpinstance = NULL;
+
+  act = find_by_rel_in_action_list(&instance->actions, action_name);
+  if (act == NULL) {
+    fprintf(stderr, "Could not find the link for action %s\n", action_name);
+    return -1;
+  }
+
+  data = post_url(act->href, api->user, api->password, NULL, 0);
+  if (data == NULL) {
+    fprintf(stderr, "Failed to POST data\n");
+    return -1;
+  }
+
+  free_instance(instance);
+
+  if (parse_one_instance(data, instance) < 0) {
+    fprintf(stderr, "Could not parse single instance\n");
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  MY_FREE(data);
+
+  return ret;
+}
+
+int deltacloud_instance_stop(struct deltacloud_api *api,
+			     struct instance *instance)
+{
+  return instance_action(api, instance, "stop");
+}
+
+int deltacloud_instance_reboot(struct deltacloud_api *api,
+			       struct instance *instance)
+{
+  return instance_action(api, instance, "reboot");
+}
+
+int deltacloud_instance_start(struct deltacloud_api *api,
+			      struct instance *instance)
+{
+  return instance_action(api, instance, "start");
 }
 
 void deltacloud_free(struct deltacloud_api *api)

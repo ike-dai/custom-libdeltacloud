@@ -69,6 +69,12 @@ struct instance *deltacloud_create_instance(struct deltacloud_api *api,
 					    const char *name,
 					    const char *realm_id,
 					    const char *flavor_id);
+int deltacloud_instance_stop(struct deltacloud_api *api,
+			     struct instance *instance);
+int deltacloud_instance_reboot(struct deltacloud_api *api,
+			       struct instance *instance);
+int deltacloud_instance_start(struct deltacloud_api *api,
+			      struct instance *instance);
 
 void deltacloud_free(struct deltacloud_api *api);
 

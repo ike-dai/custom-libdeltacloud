@@ -25,11 +25,11 @@
 extern "C" {
 #endif
 
-char *do_curl(const char *url, const char *user, const char *password,
+char *do_curl(const char *url, const char *user, const char *password, int post,
 	      char *data, int datalen);
 
-#define get_url(url, user, password) do_curl(url, user, password, NULL, 0)
-#define post_url(url, user, password, data, datalen) do_curl(url, user, password, data, datalen)
+#define get_url(url, user, password) do_curl(url, user, password, 0, NULL, 0)
+#define post_url(url, user, password, data, datalen) do_curl(url, user, password, 1, data, datalen)
 
 #ifdef __cplusplus
 }

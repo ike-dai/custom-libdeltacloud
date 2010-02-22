@@ -53,11 +53,14 @@ struct instance {
   struct instance *next;
 };
 
-int add_to_address_list(struct address **addreses, char *address);
+int add_to_address_list(struct address **addreses, const char *address);
 void print_address_list(struct address **addresses, FILE *stream);
 void free_address_list(struct address **addresses);
 
-int add_to_action_list(struct action **actions, char *rel, char *href);
+int add_to_action_list(struct action **actions, const char *rel,
+		       const char *href);
+struct action *find_by_rel_in_action_list(struct action **actions,
+					  const char *rel);
 void print_action_list(struct action **actions, FILE *stream);
 void free_action_list(struct action **actions);
 
