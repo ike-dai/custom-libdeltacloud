@@ -24,44 +24,53 @@ struct deltacloud_api {
   struct link *links;
 };
 
-int get_links(struct deltacloud_api *api);
+int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
+			  char *password);
 
-int get_instances(struct deltacloud_api *api, struct instance **instances);
-int get_instance_by_id(struct deltacloud_api *api, const char *id,
-		       struct instance *instance);
+int deltacloud_get_instances(struct deltacloud_api *api,
+			     struct instance **instances);
+int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
+				  struct instance *instance);
 
-int get_realms(struct deltacloud_api *api, struct realm **realms);
-int get_realm_by_id(struct deltacloud_api *api, const char *id,
-		    struct realm *realm);
+int deltacloud_get_realms(struct deltacloud_api *api, struct realm **realms);
+int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
+			       struct realm *realm);
 
-int get_flavors(struct deltacloud_api *api, struct flavor **flavors);
-int get_flavor_by_id(struct deltacloud_api *api, const char *id,
-		     struct flavor *flavor);
-int get_flavor_by_uri(struct deltacloud_api *api, const char *url,
-		      struct flavor *flavor);
+int deltacloud_get_flavors(struct deltacloud_api *api, struct flavor **flavors);
+int deltacloud_get_flavor_by_id(struct deltacloud_api *api, const char *id,
+				struct flavor *flavor);
+int deltacloud_get_flavor_by_uri(struct deltacloud_api *api, const char *url,
+				 struct flavor *flavor);
 
-int get_images(struct deltacloud_api *api, struct image **images);
-int get_image_by_id(struct deltacloud_api *api, const char *id,
-		    struct image *image);
+int deltacloud_get_images(struct deltacloud_api *api, struct image **images);
+int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
+			       struct image *image);
 
-int get_instance_states(struct deltacloud_api *api,
-			struct instance_state **instance_states);
-int get_instance_state_by_name(struct deltacloud_api *api, const char *name,
-			       struct instance_state *instance_state);
+int deltacloud_get_instance_states(struct deltacloud_api *api,
+				   struct instance_state **instance_states);
+int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
+					  const char *name,
+					  struct instance_state *instance_state);
 
-int get_storage_volumes(struct deltacloud_api *api,
-			struct storage_volume **storage_volumes);
-int get_storage_volume_by_id(struct deltacloud_api *api, const char *id,
-			     struct storage_volume *storage_volume);
+int deltacloud_get_storage_volumes(struct deltacloud_api *api,
+				   struct storage_volume **storage_volumes);
+int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
+					const char *id,
+					struct storage_volume *storage_volume);
 
-int get_storage_snapshots(struct deltacloud_api *api,
-			  struct storage_snapshot **storage_snapshots);
-int get_storage_snapshot_by_id(struct deltacloud_api *api, const char *id,
-			       struct storage_snapshot *storage_snapshot);
+int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
+				     struct storage_snapshot **storage_snapshots);
+int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
+					  const char *id,
+					  struct storage_snapshot *storage_snapshot);
 
-struct instance *create_instance(struct deltacloud_api *api,
-				 const char *image_id, const char *name,
-				 const char *realm_id, const char *flavor_id);
+struct instance *deltacloud_create_instance(struct deltacloud_api *api,
+					    const char *image_id,
+					    const char *name,
+					    const char *realm_id,
+					    const char *flavor_id);
+
+void deltacloud_free(struct deltacloud_api *api);
 
 #ifdef __cplusplus
 }
