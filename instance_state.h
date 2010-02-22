@@ -21,6 +21,10 @@
 #ifndef INSTANCE_STATE_H
 #define INSTANCE_STATE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct transition {
   char *action;
   char *to;
@@ -52,5 +56,9 @@ void print_instance_state_list(struct instance_state **instance_states,
 			       FILE *stream);
 void free_instance_state(struct instance_state *instance_state);
 void free_instance_state_list(struct instance_state **instance_states);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

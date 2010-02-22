@@ -21,6 +21,10 @@
 #ifndef STORAGE_VOLUME_H
 #define STORAGE_VOLUME_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct storage_volume {
   char *href;
   char *id;
@@ -44,5 +48,9 @@ void print_storage_volume_list(struct storage_volume **storage_volumes,
 			       FILE *stream);
 void free_storage_volume(struct storage_volume *storage_volume);
 void free_storage_volume_list(struct storage_volume **storage_volumes);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

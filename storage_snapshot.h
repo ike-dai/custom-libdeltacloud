@@ -21,6 +21,10 @@
 #ifndef STORAGE_SNAPSHOT_H
 #define STORAGE_SNAPSHOT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct storage_snapshot {
   char *href;
   char *id;
@@ -43,5 +47,9 @@ void print_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
 				 FILE *stream);
 void free_storage_snapshot(struct storage_snapshot *storage_snapshot);
 void free_storage_snapshot_list(struct storage_snapshot **storage_snapshots);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

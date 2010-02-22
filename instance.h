@@ -21,6 +21,10 @@
 #ifndef INSTANCES_H
 #define INSTANCES_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct action {
   char *rel;
   char *href;
@@ -69,5 +73,9 @@ void print_instance(struct instance *instance, FILE *stream);
 void print_instance_list(struct instance **instances, FILE *stream);
 void free_instance(struct instance *instance);
 void free_instance_list(struct instance **instances);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -21,6 +21,10 @@
 #ifndef FLAVOR_H
 #define FLAVOR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct flavor {
   char *href;
   char *id;
@@ -39,5 +43,9 @@ void print_flavor(struct flavor *flavor, FILE *stream);
 void print_flavor_list(struct flavor **flavors, FILE *stream);
 void free_flavor(struct flavor *flavor);
 void free_flavor_list(struct flavor **flavors);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

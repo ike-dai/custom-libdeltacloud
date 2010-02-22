@@ -21,6 +21,10 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define STREQ(a,b) (strcmp(a,b) == 0)
 #define STRNEQ(a,b) (strcmp(a,b) != 0)
 
@@ -28,6 +32,10 @@ int strdup_or_null(char **out, const char *in);
 
 #define MY_FREE(ptr) free_and_null(&(ptr))
 void free_and_null(void *ptrptr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef DEBUG
 #include <libxml/parser.h>

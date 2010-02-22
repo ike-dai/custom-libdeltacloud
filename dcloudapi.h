@@ -12,6 +12,10 @@
 #include "storage_volume.h"
 #include "storage_snapshot.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct deltacloud_api {
   char *url;
   char *user;
@@ -58,5 +62,9 @@ int get_storage_snapshot_by_id(struct deltacloud_api *api, const char *id,
 struct instance *create_instance(struct deltacloud_api *api,
 				 const char *image_id, const char *name,
 				 const char *realm_id, const char *flavor_id);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

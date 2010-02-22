@@ -21,6 +21,10 @@
 #ifndef LINK_H
 #define LINK_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct link {
   char *href;
   char *rel;
@@ -32,5 +36,9 @@ int add_to_link_list(struct link **links, char *href, char *rel);
 void print_link_list(struct link **links, FILE *stream);
 struct link *find_by_rel_in_link_list(struct link **links, char *rel);
 void free_link_list(struct link **links);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -21,6 +21,10 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct image {
   char *href;
   char *id;
@@ -40,5 +44,9 @@ void print_image(struct image *image, FILE *stream);
 void print_image_list(struct image **images, FILE *stream);
 void free_image(struct image *image);
 void free_image_list(struct image **images);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

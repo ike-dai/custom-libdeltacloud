@@ -21,6 +21,10 @@
 #ifndef REALM_H
 #define REALM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct realm {
   char *href;
   char *id;
@@ -38,5 +42,9 @@ void print_realm_list(struct realm **realms, FILE *stream);
 int copy_realm(struct realm *dst, struct realm *src);
 void free_realm(struct realm *realm);
 void free_realm_list(struct realm **realms);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
