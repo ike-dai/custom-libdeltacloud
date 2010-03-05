@@ -20,29 +20,30 @@ static int parse_xml(const char *xml_string, const char *name, void **data,
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
 		   XML_PARSE_NOWARNING);
   if (!xml) {
-    fprintf(stderr, "Failed to parse XML\n");
+    dcloudprintf("Failed to parse %s XML\n", name);
     return -1;
   }
 
   root = xmlDocGetRootElement(xml);
   if (root == NULL) {
-    fprintf(stderr, "Failed to get the root element\n");
+    dcloudprintf("Failed to get the root element for %s\n", name);
     goto cleanup;
   }
 
   if (STRNEQ((const char *)root->name, name)) {
-    fprintf(stderr, "Root element was not '%s'\n", name);
+    dcloudprintf("Failed to get expected root element '%s', saw root element '%s'\n",
+		 name, root->name);
     goto cleanup;
   }
 
   ctxt = xmlXPathNewContext(xml);
   if (ctxt == NULL) {
-    fprintf(stderr, "Could not initialize XML parsing\n");
+    dcloudprintf("Failed to initialize XPath context for %s\n", name);
     goto cleanup;
   }
 
   if (cb(root->children, ctxt, data) < 0) {
-    fprintf(stderr, "Could not parse XML\n");
+    dcloudprintf("Failed XML parse callback\n");
     goto cleanup;
   }
 
@@ -70,11 +71,11 @@ static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
       rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
 
       if (href == NULL) {
-	fprintf(stderr, "Did not see href xml property\n");
+	dcloudprintf("Did not see href XML property\n");
 	goto cleanup;
       }
       if (rel == NULL) {
-	fprintf(stderr, "Did not see rel xml property\n");
+	dcloudprintf("Did not see rel XML property\n");
 	MY_FREE(href);
 	goto cleanup;
       }
@@ -83,7 +84,7 @@ static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
       MY_FREE(href);
       MY_FREE(rel);
       if (listret < 0) {
-	fprintf(stderr, "Failed to add to link list\n");
+	dcloudprintf("Failed to add new link to list\n");
 	goto cleanup;
       }
     }
@@ -103,7 +104,7 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 			  char *password)
 {
   char *data;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
 
   api->url = url;
   api->user = user;
@@ -112,12 +113,13 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 
   data = get_url(api->url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Failed to get API data from url %s\n", api->url);
-    return -1;
+    dcloudprintf("Failed to get XML for API from %s\n", api->url);
+    return DELTACLOUD_GET_URL_ERROR;
   }
 
   if (parse_xml(data, "api", (void **)&api->links, parse_api_xml) < 0) {
-    fprintf(stderr, "Failed to parse the API XML\n");
+    dcloudprintf("Failed to parse 'api' XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
@@ -135,7 +137,7 @@ static char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
   char *ret;
 
   if ((ctxt == NULL) || (xpath == NULL)) {
-    fprintf(stderr, "Invalid parameter to virXPathString()");
+    dcloudprintf("Invalid parameter to virXPathString\n");
     return NULL;
   }
 
@@ -150,13 +152,13 @@ static char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
   ret = strdup((char *) obj->stringval);
   xmlXPathFreeObject(obj);
   if (ret == NULL)
-    fprintf(stderr, "Failed to allocate memory\n");
+    dcloudprintf("Failed to copy XPath string\n");
 
   return ret;
 }
 
 static struct deltacloud_address *parse_addresses_xml(xmlNodePtr instance,
-					   xmlXPathContextPtr ctxt)
+						      xmlXPathContextPtr ctxt)
 {
   xmlNodePtr oldnode, cur;
   struct deltacloud_address *addresses = NULL;
@@ -173,13 +175,13 @@ static struct deltacloud_address *parse_addresses_xml(xmlNodePtr instance,
 	STREQ((const char *)cur->name, "address")) {
       address = getXPathString("string(./address)", ctxt);
       if (address == NULL) {
-	fprintf(stderr, "Could find XML for address\n");
+	dcloudprintf("Could not find XML for address\n");
 	goto cleanup;
       }
       listret = add_to_address_list(&addresses, address);
       MY_FREE(address);
       if (listret < 0) {
-	fprintf(stderr, "Failed to add address to list\n");
+	dcloudprintf("Failed to add new address to list\n");
 	goto cleanup;
       }
     }
@@ -211,12 +213,13 @@ static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
 	STREQ((const char *)cur->name, "link")) {
       rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      /* FIXME: check for NULL rel and href here? */
 
       listret = add_to_action_list(&actions, rel, href);
       MY_FREE(href);
       MY_FREE(rel);
       if (listret < 0) {
-	fprintf(stderr, "Could not add new action to list\n");
+	dcloudprintf("Failed to add new action to list\n");
 	goto cleanup;
       }
     }
@@ -293,7 +296,7 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       free_address_list(&private_addresses);
       free_action_list(&actions);
       if (listret < 0) {
-	fprintf(stderr, "Failed to add new instance to list\n");
+	dcloudprintf("Failed to add new instance to list\n");
 	goto cleanup;
       }
     }
@@ -310,7 +313,8 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
-static int parse_one_instance(const char *data, struct deltacloud_instance *newinstance)
+static int parse_one_instance(const char *data,
+			      struct deltacloud_instance *newinstance)
 {
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
@@ -322,29 +326,29 @@ static int parse_one_instance(const char *data, struct deltacloud_instance *newi
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
 		   XML_PARSE_NOWARNING);
   if (!xml) {
-    fprintf(stderr, "Failed to parse XML\n");
+    dcloudprintf("Failed to parse instance XML\n");
     goto cleanup;
   }
 
   root = xmlDocGetRootElement(xml);
   if (root == NULL) {
-    fprintf(stderr, "Failed to get the root element\n");
+    dcloudprintf("Failed to get the instance root element\n");
     goto cleanup;
   }
 
   ctxt = xmlXPathNewContext(xml);
   if (ctxt == NULL) {
-    fprintf(stderr, "Could not initialize XML parsing\n");
+    dcloudprintf("Failed to initialize XPath context for instance\n");
     goto cleanup;
   }
 
   if (parse_instance_xml(root, ctxt, (void **)&tmpinstance) < 0) {
-    fprintf(stderr, "Could not parse 'instance' XML\n");
+    dcloudprintf("Failed to parse instance XML\n");
     goto cleanup;
   }
 
   if (copy_instance(newinstance, tmpinstance) < 0) {
-    fprintf(stderr, "Could not copy instance structure\n");
+    dcloudprintf("Failed to copy instance structure\n");
     goto cleanup;
   }
 
@@ -365,24 +369,25 @@ int deltacloud_get_instances(struct deltacloud_api *api,
 {
   struct deltacloud_link *thislink;
   char *data;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
 
   thislink = find_by_rel_in_link_list(&api->links, "instances");
   if (thislink == NULL) {
-    fprintf(stderr, "Could not find the link for 'instances'\n");
-    return -1;
+    dcloudprintf("Failed to find the link for 'instances'\n");
+    return DELTACLOUD_URL_DOES_NOT_EXIST;
   }
 
   data = get_url(thislink->href, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML for instances from url %s\n",
-	    thislink->href);
-    return -1;
+    dcloudprintf("Failed to get the XML for instances from %s\n",
+		 thislink->href);
+    return DELTACLOUD_GET_URL_ERROR;
   }
 
   *instances = NULL;
   if (parse_xml(data, "instances", (void **)instances, parse_instance_xml) < 0) {
-    fprintf(stderr, "Failed to parse the instances XML\n");
+    dcloudprintf("Failed to parse 'instances' XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
@@ -398,21 +403,23 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
 				  struct deltacloud_instance *instance)
 {
   char *url, *data;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
 
   if (asprintf(&url, "%s/instances/%s", api->url, id) < 0) {
-    fprintf(stderr, "Failed to allocate memory for url\n");
-    return -1;
+    dcloudprintf("Failed to allocate memory for URL\n");
+    return DELTACLOUD_OOM_ERROR;
   }
 
   data = get_url(url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML data from url %s\n", url);
+    dcloudprintf("Failed to get the XML for instance from %s\n", url);
+    ret = DELTACLOUD_GET_URL_ERROR;
     goto cleanup;
   }
 
   if (parse_one_instance(data, instance) < 0) {
-    fprintf(stderr, "Could not parse single instance\n");
+    dcloudprintf("Failed to parse the 'instance' XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
@@ -463,7 +470,7 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       MY_FREE(state);
       MY_FREE(limit);
       if (listret < 0) {
-	fprintf(stderr, "Could not add new realm to list\n");
+	dcloudprintf("Failed to add new realm to list\n");
 	goto cleanup;
       }
     }
@@ -480,28 +487,29 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
-int deltacloud_get_realms(struct deltacloud_api *api, struct deltacloud_realm **realms)
+int deltacloud_get_realms(struct deltacloud_api *api,
+			  struct deltacloud_realm **realms)
 {
   struct deltacloud_link *thislink;
   char *data;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
 
   thislink = find_by_rel_in_link_list(&api->links, "realms");
   if (thislink == NULL) {
-    fprintf(stderr, "Could not find the link for 'realms'\n");
-    return -1;
+    dcloudprintf("Failed to find the link for 'realms'\n");
+    return DELTACLOUD_URL_DOES_NOT_EXIST;
   }
 
   data = get_url(thislink->href, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not fetch XML for realms from url %s\n",
-	    thislink->href);
-    return -1;
+    dcloudprintf("Failed to get the XML for realms from %s\n", thislink->href);
+    return DELTACLOUD_GET_URL_ERROR;
   }
 
   *realms = NULL;
   if (parse_xml(data, "realms", (void **)realms, parse_realm_xml) < 0) {
-    fprintf(stderr, "Could not parse realms XML\n");
+    dcloudprintf("Failed to parse 'realms' XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
@@ -520,17 +528,18 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
   struct deltacloud_realm *tmprealm = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
 
   if (asprintf(&url, "%s/realms/%s", api->url, id) < 0) {
-    fprintf(stderr, "Failed to allocate memory for url\n");
-    return -1;
+    dcloudprintf("Failed to allocate memory for URL\n");
+    return DELTACLOUD_OOM_ERROR;
   }
 
   data = get_url(url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML data from url %s\n", url);
+    dcloudprintf("Failed to get the XML for realm from %s\n", url);
+    ret = DELTACLOUD_GET_URL_ERROR;
     goto cleanup;
   }
 
@@ -538,29 +547,34 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
 		   XML_PARSE_NOWARNING);
   if (!xml) {
-    fprintf(stderr, "Failed to parse XML\n");
+    dcloudprintf("Failed to parse realm XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   root = xmlDocGetRootElement(xml);
   if (root == NULL) {
-    fprintf(stderr, "Failed to get the root element\n");
+    dcloudprintf("Failed to get the realm root element\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   ctxt = xmlXPathNewContext(xml);
   if (ctxt == NULL) {
-    fprintf(stderr, "Could not initialize XML parsing\n");
+    dcloudprintf("Failed to initialize XPath context for realm\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   if (parse_realm_xml(root, ctxt, (void **)&tmprealm) < 0) {
-    fprintf(stderr, "Could not parse 'flavor' XML\n");
+    dcloudprintf("Failed to parse realm XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   if (copy_realm(realm, tmprealm) < 0) {
-    fprintf(stderr, "Could not copy realm structure\n");
+    dcloudprintf("Failed to copy realm structure\n");
+    ret = DELTACLOUD_OOM_ERROR;
     goto cleanup;
   }
 
@@ -618,7 +632,7 @@ static int parse_flavor_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       MY_FREE(storage);
       MY_FREE(architecture);
       if (listret < 0) {
-	fprintf(stderr, "Could not add new flavor to list\n");
+	dcloudprintf("Failed to add new flavor to list\n");
 	goto cleanup;
       }
     }
@@ -635,27 +649,29 @@ static int parse_flavor_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
-int deltacloud_get_flavors(struct deltacloud_api *api, struct deltacloud_flavor **flavors)
+int deltacloud_get_flavors(struct deltacloud_api *api,
+			   struct deltacloud_flavor **flavors)
 {
   struct deltacloud_link *thislink;
   char *data;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
 
   thislink = find_by_rel_in_link_list(&api->links, "flavors");
   if (thislink == NULL) {
-    fprintf(stderr, "Could not find the link for 'flavors'\n");
-    return -1;
+    dcloudprintf("Failed to find the link for 'flavors'\n");
+    return DELTACLOUD_URL_DOES_NOT_EXIST;
   }
 
   data = get_url(thislink->href, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML data from url %s\n", thislink->href);
-    return -1;
+    dcloudprintf("Failed to get the XML for flavors from %s\n", thislink->href);
+    return DELTACLOUD_GET_URL_ERROR;
   }
 
   *flavors = NULL;
   if (parse_xml(data, "flavors", (void **)flavors, parse_flavor_xml) < 0) {
-    fprintf(stderr, "Could not parse XML data for flavors\n");
+    dcloudprintf("Failed to parse 'flavors' XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
@@ -672,33 +688,36 @@ int deltacloud_get_flavor_by_id(struct deltacloud_api *api, const char *id,
 {
   struct deltacloud_link *thislink;
   char *data, *fullurl;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
   struct deltacloud_flavor *tmpflavor = NULL;
 
   thislink = find_by_rel_in_link_list(&api->links, "flavors");
   if (thislink == NULL) {
-    fprintf(stderr, "Could not find the link for 'flavors'\n");
-    return -1;
+    dcloudprintf("Failed to find the link for 'flavors'\n");
+    return DELTACLOUD_URL_DOES_NOT_EXIST;
   }
 
   if (asprintf(&fullurl, "%s?id=%s", thislink->href, id) < 0) {
-    fprintf(stderr, "Could not allocate memory for fullurl\n");
-    return -1;
+    dcloudprintf("Failed to allocate memory for URL\n");
+    return DELTACLOUD_OOM_ERROR;
   }
 
   data = get_url(fullurl, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML data from url %s\n", fullurl);
+    dcloudprintf("Failed to get the XML for flavor from %s\n", fullurl);
+    ret = DELTACLOUD_GET_URL_ERROR;
     goto cleanup;
   }
 
   if (parse_xml(data, "flavors", (void **)&tmpflavor, parse_flavor_xml) < 0) {
-    fprintf(stderr, "Could not parse XML data for flavors\n");
+    dcloudprintf("Failed to parse 'flavors' XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   if (copy_flavor(flavor, tmpflavor) < 0) {
-    fprintf(stderr, "Could not copy flavor structure\n");
+    dcloudprintf("Failed to copy flavor structure\n");
+    ret = DELTACLOUD_OOM_ERROR;
     goto cleanup;
   }
 
@@ -719,42 +738,47 @@ int deltacloud_get_flavor_by_uri(struct deltacloud_api *api, const char *url,
   struct deltacloud_flavor *tmpflavor = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
 
   data = get_url(url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML data from url %s\n", url);
-    return -1;
+    dcloudprintf("Failed to get the XML for flavor from %s\n", url);
+    return DELTACLOUD_GET_URL_ERROR;
   }
 
   xml = xmlReadDoc(BAD_CAST data, "flavor.xml", NULL,
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
 		   XML_PARSE_NOWARNING);
   if (!xml) {
-    fprintf(stderr, "Failed to parse XML\n");
+    dcloudprintf("Failed to parse flavor XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   root = xmlDocGetRootElement(xml);
   if (root == NULL) {
-    fprintf(stderr, "Failed to get the root element\n");
+    dcloudprintf("Failed to get the flavor root element\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   ctxt = xmlXPathNewContext(xml);
   if (ctxt == NULL) {
-    fprintf(stderr, "Could not initialize XML parsing\n");
+    dcloudprintf("Failed to initialize XPath context for flavor\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   if (parse_flavor_xml(root, ctxt, (void **)&tmpflavor) < 0) {
-    fprintf(stderr, "Could not parse 'flavor' XML\n");
+    dcloudprintf("Failed to parse flavor XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   if (copy_flavor(flavor, tmpflavor) < 0) {
-    fprintf(stderr, "Could not copy flavor structure\n");
+    dcloudprintf("Failed to copy flavor structure\n");
+    ret = DELTACLOUD_OOM_ERROR;
     goto cleanup;
   }
 
@@ -814,7 +838,7 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       MY_FREE(owner_id);
       MY_FREE(name);
       if (listret < 0) {
-	fprintf(stderr, "Could not add new image to list\n");
+	dcloudprintf("Failed to add new image to list\n");
 	goto cleanup;
       }
     }
@@ -831,28 +855,29 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
-int deltacloud_get_images(struct deltacloud_api *api, struct deltacloud_image **images)
+int deltacloud_get_images(struct deltacloud_api *api,
+			  struct deltacloud_image **images)
 {
   struct deltacloud_link *thislink;
   char *data;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
 
   thislink = find_by_rel_in_link_list(&api->links, "images");
   if (thislink == NULL) {
-    fprintf(stderr, "Could not find the link for 'images'\n");
-    return -1;
+    dcloudprintf("Failed to find the link for 'images'\n");
+    return DELTACLOUD_URL_DOES_NOT_EXIST;
   }
 
   data = get_url(thislink->href, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get the XML from images url %s\n",
-	    thislink->href);
-    return -1;
+    dcloudprintf("Failed to get the XML for images from %s\n", thislink->href);
+    return DELTACLOUD_GET_URL_ERROR;
   }
 
   *images = NULL;
   if (parse_xml(data, "images", (void **)images, parse_image_xml) < 0) {
-    fprintf(stderr, "Could not parse images XML\n");
+    dcloudprintf("Failed to parse 'images' XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
@@ -871,17 +896,18 @@ int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
   struct deltacloud_image *tmpimage = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
 
   if (asprintf(&url, "%s/images/%s", api->url, id) < 0) {
-    fprintf(stderr, "Failed to allocate memory for url\n");
-    return -1;
+    dcloudprintf("Failed to allocate memory for URL\n");
+    return DELTACLOUD_OOM_ERROR;
   }
 
   data = get_url(url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML data from url %s\n", url);
+    dcloudprintf("Failed to get the XML for image from %s\n", url);
+    ret = DELTACLOUD_GET_URL_ERROR;
     goto cleanup;
   }
 
@@ -889,29 +915,34 @@ int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
 		   XML_PARSE_NOWARNING);
   if (!xml) {
-    fprintf(stderr, "Failed to parse XML\n");
+    dcloudprintf("Failed to parse image XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   root = xmlDocGetRootElement(xml);
   if (root == NULL) {
-    fprintf(stderr, "Failed to get the root element\n");
+    dcloudprintf("Failed to get the image root element\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   ctxt = xmlXPathNewContext(xml);
   if (ctxt == NULL) {
-    fprintf(stderr, "Could not initialize XML parsing\n");
+    dcloudprintf("Failed to initialize XPath context for image\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   if (parse_image_xml(root, ctxt, (void **)&tmpimage) < 0) {
-    fprintf(stderr, "Could not parse 'image' XML\n");
+    dcloudprintf("Failed to parse image XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   if (copy_image(image, tmpimage) < 0) {
-    fprintf(stderr, "Could not copy image structure\n");
+    dcloudprintf("Failed to copy image structure\n");
+    ret = DELTACLOUD_OOM_ERROR;
     goto cleanup;
   }
 
@@ -960,7 +991,7 @@ static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       MY_FREE(name);
       free_transition_list(&transitions);
       if (listret < 0) {
-	fprintf(stderr, "Could not add new instance_state to list\n");
+	dcloudprintf("Failed to add new instance_state to list\n");
 	goto cleanup;
       }
       transitions = NULL;
@@ -982,24 +1013,25 @@ int deltacloud_get_instance_states(struct deltacloud_api *api,
 {
   struct deltacloud_link *thislink;
   char *data;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
 
   thislink = find_by_rel_in_link_list(&api->links, "instance_states");
   if (thislink == NULL) {
-    fprintf(stderr, "Could not find the link for 'instance-states'\n");
-    return -1;
+    dcloudprintf("Failed to find the link for 'instance-states'\n");
+    return DELTACLOUD_URL_DOES_NOT_EXIST;
   }
 
   data = get_url(thislink->href, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML for instance_states from url %s\n",
-	    thislink->href);
-    return -1;
+    dcloudprintf("Failed to get the XML for instance_states from %s\n",
+		 thislink->href);
+    return DELTACLOUD_GET_URL_ERROR;
   }
 
   *instance_states = NULL;
   if (parse_xml(data, "states", (void **)instance_states, parse_instance_state_xml) < 0) {
-    fprintf(stderr, "Could not parse instance_states XML\n");
+    dcloudprintf("Failed to parse 'instance_states' XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
@@ -1017,19 +1049,24 @@ int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
 {
   struct deltacloud_instance_state *statelist = NULL;
   struct deltacloud_instance_state *found;
-  int ret = -1;
+  int instance_ret;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
 
-  if (deltacloud_get_instance_states(api, &statelist) < 0) {
-    fprintf(stderr, "Failed to get instance_states\n");
-    return -1;
+  instance_ret = deltacloud_get_instance_states(api, &statelist);
+  if (instance_ret < 0) {
+    dcloudprintf("Failed to get instance_states\n");
+    return instance_ret;
   }
+
   found = find_by_name_in_instance_state_list(&statelist, name);
   if (found == NULL) {
-    fprintf(stderr, "Could not find %s in instance state list\n", name);
+    dcloudprintf("Failed to find %s in instance_state list\n", name);
+    ret = DELTACLOUD_URL_DOES_NOT_EXIST;
     goto cleanup;
   }
   if (copy_instance_state(instance_state, found) < 0) {
-    fprintf(stderr, "Could not copy instance_state structure\n");
+    dcloudprintf("Failed to copy instance_state structure\n");
+    ret = DELTACLOUD_OOM_ERROR;
     goto cleanup;
   }
 
@@ -1087,7 +1124,7 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       MY_FREE(instance_href);
       MY_FREE(href);
       if (listret < 0) {
-	fprintf(stderr, "Could not add new storage_volume to list\n");
+	dcloudprintf("Failed to add new storage_volume to list\n");
 	goto cleanup;
       }
     }
@@ -1109,24 +1146,25 @@ int deltacloud_get_storage_volumes(struct deltacloud_api *api,
 {
   struct deltacloud_link *thislink;
   char *data;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
 
   thislink = find_by_rel_in_link_list(&api->links, "storage_volumes");
   if (thislink == NULL) {
-    fprintf(stderr, "Could not find the link for 'storage_volumes'\n");
-    return -1;
+    dcloudprintf("Failed to find the link for 'storage_volumes'\n");
+    return DELTACLOUD_URL_DOES_NOT_EXIST;
   }
 
   data = get_url(thislink->href, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML for storage_volumes from url %s\n",
-	    thislink->href);
-    return -1;
+    dcloudprintf("Failed to get the XML for storage_volumes from %s\n",
+		 thislink->href);
+    return DELTACLOUD_GET_URL_ERROR;
   }
 
   *storage_volumes = NULL;
   if (parse_xml(data, "storage-volumes", (void **)storage_volumes, parse_storage_volume_xml) < 0) {
-    fprintf(stderr, "Could not parse storage_volumes XML\n");
+    dcloudprintf("Failed to parse 'storage_volumes' XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
@@ -1146,17 +1184,18 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
   struct deltacloud_storage_volume *tmpstorage_volume = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
 
   if (asprintf(&url, "%s/storage_volumes/%s", api->url, id) < 0) {
-    fprintf(stderr, "Failed to allocate memory for url\n");
-    return -1;
+    dcloudprintf("Failed to allocate memory for URL\n");
+    return DELTACLOUD_OOM_ERROR;
   }
 
   data = get_url(url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML data from url %s\n", url);
+    dcloudprintf("Failed to get the XML for storage_volume from %s\n", url);
+    ret = DELTACLOUD_GET_URL_ERROR;
     goto cleanup;
   }
 
@@ -1164,29 +1203,34 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
 		   XML_PARSE_NOWARNING);
   if (!xml) {
-    fprintf(stderr, "Failed to parse XML\n");
+    dcloudprintf("Failed to parse storage_volume XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   root = xmlDocGetRootElement(xml);
   if (root == NULL) {
-    fprintf(stderr, "Failed to get the root element\n");
+    dcloudprintf("Failed to get the storage_volume root element\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   ctxt = xmlXPathNewContext(xml);
   if (ctxt == NULL) {
-    fprintf(stderr, "Could not initialize XML parsing\n");
+    dcloudprintf("Failed to initialize XPath context for storage_volume\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   if (parse_storage_volume_xml(root, ctxt, (void **)&tmpstorage_volume) < 0) {
-    fprintf(stderr, "Could not parse 'instance' XML\n");
+    dcloudprintf("Failed to parse storage_volume XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   if (copy_storage_volume(storage_volume, tmpstorage_volume) < 0) {
-    fprintf(stderr, "Could not copy storage_volume structure\n");
+    dcloudprintf("Failed to copy storage_volume structure\n");
+    ret = DELTACLOUD_OOM_ERROR;
     goto cleanup;
   }
 
@@ -1245,7 +1289,7 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       MY_FREE(storage_volume_href);
       MY_FREE(href);
       if (listret < 0) {
-	fprintf(stderr, "Could not add new storage_snapshot to list\n");
+	dcloudprintf("Failed to add new storage_snapshot to list\n");
 	goto cleanup;
       }
     }
@@ -1267,24 +1311,25 @@ int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
 {
   struct deltacloud_link *thislink;
   char *data;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
 
   thislink = find_by_rel_in_link_list(&api->links, "storage_snapshots");
   if (thislink == NULL) {
-    fprintf(stderr, "Could not find the link for 'storage_snapshots'\n");
-    return -1;
+    dcloudprintf("Failed to find the link for 'storage_snapshots'\n");
+    return DELTACLOUD_URL_DOES_NOT_EXIST;
   }
 
   data = get_url(thislink->href, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML for storage_snapshots from url %s\n",
-	    thislink->href);
-    return -1;
+    dcloudprintf("Failed to get the XML for storage_snapshots from %s\n",
+		 thislink->href);
+    return DELTACLOUD_GET_URL_ERROR;
   }
 
   *storage_snapshots = NULL;
   if (parse_xml(data, "storage-snapshots", (void **)storage_snapshots, parse_storage_snapshot_xml) < 0) {
-    fprintf(stderr, "Could not parse storage_snapshots XML\n");
+    dcloudprintf("Failed to parse 'storage_snapshots' XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
@@ -1304,17 +1349,18 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
   struct deltacloud_storage_snapshot *tmpstorage_snapshot = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
 
   if (asprintf(&url, "%s/storage_snapshots/%s", api->url, id) < 0) {
-    fprintf(stderr, "Failed to allocate memory for url\n");
-    return -1;
+    dcloudprintf("Failed to allocate memory for URL\n");
+    return DELTACLOUD_OOM_ERROR;
   }
 
   data = get_url(url, api->user, api->password);
   if (data == NULL) {
-    fprintf(stderr, "Could not get XML data from url %s\n", url);
+    dcloudprintf("Failed to get the XML for storage_snapshot from %s\n", url);
+    ret = DELTACLOUD_GET_URL_ERROR;
     goto cleanup;
   }
 
@@ -1322,29 +1368,34 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
 		   XML_PARSE_NOWARNING);
   if (!xml) {
-    fprintf(stderr, "Failed to parse XML\n");
+    dcloudprintf("Failed to parse storage_snapshot XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   root = xmlDocGetRootElement(xml);
   if (root == NULL) {
-    fprintf(stderr, "Failed to get the root element\n");
+    dcloudprintf("Failed to get the storage_snapshot root element\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   ctxt = xmlXPathNewContext(xml);
   if (ctxt == NULL) {
-    fprintf(stderr, "Could not initialize XML parsing\n");
+    dcloudprintf("Failed to initialize XPath context for storage_snapshot\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   if (parse_storage_snapshot_xml(root, ctxt, (void **)&tmpstorage_snapshot) < 0) {
-    fprintf(stderr, "Could not parse 'storage_snapshot' XML\n");
+    dcloudprintf("Failed to parse storage_snapshot XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
   if (copy_storage_snapshot(storage_snapshot, tmpstorage_snapshot) < 0) {
-    fprintf(stderr, "Could not copy storage_snapshot structure\n");
+    dcloudprintf("Failed to copy storage_snapshot structure\n");
+    ret = DELTACLOUD_OOM_ERROR;
     goto cleanup;
   }
 
@@ -1373,22 +1424,22 @@ struct deltacloud_instance *deltacloud_create_instance(struct deltacloud_api *ap
   size_t param_size;
   FILE *paramfp;
   struct deltacloud_instance *newinstance = NULL;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
 
   if (image_id == NULL) {
-    fprintf(stderr, "Image ID cannot be NULL\n");
+    dcloudprintf("Failed create_instance: image ID cannot be NULL\n");
     return NULL;
   }
 
   thislink = find_by_rel_in_link_list(&api->links, "instances");
   if (thislink == NULL) {
-    fprintf(stderr, "Could not find the link for 'instances'\n");
+    dcloudprintf("Failed to find the link for 'instances'\n");
     return NULL;
   }
 
   paramfp = open_memstream(&params, &param_size);
   if (paramfp == NULL) {
-    fprintf(stderr, "Could not allocate memory for parameters\n");
+    dcloudprintf("Failed to allocate memory for parameters\n");
     return NULL;
   }
 
@@ -1404,18 +1455,19 @@ struct deltacloud_instance *deltacloud_create_instance(struct deltacloud_api *ap
   data = post_url(thislink->href, api->user, api->password, params, param_size);
   MY_FREE(params);
   if (data == NULL) {
-    fprintf(stderr, "Failed to post instance data\n");
+    dcloudprintf("Failed to post the XML for create_instance to %s\n",
+		 thislink->href);
     return NULL;
   }
 
   newinstance = malloc(sizeof(struct deltacloud_instance));
   if (newinstance == NULL) {
-    fprintf(stderr, "Failed to allocate memory\n");
+    dcloudprintf("Failed to allocate memory for new instance\n");
     goto cleanup;
   }
 
   if (parse_one_instance(data, newinstance) < 0) {
-    fprintf(stderr, "Could not parse single instance data\n");
+    dcloudprintf("Failed to parse instance XML\n");
     goto cleanup;
   }
 
@@ -1437,26 +1489,28 @@ static int instance_action(struct deltacloud_api *api,
   char *data;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
-  int ret = -1;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
   struct deltacloud_instance *tmpinstance = NULL;
 
   act = find_by_rel_in_action_list(&instance->actions, action_name);
   if (act == NULL) {
-    fprintf(stderr, "Could not find the link for action %s\n", action_name);
-    return -1;
+    dcloudprintf("Failed to find the link for '%s'\n", action_name);
+    return DELTACLOUD_URL_DOES_NOT_EXIST;
   }
 
   data = post_url(act->href, api->user, api->password, NULL, 0);
   if (data == NULL) {
-    fprintf(stderr, "Failed to POST data\n");
-    return -1;
+    dcloudprintf("Failed to post the XML for create_instance to %s\n",
+		 act->href);
+    return DELTACLOUD_POST_URL_ERROR;
   }
 
-  free_instance(instance);
+  deltacloud_free_instance(instance);
 
   if (parse_one_instance(data, instance) < 0) {
-    fprintf(stderr, "Could not parse single instance\n");
+    dcloudprintf("Failed to parse instance XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
 
@@ -1484,6 +1538,33 @@ int deltacloud_instance_start(struct deltacloud_api *api,
 			      struct deltacloud_instance *instance)
 {
   return instance_action(api, instance, "start");
+}
+
+struct deltacloud_error_entry {
+  int number;
+  const char *desc;
+};
+
+static const struct deltacloud_error_entry errors[] = {
+  { DELTACLOUD_UNKNOWN_ERROR, "Unknown error" },
+  { DELTACLOUD_GET_URL_ERROR, "Failed to get url" },
+  { DELTACLOUD_POST_URL_ERROR, "Failed to post data to url" },
+  { DELTACLOUD_XML_PARSE_ERROR, "Failed to parse the XML" },
+  { DELTACLOUD_URL_DOES_NOT_EXIST, "Failed to find required URL" },
+  { DELTACLOUD_OOM_ERROR, "Out of memory" },
+  { 0, NULL },
+};
+
+const char *deltacloud_strerror(int error)
+{
+  const struct deltacloud_error_entry *p;
+
+  for (p = errors; p->desc != NULL; p++) {
+    if (p->number == error)
+      return p->desc;
+  }
+
+  return "Unknown Error";
 }
 
 void deltacloud_free(struct deltacloud_api *api)

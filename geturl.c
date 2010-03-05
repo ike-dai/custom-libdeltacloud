@@ -60,7 +60,7 @@ char *do_curl(const char *url, const char *user, const char *password, int post,
 
   curl = curl_easy_init();
   if (curl == NULL) {
-    fprintf(stderr, "Failed to initialize curl\n");
+    dcloudprintf("Failed to initialize curl\n");
     return NULL;
   }
 
@@ -69,27 +69,27 @@ char *do_curl(const char *url, const char *user, const char *password, int post,
 
   reqlist = curl_slist_append(reqlist, "Accept: application/xml");
   if (reqlist == NULL) {
-    fprintf(stderr, "Failed to create request list\n");
+    dcloudprintf("Failed to create request list\n");
     goto cleanup;
   }
 
   res = curl_easy_setopt(curl, CURLOPT_URL, url);
   if (res != CURLE_OK) {
-    fprintf(stderr, "Failed to set URL header: %s\n", curl_easy_strerror(res));
+    dcloudprintf("Failed to set URL header: %s\n", curl_easy_strerror(res));
     goto cleanup;
   }
 
   res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, reqlist);
   if (res != CURLE_OK) {
-    fprintf(stderr, "Failed to set HTTP header: %s\n", curl_easy_strerror(res));
+    dcloudprintf("Failed to set HTTP header: %s\n", curl_easy_strerror(res));
     goto cleanup;
   }
 
   if (user != NULL) {
     res = curl_easy_setopt(curl, CURLOPT_USERNAME, user);
     if (res != CURLE_OK) {
-      fprintf(stderr, "Failed to set username header: %s\n",
-	      curl_easy_strerror(res));
+      dcloudprintf("Failed to set username header: %s\n",
+		   curl_easy_strerror(res));
       goto cleanup;
     }
   }
@@ -97,23 +97,21 @@ char *do_curl(const char *url, const char *user, const char *password, int post,
   if (password != NULL) {
     res = curl_easy_setopt(curl, CURLOPT_PASSWORD, password);
     if (res != CURLE_OK) {
-      fprintf(stderr, "Failed to set password header: %s\n",
-	      curl_easy_strerror(res));
+      dcloudprintf("Failed to set password header: %s\n",
+		   curl_easy_strerror(res));
       goto cleanup;
     }
   }
 
   res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, memory_callback);
   if (res != CURLE_OK) {
-    fprintf(stderr, "Failed to set data callback: %s\n",
-	    curl_easy_strerror(res));
+    dcloudprintf("Failed to set data callback: %s\n", curl_easy_strerror(res));
     goto cleanup;
   }
 
   res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
   if (res != CURLE_OK) {
-    fprintf(stderr, "Failed to set data pointer: %s\n",
-	    curl_easy_strerror(res));
+    dcloudprintf("Failed to set data pointer: %s\n", curl_easy_strerror(res));
     goto cleanup;
   }
 
@@ -123,8 +121,7 @@ char *do_curl(const char *url, const char *user, const char *password, int post,
      */
     res = curl_easy_setopt(curl, CURLOPT_POST, 1);
     if (res != CURLE_OK) {
-      fprintf(stderr, "Failed to set header POST: %s\n",
-	      curl_easy_strerror(res));
+      dcloudprintf("Failed to set header POST: %s\n", curl_easy_strerror(res));
       goto cleanup;
     }
 
@@ -133,15 +130,15 @@ char *do_curl(const char *url, const char *user, const char *password, int post,
      */
     res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, datalen);
     if (res != CURLE_OK) {
-      fprintf(stderr, "Failed to set post field size: %s\n",
-	      curl_easy_strerror(res));
+      dcloudprintf("Failed to set post field size: %s\n",
+		   curl_easy_strerror(res));
       goto cleanup;
     }
     if (data != NULL) {
       res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
       if (res != CURLE_OK) {
-	fprintf(stderr, "Failed to set header post fields: %s\n",
-		curl_easy_strerror(res));
+	dcloudprintf("Failed to set header post fields: %s\n",
+		     curl_easy_strerror(res));
 	goto cleanup;
       }
     }
@@ -149,8 +146,7 @@ char *do_curl(const char *url, const char *user, const char *password, int post,
 
   res = curl_easy_perform(curl);
   if (res != CURLE_OK) {
-    fprintf(stderr, "Failed to perform transfer: %s\n",
-	    curl_easy_strerror(res));
+    dcloudprintf("Failed to perform transfer: %s\n", curl_easy_strerror(res));
     MY_FREE(chunk.data);
   }
 

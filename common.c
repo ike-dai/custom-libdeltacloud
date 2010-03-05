@@ -19,9 +19,11 @@
  */
 
 #define _GNU_SOURCE
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stdarg.h>
 #include "common.h"
 
 void free_and_null(void *ptrptr)
@@ -43,6 +45,17 @@ int strdup_or_null(char **out, const char *in)
     return -1;
 
   return 0;
+}
+
+void dcloudprintf(const char *fmt, ...)
+{
+  va_list va_args;
+
+  if (getenv("DCLOUDAPI_DEBUG")) {
+    va_start(va_args, fmt);
+    vfprintf(stderr, fmt, va_args);
+    va_end(va_args);
+  }
 }
 
 #ifdef DEBUG

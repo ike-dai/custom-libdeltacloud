@@ -273,7 +273,7 @@ int add_to_instance_list(struct deltacloud_instance **instances, const char *id,
   return 0;
 
  error:
-  free_instance(oneinstance);
+  deltacloud_free_instance(oneinstance);
   MY_FREE(oneinstance);
   return -1;
 }
@@ -304,7 +304,7 @@ int copy_instance(struct deltacloud_instance *dst, struct deltacloud_instance *s
   return 0;
 
  error:
-  free_instance(dst);
+  deltacloud_free_instance(dst);
   return -1;
 }
 
@@ -339,7 +339,7 @@ void print_instance_list(struct deltacloud_instance **instances, FILE *stream)
   }
 }
 
-void free_instance(struct deltacloud_instance *instance)
+void deltacloud_free_instance(struct deltacloud_instance *instance)
 {
   MY_FREE(instance->id);
   MY_FREE(instance->name);
@@ -360,7 +360,7 @@ void free_instance_list(struct deltacloud_instance **instances)
   curr = *instances;
   while (curr != NULL) {
     next = curr->next;
-    free_instance(curr);
+    deltacloud_free_instance(curr);
     MY_FREE(curr);
     curr = next;
   }

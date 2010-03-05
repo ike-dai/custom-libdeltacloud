@@ -74,7 +74,7 @@ int add_to_instance_list(struct deltacloud_instance **instances, const char *id,
 int copy_instance(struct deltacloud_instance *dst, struct deltacloud_instance *src);
 void print_instance(struct deltacloud_instance *instance, FILE *stream);
 void print_instance_list(struct deltacloud_instance **instances, FILE *stream);
-void free_instance(struct deltacloud_instance *instance);
+void deltacloud_free_instance(struct deltacloud_instance *instance);
 void free_instance_list(struct deltacloud_instance **instances);
 
 #ifdef __cplusplus

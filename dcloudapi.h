@@ -81,6 +81,17 @@ int deltacloud_instance_start(struct deltacloud_api *api,
 
 void deltacloud_free(struct deltacloud_api *api);
 
+const char *deltacloud_strerror(int error);
+
+/* Error codes */
+#define DELTACLOUD_UNKNOWN_ERROR -1
+/* ERROR codes -2, -3, and -4 are reserved for future use */
+#define DELTACLOUD_GET_URL_ERROR -5
+#define DELTACLOUD_POST_URL_ERROR -6
+#define DELTACLOUD_XML_PARSE_ERROR -7
+#define DELTACLOUD_URL_DOES_NOT_EXIST -8
+#define DELTACLOUD_OOM_ERROR -9
+
 #ifdef __cplusplus
 }
 #endif

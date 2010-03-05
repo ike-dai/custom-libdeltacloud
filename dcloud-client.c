@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
     goto cleanup;
   }
   print_instance(&instance, NULL);
-  free_instance(&instance);
+  deltacloud_free_instance(&instance);
 
   fprintf(stderr, "--------------STORAGE VOLUMES---------------\n");
   if (deltacloud_get_storage_volumes(&api, &storage_volumes) < 0) {
@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
   if (deltacloud_instance_reboot(&api, newinstance) < 0)
     fprintf(stderr, "Failed to reboot instance\n");
   print_instance(newinstance, NULL);
-  free_instance(newinstance);
+  deltacloud_free_instance(newinstance);
   MY_FREE(newinstance);
 
   ret = 0;
