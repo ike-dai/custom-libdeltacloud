@@ -27,21 +27,21 @@
 int main(int argc, char *argv[])
 {
   struct deltacloud_api api;
-  struct instance *instances;
-  struct image *images;
-  struct flavor *flavors;
-  struct realm *realms;
-  struct instance_state *instance_states;
-  struct storage_volume *storage_volumes;
-  struct storage_snapshot *storage_snapshots;
-  struct flavor flavor;
-  struct instance_state instance_state;
-  struct realm realm;
-  struct image image;
-  struct instance instance;
-  struct storage_volume storage_volume;
-  struct storage_snapshot storage_snapshot;
-  struct instance *newinstance;
+  struct deltacloud_instance *instances;
+  struct deltacloud_image *images;
+  struct deltacloud_flavor *flavors;
+  struct deltacloud_realm *realms;
+  struct deltacloud_instance_state *instance_states;
+  struct deltacloud_storage_volume *storage_volumes;
+  struct deltacloud_storage_snapshot *storage_snapshots;
+  struct deltacloud_flavor flavor;
+  struct deltacloud_instance_state instance_state;
+  struct deltacloud_realm realm;
+  struct deltacloud_image image;
+  struct deltacloud_instance instance;
+  struct deltacloud_storage_volume storage_volume;
+  struct deltacloud_storage_snapshot storage_snapshot;
+  struct deltacloud_instance *newinstance;
   char *fullurl;
   int ret = 3;
 

@@ -25,24 +25,24 @@
 extern "C" {
 #endif
 
-struct flavor {
+struct deltacloud_flavor {
   char *href;
   char *id;
   char *memory;
   char *storage;
   char *architecture;
 
-  struct flavor *next;
+  struct deltacloud_flavor *next;
 };
 
-int copy_flavor(struct flavor *dst, struct flavor *src);
-int add_to_flavor_list(struct flavor **flavors, const char *href,
+int copy_flavor(struct deltacloud_flavor *dst, struct deltacloud_flavor *src);
+int add_to_flavor_list(struct deltacloud_flavor **flavors, const char *href,
 		       const char *id, const char *memory, const char *storage,
 		       const char *architecture);
-void print_flavor(struct flavor *flavor, FILE *stream);
-void print_flavor_list(struct flavor **flavors, FILE *stream);
-void free_flavor(struct flavor *flavor);
-void free_flavor_list(struct flavor **flavors);
+void print_flavor(struct deltacloud_flavor *flavor, FILE *stream);
+void print_flavor_list(struct deltacloud_flavor **flavors, FILE *stream);
+void free_flavor(struct deltacloud_flavor *flavor);
+void free_flavor_list(struct deltacloud_flavor **flavors);
 
 #ifdef __cplusplus
 }

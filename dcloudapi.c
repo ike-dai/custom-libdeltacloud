@@ -58,7 +58,7 @@ static int parse_xml(const char *xml_string, const char *name, void **data,
 
 static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 {
-  struct link **links = (struct link **)data;
+  struct deltacloud_link **links = (struct deltacloud_link **)data;
   char *href = NULL, *rel = NULL;
   int listret;
   int ret = -1;
@@ -155,11 +155,11 @@ static char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
   return ret;
 }
 
-static struct address *parse_addresses_xml(xmlNodePtr instance,
+static struct deltacloud_address *parse_addresses_xml(xmlNodePtr instance,
 					   xmlXPathContextPtr ctxt)
 {
   xmlNodePtr oldnode, cur;
-  struct address *addresses = NULL;
+  struct deltacloud_address *addresses = NULL;
   char *address = NULL;
   int failed = 1;
   int listret;
@@ -197,10 +197,10 @@ static struct address *parse_addresses_xml(xmlNodePtr instance,
   return addresses;
 }
 
-static struct action *parse_actions_xml(xmlNodePtr instance)
+static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
 {
   xmlNodePtr cur;
-  struct action *actions = NULL;
+  struct deltacloud_action *actions = NULL;
   char *rel = NULL, *href = NULL;
   int failed = 1;
   int listret;
@@ -235,13 +235,13 @@ static struct action *parse_actions_xml(xmlNodePtr instance)
 static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			      void **data)
 {
-  struct instance **instances = (struct instance **)data;
+  struct deltacloud_instance **instances = (struct deltacloud_instance **)data;
   xmlNodePtr oldnode, instance_cur;
   char *id = NULL, *name = NULL, *owner_id = NULL, *image_href = NULL;
   char *flavor_href = NULL, *realm_href = NULL, *state = NULL;
-  struct action *actions = NULL;
-  struct address *public_addresses = NULL;
-  struct address *private_addresses = NULL;
+  struct deltacloud_action *actions = NULL;
+  struct deltacloud_address *public_addresses = NULL;
+  struct deltacloud_address *private_addresses = NULL;
   int listret;
   int ret = -1;
 
@@ -310,13 +310,13 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
-static int parse_one_instance(const char *data, struct instance *newinstance)
+static int parse_one_instance(const char *data, struct deltacloud_instance *newinstance)
 {
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
   xmlXPathContextPtr ctxt = NULL;
-  struct instance *tmpinstance = NULL;
+  struct deltacloud_instance *tmpinstance = NULL;
 
   xml = xmlReadDoc(BAD_CAST data, "instance.xml", NULL,
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
@@ -361,9 +361,9 @@ static int parse_one_instance(const char *data, struct instance *newinstance)
 }
 
 int deltacloud_get_instances(struct deltacloud_api *api,
-			     struct instance **instances)
+			     struct deltacloud_instance **instances)
 {
-  struct link *thislink;
+  struct deltacloud_link *thislink;
   char *data;
   int ret = -1;
 
@@ -395,7 +395,7 @@ int deltacloud_get_instances(struct deltacloud_api *api,
 }
 
 int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
-				  struct instance *instance)
+				  struct deltacloud_instance *instance)
 {
   char *url, *data;
   int ret = -1;
@@ -428,7 +428,7 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
 static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			   void **data)
 {
-  struct realm **realms = (struct realm **)data;
+  struct deltacloud_realm **realms = (struct deltacloud_realm **)data;
   xmlNodePtr oldnode, realm_cur;
   int ret = -1;
   char *href = NULL, *id = NULL, *name = NULL, *state = NULL, *limit = NULL;
@@ -480,9 +480,9 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
-int deltacloud_get_realms(struct deltacloud_api *api, struct realm **realms)
+int deltacloud_get_realms(struct deltacloud_api *api, struct deltacloud_realm **realms)
 {
-  struct link *thislink;
+  struct deltacloud_link *thislink;
   char *data;
   int ret = -1;
 
@@ -514,10 +514,10 @@ int deltacloud_get_realms(struct deltacloud_api *api, struct realm **realms)
 }
 
 int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
-			       struct realm *realm)
+			       struct deltacloud_realm *realm)
 {
   char *url, *data;
-  struct realm *tmprealm = NULL;
+  struct deltacloud_realm *tmprealm = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
@@ -581,7 +581,7 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
 static int parse_flavor_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			    void **data)
 {
-  struct flavor **flavors = (struct flavor **)data;
+  struct deltacloud_flavor **flavors = (struct deltacloud_flavor **)data;
   xmlNodePtr flavor_cur, oldnode;
   char *href = NULL, *id = NULL, *memory = NULL, *storage = NULL;
   char *architecture = NULL;
@@ -635,9 +635,9 @@ static int parse_flavor_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
-int deltacloud_get_flavors(struct deltacloud_api *api, struct flavor **flavors)
+int deltacloud_get_flavors(struct deltacloud_api *api, struct deltacloud_flavor **flavors)
 {
-  struct link *thislink;
+  struct deltacloud_link *thislink;
   char *data;
   int ret = -1;
 
@@ -668,12 +668,12 @@ int deltacloud_get_flavors(struct deltacloud_api *api, struct flavor **flavors)
 }
 
 int deltacloud_get_flavor_by_id(struct deltacloud_api *api, const char *id,
-				struct flavor *flavor)
+				struct deltacloud_flavor *flavor)
 {
-  struct link *thislink;
+  struct deltacloud_link *thislink;
   char *data, *fullurl;
   int ret = -1;
-  struct flavor *tmpflavor = NULL;
+  struct deltacloud_flavor *tmpflavor = NULL;
 
   thislink = find_by_rel_in_link_list(&api->links, "flavors");
   if (thislink == NULL) {
@@ -713,10 +713,10 @@ int deltacloud_get_flavor_by_id(struct deltacloud_api *api, const char *id,
 }
 
 int deltacloud_get_flavor_by_uri(struct deltacloud_api *api, const char *url,
-				 struct flavor *flavor)
+				 struct deltacloud_flavor *flavor)
 {
   char *data;
-  struct flavor *tmpflavor = NULL;
+  struct deltacloud_flavor *tmpflavor = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
@@ -774,7 +774,7 @@ int deltacloud_get_flavor_by_uri(struct deltacloud_api *api, const char *url,
 static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			   void **data)
 {
-  struct image **images = (struct image **)data;
+  struct deltacloud_image **images = (struct deltacloud_image **)data;
   xmlNodePtr oldnode, image_cur;
   char *href = NULL, *id = NULL, *description = NULL, *architecture = NULL;
   char *owner_id = NULL, *name = NULL;
@@ -831,9 +831,9 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
-int deltacloud_get_images(struct deltacloud_api *api, struct image **images)
+int deltacloud_get_images(struct deltacloud_api *api, struct deltacloud_image **images)
 {
-  struct link *thislink;
+  struct deltacloud_link *thislink;
   char *data;
   int ret = -1;
 
@@ -865,10 +865,10 @@ int deltacloud_get_images(struct deltacloud_api *api, struct image **images)
 }
 
 int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
-			       struct image *image)
+			       struct deltacloud_image *image)
 {
   char *url, *data;
-  struct image *tmpimage = NULL;
+  struct deltacloud_image *tmpimage = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
@@ -932,7 +932,7 @@ int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
 static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				    void **data)
 {
-  struct instance_state **instance_states = (struct instance_state **)data;
+  struct deltacloud_instance_state **instance_states = (struct deltacloud_instance_state **)data;
   xmlNodePtr state_cur;
   char *name = NULL, *action = NULL, *to = NULL;
   struct transition *transitions = NULL;
@@ -978,9 +978,9 @@ static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 }
 
 int deltacloud_get_instance_states(struct deltacloud_api *api,
-				   struct instance_state **instance_states)
+				   struct deltacloud_instance_state **instance_states)
 {
-  struct link *thislink;
+  struct deltacloud_link *thislink;
   char *data;
   int ret = -1;
 
@@ -1013,10 +1013,10 @@ int deltacloud_get_instance_states(struct deltacloud_api *api,
 
 int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
 					  const char *name,
-					  struct instance_state *instance_state)
+					  struct deltacloud_instance_state *instance_state)
 {
-  struct instance_state *statelist = NULL;
-  struct instance_state *found;
+  struct deltacloud_instance_state *statelist = NULL;
+  struct deltacloud_instance_state *found;
   int ret = -1;
 
   if (deltacloud_get_instance_states(api, &statelist) < 0) {
@@ -1043,7 +1043,7 @@ int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
 static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				    void **data)
 {
-  struct storage_volume **storage_volumes = (struct storage_volume **)data;
+  struct deltacloud_storage_volume **storage_volumes = (struct deltacloud_storage_volume **)data;
   xmlNodePtr oldnode, storage_cur;
   int ret = -1;
   char *href = NULL, *id = NULL, *created = NULL, *state = NULL;
@@ -1105,9 +1105,9 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 }
 
 int deltacloud_get_storage_volumes(struct deltacloud_api *api,
-				   struct storage_volume **storage_volumes)
+				   struct deltacloud_storage_volume **storage_volumes)
 {
-  struct link *thislink;
+  struct deltacloud_link *thislink;
   char *data;
   int ret = -1;
 
@@ -1140,10 +1140,10 @@ int deltacloud_get_storage_volumes(struct deltacloud_api *api,
 
 int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
 					const char *id,
-					struct storage_volume *storage_volume)
+					struct deltacloud_storage_volume *storage_volume)
 {
   char *url, *data;
-  struct storage_volume *tmpstorage_volume = NULL;
+  struct deltacloud_storage_volume *tmpstorage_volume = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
@@ -1207,7 +1207,7 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
 static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				      void **data)
 {
-  struct storage_snapshot **storage_snapshots = (struct storage_snapshot **)data;
+  struct deltacloud_storage_snapshot **storage_snapshots = (struct deltacloud_storage_snapshot **)data;
   int ret = -1;
   xmlNodePtr oldnode, snap_cur;
   char *href = NULL, *id = NULL, *created = NULL, *state = NULL;
@@ -1263,9 +1263,9 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 }
 
 int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
-				     struct storage_snapshot **storage_snapshots)
+				     struct deltacloud_storage_snapshot **storage_snapshots)
 {
-  struct link *thislink;
+  struct deltacloud_link *thislink;
   char *data;
   int ret = -1;
 
@@ -1298,10 +1298,10 @@ int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
 
 int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 					  const char *id,
-					  struct storage_snapshot *storage_snapshot)
+					  struct deltacloud_storage_snapshot *storage_snapshot)
 {
   char *url, *data;
-  struct storage_snapshot *tmpstorage_snapshot = NULL;
+  struct deltacloud_storage_snapshot *tmpstorage_snapshot = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
@@ -1362,17 +1362,17 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
   return ret;
 }
 
-struct instance *deltacloud_create_instance(struct deltacloud_api *api,
+struct deltacloud_instance *deltacloud_create_instance(struct deltacloud_api *api,
 					    const char *image_id,
 					    const char *name,
 					    const char *realm_id,
 					    const char *flavor_id)
 {
-  struct link *thislink;
+  struct deltacloud_link *thislink;
   char *data, *params;
   size_t param_size;
   FILE *paramfp;
-  struct instance *newinstance = NULL;
+  struct deltacloud_instance *newinstance = NULL;
   int ret = -1;
 
   if (image_id == NULL) {
@@ -1408,7 +1408,7 @@ struct instance *deltacloud_create_instance(struct deltacloud_api *api,
     return NULL;
   }
 
-  newinstance = malloc(sizeof(struct instance));
+  newinstance = malloc(sizeof(struct deltacloud_instance));
   if (newinstance == NULL) {
     fprintf(stderr, "Failed to allocate memory\n");
     goto cleanup;
@@ -1430,16 +1430,16 @@ struct instance *deltacloud_create_instance(struct deltacloud_api *api,
 }
 
 static int instance_action(struct deltacloud_api *api,
-			   struct instance *instance,
+			   struct deltacloud_instance *instance,
 			   const char *action_name)
 {
-  struct action *act;
+  struct deltacloud_action *act;
   char *data;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = -1;
   xmlXPathContextPtr ctxt = NULL;
-  struct instance *tmpinstance = NULL;
+  struct deltacloud_instance *tmpinstance = NULL;
 
   act = find_by_rel_in_action_list(&instance->actions, action_name);
   if (act == NULL) {
@@ -1469,19 +1469,19 @@ static int instance_action(struct deltacloud_api *api,
 }
 
 int deltacloud_instance_stop(struct deltacloud_api *api,
-			     struct instance *instance)
+			     struct deltacloud_instance *instance)
 {
   return instance_action(api, instance, "stop");
 }
 
 int deltacloud_instance_reboot(struct deltacloud_api *api,
-			       struct instance *instance)
+			       struct deltacloud_instance *instance)
 {
   return instance_action(api, instance, "reboot");
 }
 
 int deltacloud_instance_start(struct deltacloud_api *api,
-			      struct instance *instance)
+			      struct deltacloud_instance *instance)
 {
   return instance_action(api, instance, "start");
 }

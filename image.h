@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-struct image {
+struct deltacloud_image {
   char *href;
   char *id;
   char *description;
@@ -33,17 +33,17 @@ struct image {
   char *owner_id;
   char *name;
 
-  struct image *next;
+  struct deltacloud_image *next;
 };
 
-int add_to_image_list(struct image **images, const char *href, const char *id,
+int add_to_image_list(struct deltacloud_image **images, const char *href, const char *id,
 		      const char *description, const char *architecture,
 		      const char *owner_id, const char *name);
-int copy_image(struct image *dst, struct image *src);
-void print_image(struct image *image, FILE *stream);
-void print_image_list(struct image **images, FILE *stream);
-void free_image(struct image *image);
-void free_image_list(struct image **images);
+int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src);
+void print_image(struct deltacloud_image *image, FILE *stream);
+void print_image_list(struct deltacloud_image **images, FILE *stream);
+void free_image(struct deltacloud_image *image);
+void free_image_list(struct deltacloud_image **images);
 
 #ifdef __cplusplus
 }

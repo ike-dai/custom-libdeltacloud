@@ -24,17 +24,17 @@
 #include "common.h"
 #include "image.h"
 
-int add_to_image_list(struct image **images, const char *href, const char *id,
+int add_to_image_list(struct deltacloud_image **images, const char *href, const char *id,
 		      const char *description, const char *architecture,
 		      const char *owner_id, const char *name)
 {
-  struct image *oneimage, *curr, *last;
+  struct deltacloud_image *oneimage, *curr, *last;
 
-  oneimage = malloc(sizeof(struct image));
+  oneimage = malloc(sizeof(struct deltacloud_image));
   if (oneimage == NULL)
     return -1;
 
-  memset(oneimage, 0, sizeof(struct image));
+  memset(oneimage, 0, sizeof(struct deltacloud_image));
 
   if (strdup_or_null(&oneimage->href, href) < 0)
     goto error;
@@ -70,9 +70,9 @@ int add_to_image_list(struct image **images, const char *href, const char *id,
   return -1;
 }
 
-int copy_image(struct image *dst, struct image *src)
+int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src)
 {
-  memset(dst, 0, sizeof(struct image));
+  memset(dst, 0, sizeof(struct deltacloud_image));
 
   if (strdup_or_null(&dst->href, src->href) < 0)
     goto error;
@@ -95,7 +95,7 @@ int copy_image(struct image *dst, struct image *src)
   return -1;
 }
 
-void print_image(struct image *image, FILE *stream)
+void print_image(struct deltacloud_image *image, FILE *stream)
 {
   if (stream == NULL)
     stream = stderr;
@@ -108,9 +108,9 @@ void print_image(struct image *image, FILE *stream)
   fprintf(stream, "Name: %s\n", image->name);
 }
 
-void print_image_list(struct image **images, FILE *stream)
+void print_image_list(struct deltacloud_image **images, FILE *stream)
 {
-  struct image *curr;
+  struct deltacloud_image *curr;
 
   if (stream == NULL)
     stream = stderr;
@@ -122,7 +122,7 @@ void print_image_list(struct image **images, FILE *stream)
   }
 }
 
-void free_image(struct image *image)
+void free_image(struct deltacloud_image *image)
 {
   MY_FREE(image->href);
   MY_FREE(image->id);
@@ -132,9 +132,9 @@ void free_image(struct image *image)
   MY_FREE(image->name);
 }
 
-void free_image_list(struct image **images)
+void free_image_list(struct deltacloud_image **images)
 {
-  struct image *curr, *next;
+  struct deltacloud_image *curr, *next;
 
   curr = *images;
   while (curr != NULL) {

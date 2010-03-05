@@ -118,17 +118,17 @@ void free_transition_list(struct transition **transitions)
   *transitions = NULL;
 }
 
-int add_to_instance_state_list(struct instance_state **instance_states,
+int add_to_instance_state_list(struct deltacloud_instance_state **instance_states,
 			       const char *name,
 			       struct transition *transitions)
 {
-  struct instance_state *oneinstance_state, *curr, *last;
+  struct deltacloud_instance_state *oneinstance_state, *curr, *last;
 
-  oneinstance_state = malloc(sizeof(struct instance_state));
+  oneinstance_state = malloc(sizeof(struct deltacloud_instance_state));
   if (oneinstance_state == NULL)
     return -1;
 
-  memset(oneinstance_state, 0, sizeof(struct instance_state));
+  memset(oneinstance_state, 0, sizeof(struct deltacloud_instance_state));
 
   if (strdup_or_null(&oneinstance_state->name, name) < 0)
     goto error;
@@ -156,10 +156,10 @@ int add_to_instance_state_list(struct instance_state **instance_states,
   return -1;
 }
 
-struct instance_state *find_by_name_in_instance_state_list(struct instance_state **instance_states,
+struct deltacloud_instance_state *find_by_name_in_instance_state_list(struct deltacloud_instance_state **instance_states,
 							   const char *name)
 {
-  struct instance_state *curr;
+  struct deltacloud_instance_state *curr;
 
   curr = *instance_states;
   while (curr != NULL) {
@@ -171,9 +171,10 @@ struct instance_state *find_by_name_in_instance_state_list(struct instance_state
   return NULL;
 }
 
-int copy_instance_state(struct instance_state *dst, struct instance_state *src)
+int copy_instance_state(struct deltacloud_instance_state *dst,
+			struct deltacloud_instance_state *src)
 {
-  memset(dst, 0, sizeof(struct instance_state));
+  memset(dst, 0, sizeof(struct deltacloud_instance_state));
 
   if (strdup_or_null(&dst->name, src->name) < 0)
     goto error;
@@ -188,7 +189,7 @@ int copy_instance_state(struct instance_state *dst, struct instance_state *src)
   return -1;
 }
 
-void print_instance_state(struct instance_state *instance_state,
+void print_instance_state(struct deltacloud_instance_state *instance_state,
 			  FILE *stream)
 {
   if (stream == NULL)
@@ -198,10 +199,10 @@ void print_instance_state(struct instance_state *instance_state,
   print_transition_list(&instance_state->transitions, stream);
 }
 
-void print_instance_state_list(struct instance_state **instance_states,
+void print_instance_state_list(struct deltacloud_instance_state **instance_states,
 			       FILE *stream)
 {
-  struct instance_state *curr;
+  struct deltacloud_instance_state *curr;
 
   if (stream == NULL)
     stream = stderr;
@@ -213,15 +214,15 @@ void print_instance_state_list(struct instance_state **instance_states,
   }
 }
 
-void free_instance_state(struct instance_state *instance_state)
+void free_instance_state(struct deltacloud_instance_state *instance_state)
 {
   MY_FREE(instance_state->name);
   free_transition_list(&instance_state->transitions);
 }
 
-void free_instance_state_list(struct instance_state **instance_states)
+void free_instance_state_list(struct deltacloud_instance_state **instance_states)
 {
-  struct instance_state *curr, *next;
+  struct deltacloud_instance_state *curr, *next;
 
   curr = *instance_states;
   while (curr != NULL) {

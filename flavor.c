@@ -24,9 +24,9 @@
 #include "common.h"
 #include "flavor.h"
 
-int copy_flavor(struct flavor *dst, struct flavor *src)
+int copy_flavor(struct deltacloud_flavor *dst, struct deltacloud_flavor *src)
 {
-  memset(dst, 0, sizeof(struct flavor));
+  memset(dst, 0, sizeof(struct deltacloud_flavor));
 
   if (strdup_or_null(&dst->href, src->href) < 0)
     return -1;
@@ -47,17 +47,17 @@ int copy_flavor(struct flavor *dst, struct flavor *src)
   return -1;
 }
 
-int add_to_flavor_list(struct flavor **flavors, const char *href,
+int add_to_flavor_list(struct deltacloud_flavor **flavors, const char *href,
 		       const char *id, const char *memory, const char *storage,
 		       const char *architecture)
 {
-  struct flavor *oneflavor, *curr, *last;
+  struct deltacloud_flavor *oneflavor, *curr, *last;
 
-  oneflavor = malloc(sizeof(struct flavor));
+  oneflavor = malloc(sizeof(struct deltacloud_flavor));
   if (oneflavor == NULL)
     return -1;
 
-  memset(oneflavor, 0, sizeof(struct flavor));
+  memset(oneflavor, 0, sizeof(struct deltacloud_flavor));
 
   if (strdup_or_null(&oneflavor->href, href) < 0)
     goto error;
@@ -91,7 +91,7 @@ int add_to_flavor_list(struct flavor **flavors, const char *href,
   return -1;
 }
 
-void print_flavor(struct flavor *flavor, FILE *stream)
+void print_flavor(struct deltacloud_flavor *flavor, FILE *stream)
 {
   if (stream == NULL)
     stream = stderr;
@@ -103,9 +103,9 @@ void print_flavor(struct flavor *flavor, FILE *stream)
   fprintf(stream, "Architecture: %s\n", flavor->architecture);
 }
 
-void print_flavor_list(struct flavor **flavors, FILE *stream)
+void print_flavor_list(struct deltacloud_flavor **flavors, FILE *stream)
 {
-  struct flavor *curr;
+  struct deltacloud_flavor *curr;
 
   if (stream == NULL)
     stream = stderr;
@@ -117,7 +117,7 @@ void print_flavor_list(struct flavor **flavors, FILE *stream)
   }
 }
 
-void free_flavor(struct flavor *flavor)
+void free_flavor(struct deltacloud_flavor *flavor)
 {
   MY_FREE(flavor->href);
   MY_FREE(flavor->id);
@@ -126,9 +126,9 @@ void free_flavor(struct flavor *flavor)
   MY_FREE(flavor->architecture);
 }
 
-void free_flavor_list(struct flavor **flavors)
+void free_flavor_list(struct deltacloud_flavor **flavors)
 {
-  struct flavor *curr, *next;
+  struct deltacloud_flavor *curr, *next;
 
   curr = *flavors;
   while (curr != NULL) {

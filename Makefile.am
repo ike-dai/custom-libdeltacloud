@@ -34,4 +34,4 @@ LDADD = $(lib_LTLIBRARIES)
 generated_test_scripts = $(pathsubst %,%.sh,$(check_PROGRAMS))
 TESTS = $(generated_test_scripts)
 
-DISTCLEANFILES = $(generated_test_scripts)
+DISTCLEANFILES = $(generated_test_scripts) *~

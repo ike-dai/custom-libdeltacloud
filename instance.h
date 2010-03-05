@@ -25,20 +25,20 @@
 extern "C" {
 #endif
 
-struct action {
+struct deltacloud_action {
   char *rel;
   char *href;
 
-  struct action *next;
+  struct deltacloud_action *next;
 };
 
-struct address {
+struct deltacloud_address {
   char *address;
 
-  struct address *next;
+  struct deltacloud_address *next;
 };
 
-struct instance {
+struct deltacloud_instance {
   char *id;
   char *name;
   char *owner_id;
@@ -46,36 +46,36 @@ struct instance {
   char *flavor_href;
   char *realm_href;
   char *state;
-  struct action *actions;
-  struct address *public_addresses;
-  struct address *private_addresses;
+  struct deltacloud_action *actions;
+  struct deltacloud_address *public_addresses;
+  struct deltacloud_address *private_addresses;
 
-  struct instance *next;
+  struct deltacloud_instance *next;
 };
 
-int add_to_address_list(struct address **addreses, const char *address);
-void print_address_list(struct address **addresses, FILE *stream);
-void free_address_list(struct address **addresses);
+int add_to_address_list(struct deltacloud_address **addreses, const char *address);
+void print_address_list(struct deltacloud_address **addresses, FILE *stream);
+void free_address_list(struct deltacloud_address **addresses);
 
-int add_to_action_list(struct action **actions, const char *rel,
+int add_to_action_list(struct deltacloud_action **actions, const char *rel,
 		       const char *href);
-struct action *find_by_rel_in_action_list(struct action **actions,
+struct deltacloud_action *find_by_rel_in_action_list(struct deltacloud_action **actions,
 					  const char *rel);
-void print_action_list(struct action **actions, FILE *stream);
-void free_action_list(struct action **actions);
+void print_action_list(struct deltacloud_action **actions, FILE *stream);
+void free_action_list(struct deltacloud_action **actions);
 
-int add_to_instance_list(struct instance **instances, const char *id,
+int add_to_instance_list(struct deltacloud_instance **instances, const char *id,
 			 const char *name, const char *owner_id,
 			 const char *image_href, const char *flavor_href,
 			 const char *realm_href, const char *state,
-			 struct action *actions,
-			 struct address *public_addresses,
-			 struct address *private_addresses);
-int copy_instance(struct instance *dst, struct instance *src);
-void print_instance(struct instance *instance, FILE *stream);
-void print_instance_list(struct instance **instances, FILE *stream);
-void free_instance(struct instance *instance);
-void free_instance_list(struct instance **instances);
+			 struct deltacloud_action *actions,
+			 struct deltacloud_address *public_addresses,
+			 struct deltacloud_address *private_addresses);
+int copy_instance(struct deltacloud_instance *dst, struct deltacloud_instance *src);
+void print_instance(struct deltacloud_instance *instance, FILE *stream);
+void print_instance_list(struct deltacloud_instance **instances, FILE *stream);
+void free_instance(struct deltacloud_instance *instance);
+void free_instance_list(struct deltacloud_instance **instances);
 
 #ifdef __cplusplus
 }

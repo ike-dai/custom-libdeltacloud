@@ -24,16 +24,16 @@
 #include "common.h"
 #include "realm.h"
 
-int add_to_realm_list(struct realm **realms, char *href, char *id, char *name,
-		      char *state, char *limit)
+int add_to_realm_list(struct deltacloud_realm **realms, char *href, char *id,
+		      char *name, char *state, char *limit)
 {
-  struct realm *onerealm, *now, *last;
+  struct deltacloud_realm *onerealm, *now, *last;
 
-  onerealm = malloc(sizeof(struct realm));
+  onerealm = malloc(sizeof(struct deltacloud_realm));
   if (onerealm == NULL)
     return -1;
 
-  memset(onerealm, 0, sizeof(struct realm));
+  memset(onerealm, 0, sizeof(struct deltacloud_realm));
 
   if (strdup_or_null(&onerealm->href, href) < 0)
     goto error;
@@ -67,9 +67,9 @@ int add_to_realm_list(struct realm **realms, char *href, char *id, char *name,
   return -1;
 }
 
-int copy_realm(struct realm *dst, struct realm *src)
+int copy_realm(struct deltacloud_realm *dst, struct deltacloud_realm *src)
 {
-  memset(dst, 0, sizeof(struct realm));
+  memset(dst, 0, sizeof(struct deltacloud_realm));
 
   if (strdup_or_null(&dst->href, src->href) < 0)
     goto error;
@@ -90,7 +90,7 @@ int copy_realm(struct realm *dst, struct realm *src)
   return -1;
 }
 
-void print_realm(struct realm *realm, FILE *stream)
+void print_realm(struct deltacloud_realm *realm, FILE *stream)
 {
   if (stream == NULL)
     stream = stderr;
@@ -102,9 +102,9 @@ void print_realm(struct realm *realm, FILE *stream)
   fprintf(stream, "State: %s\n", realm->state);
 }
 
-void print_realm_list(struct realm **realms, FILE *stream)
+void print_realm_list(struct deltacloud_realm **realms, FILE *stream)
 {
-  struct realm *curr;
+  struct deltacloud_realm *curr;
 
   if (stream == NULL)
     stream = stderr;
@@ -116,7 +116,7 @@ void print_realm_list(struct realm **realms, FILE *stream)
   }
 }
 
-void free_realm(struct realm *realm)
+void free_realm(struct deltacloud_realm *realm)
 {
   MY_FREE(realm->href);
   MY_FREE(realm->id);
@@ -125,9 +125,9 @@ void free_realm(struct realm *realm)
   MY_FREE(realm->state);
 }
 
-void free_realm_list(struct realm **realms)
+void free_realm_list(struct deltacloud_realm **realms)
 {
-  struct realm *curr, *next;
+  struct deltacloud_realm *curr, *next;
 
   curr = *realms;
   while (curr != NULL) {

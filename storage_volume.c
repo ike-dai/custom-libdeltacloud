@@ -24,19 +24,19 @@
 #include "common.h"
 #include "storage_volume.h"
 
-int add_to_storage_volume_list(struct storage_volume **storage_volumes,
+int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
 			       const char *href, const char *id,
 			       const char *created, const char *state,
 			       const char *capacity, const char *device,
 			       const char *instance_href)
 {
-  struct storage_volume *onestorage_volume, *curr, *last;
+  struct deltacloud_storage_volume *onestorage_volume, *curr, *last;
 
-  onestorage_volume = malloc(sizeof(struct storage_volume));
+  onestorage_volume = malloc(sizeof(struct deltacloud_storage_volume));
   if (onestorage_volume == NULL)
     return -1;
 
-  memset(onestorage_volume, 0, sizeof(struct storage_volume));
+  memset(onestorage_volume, 0, sizeof(struct deltacloud_storage_volume));
 
   if (strdup_or_null(&onestorage_volume->href, href) < 0)
     goto error;
@@ -74,9 +74,10 @@ int add_to_storage_volume_list(struct storage_volume **storage_volumes,
   return -1;
 }
 
-int copy_storage_volume(struct storage_volume *dst, struct storage_volume *src)
+int copy_storage_volume(struct deltacloud_storage_volume *dst,
+			struct deltacloud_storage_volume *src)
 {
-  memset(dst, 0, sizeof(struct storage_volume));
+  memset(dst, 0, sizeof(struct deltacloud_storage_volume));
 
   if (strdup_or_null(&dst->href, src->href) < 0)
     goto error;
@@ -101,7 +102,8 @@ int copy_storage_volume(struct storage_volume *dst, struct storage_volume *src)
   return -1;
 }
 
-void print_storage_volume(struct storage_volume *storage_volume, FILE *stream)
+void print_storage_volume(struct deltacloud_storage_volume *storage_volume,
+			  FILE *stream)
 {
   if (stream == NULL)
     stream = stderr;
@@ -115,10 +117,10 @@ void print_storage_volume(struct storage_volume *storage_volume, FILE *stream)
   fprintf(stream, "Instance Href: %s\n", storage_volume->instance_href);
 }
 
-void print_storage_volume_list(struct storage_volume **storage_volumes,
+void print_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
 			       FILE *stream)
 {
-  struct storage_volume *curr;
+  struct deltacloud_storage_volume *curr;
 
   if (stream == NULL)
     stream = stderr;
@@ -130,7 +132,7 @@ void print_storage_volume_list(struct storage_volume **storage_volumes,
   }
 }
 
-void free_storage_volume(struct storage_volume *storage_volume)
+void free_storage_volume(struct deltacloud_storage_volume *storage_volume)
 {
   MY_FREE(storage_volume->href);
   MY_FREE(storage_volume->id);
@@ -141,9 +143,9 @@ void free_storage_volume(struct storage_volume *storage_volume)
   MY_FREE(storage_volume->instance_href);
 }
 
-void free_storage_volume_list(struct storage_volume **storage_volumes)
+void free_storage_volume_list(struct deltacloud_storage_volume **storage_volumes)
 {
-  struct storage_volume *curr, *next;
+  struct deltacloud_storage_volume *curr, *next;
 
   curr = *storage_volumes;
   while (curr != NULL) {

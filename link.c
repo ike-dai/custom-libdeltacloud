@@ -24,21 +24,21 @@
 #include "common.h"
 #include "link.h"
 
-static void free_link(struct link *link)
+static void free_link(struct deltacloud_link *link)
 {
   MY_FREE(link->href);
   MY_FREE(link->rel);
 }
 
-int add_to_link_list(struct link **links, char *href, char *rel)
+int add_to_link_list(struct deltacloud_link **links, char *href, char *rel)
 {
-  struct link *onelink, *curr, *last;
+  struct deltacloud_link *onelink, *curr, *last;
 
-  onelink = malloc(sizeof(struct link));
+  onelink = malloc(sizeof(struct deltacloud_link));
   if (onelink == NULL)
     return -1;
 
-  memset(onelink, 0, sizeof(struct link));
+  memset(onelink, 0, sizeof(struct deltacloud_link));
 
   if (strdup_or_null(&onelink->href, href) < 0)
     goto error;
@@ -66,9 +66,9 @@ int add_to_link_list(struct link **links, char *href, char *rel)
   return -1;
 }
 
-void print_link_list(struct link **links, FILE *stream)
+void print_link_list(struct deltacloud_link **links, FILE *stream)
 {
-  struct link *curr;
+  struct deltacloud_link *curr;
 
   if (stream == NULL)
     stream = stderr;
@@ -80,9 +80,10 @@ void print_link_list(struct link **links, FILE *stream)
   }
 }
 
-struct link *find_by_rel_in_link_list(struct link **links, char *rel)
+struct deltacloud_link *find_by_rel_in_link_list(struct deltacloud_link **links,
+						 char *rel)
 {
-  struct link *curr;
+  struct deltacloud_link *curr;
 
   curr = *links;
   while (curr != NULL) {
@@ -94,9 +95,9 @@ struct link *find_by_rel_in_link_list(struct link **links, char *rel)
   return NULL;
 }
 
-void free_link_list(struct link **links)
+void free_link_list(struct deltacloud_link **links)
 {
-  struct link *curr, *next;
+  struct deltacloud_link *curr, *next;
 
   curr = *links;
   while (curr != NULL) {

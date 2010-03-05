@@ -24,18 +24,18 @@
 #include "common.h"
 #include "storage_snapshot.h"
 
-int add_to_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
+int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots,
 				 const char *href, const char *id,
 				 const char *created, const char *state,
 				 const char *storage_volume_href)
 {
-  struct storage_snapshot *onestorage_snapshot, *curr, *last;
+  struct deltacloud_storage_snapshot *onestorage_snapshot, *curr, *last;
 
-  onestorage_snapshot = malloc(sizeof(struct storage_snapshot));
+  onestorage_snapshot = malloc(sizeof(struct deltacloud_storage_snapshot));
   if (onestorage_snapshot == NULL)
     return -1;
 
-  memset(onestorage_snapshot, 0, sizeof(struct storage_snapshot));
+  memset(onestorage_snapshot, 0, sizeof(struct deltacloud_storage_snapshot));
 
   if (strdup_or_null(&onestorage_snapshot->href, href) < 0)
     goto error;
@@ -69,10 +69,10 @@ int add_to_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
   return -1;
 }
 
-int copy_storage_snapshot(struct storage_snapshot *dst,
-			  struct storage_snapshot *src)
+int copy_storage_snapshot(struct deltacloud_storage_snapshot *dst,
+			  struct deltacloud_storage_snapshot *src)
 {
-  memset(dst, 0, sizeof(struct storage_snapshot));
+  memset(dst, 0, sizeof(struct deltacloud_storage_snapshot));
 
   if (strdup_or_null(&dst->href, src->href) < 0)
     goto error;
@@ -93,7 +93,7 @@ int copy_storage_snapshot(struct storage_snapshot *dst,
   return -1;
 }
 
-void print_storage_snapshot(struct storage_snapshot *storage_snapshot,
+void print_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot,
 			    FILE *stream)
 {
   if (stream == NULL)
@@ -107,10 +107,10 @@ void print_storage_snapshot(struct storage_snapshot *storage_snapshot,
 	  storage_snapshot->storage_volume_href);
 }
 
-void print_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
+void print_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots,
 				 FILE *stream)
 {
-  struct storage_snapshot *curr;
+  struct deltacloud_storage_snapshot *curr;
 
   if (stream == NULL)
     stream = stderr;
@@ -122,7 +122,7 @@ void print_storage_snapshot_list(struct storage_snapshot **storage_snapshots,
   }
 }
 
-void free_storage_snapshot(struct storage_snapshot *storage_snapshot)
+void free_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot)
 {
   MY_FREE(storage_snapshot->href);
   MY_FREE(storage_snapshot->id);
@@ -131,9 +131,9 @@ void free_storage_snapshot(struct storage_snapshot *storage_snapshot)
   MY_FREE(storage_snapshot->storage_volume_href);
 }
 
-void free_storage_snapshot_list(struct storage_snapshot **storage_snapshots)
+void free_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots)
 {
-  struct storage_snapshot *curr, *next;
+  struct deltacloud_storage_snapshot *curr, *next;
 
   curr = *storage_snapshots;
   while (curr != NULL) {

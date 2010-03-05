@@ -24,20 +24,20 @@
 #include "common.h"
 #include "instance.h"
 
-static void free_address(struct address *addr)
+static void free_address(struct deltacloud_address *addr)
 {
   MY_FREE(addr->address);
 }
 
-int add_to_address_list(struct address **addresses, const char *address)
+int add_to_address_list(struct deltacloud_address **addresses, const char *address)
 {
-  struct address *oneaddress, *curr, *last;
+  struct deltacloud_address *oneaddress, *curr, *last;
 
-  oneaddress = malloc(sizeof(struct address));
+  oneaddress = malloc(sizeof(struct deltacloud_address));
   if (oneaddress == NULL)
     return -1;
 
-  memset(oneaddress, 0, sizeof(struct address));
+  memset(oneaddress, 0, sizeof(struct deltacloud_address));
 
   if (strdup_or_null(&oneaddress->address, address) < 0)
     goto error;
@@ -63,9 +63,9 @@ int add_to_address_list(struct address **addresses, const char *address)
   return -1;
 }
 
-static int copy_address_list(struct address **dst, struct address **src)
+static int copy_address_list(struct deltacloud_address **dst, struct deltacloud_address **src)
 {
-  struct address *curr;
+  struct deltacloud_address *curr;
 
   *dst = NULL;
 
@@ -83,9 +83,9 @@ static int copy_address_list(struct address **dst, struct address **src)
   return -1;
 }
 
-void print_address_list(struct address **addresses, FILE *stream)
+void print_address_list(struct deltacloud_address **addresses, FILE *stream)
 {
-  struct address *curr;
+  struct deltacloud_address *curr;
 
   if (stream == NULL)
     stream = stderr;
@@ -97,9 +97,9 @@ void print_address_list(struct address **addresses, FILE *stream)
   }
 }
 
-void free_address_list(struct address **addresses)
+void free_address_list(struct deltacloud_address **addresses)
 {
-  struct address *curr, *next;
+  struct deltacloud_address *curr, *next;
 
   curr = *addresses;
   while (curr != NULL) {
@@ -112,22 +112,22 @@ void free_address_list(struct address **addresses)
   *addresses = NULL;
 }
 
-static void free_action(struct action *action)
+static void free_action(struct deltacloud_action *action)
 {
   MY_FREE(action->rel);
   MY_FREE(action->href);
 }
 
-int add_to_action_list(struct action **actions, const char *rel,
+int add_to_action_list(struct deltacloud_action **actions, const char *rel,
 		       const char *href)
 {
-  struct action *oneaction, *curr, *last;
+  struct deltacloud_action *oneaction, *curr, *last;
 
-  oneaction = malloc(sizeof(struct action));
+  oneaction = malloc(sizeof(struct deltacloud_action));
   if (oneaction == NULL)
     return -1;
 
-  memset(oneaction, 0, sizeof(struct action));
+  memset(oneaction, 0, sizeof(struct deltacloud_action));
 
   if (strdup_or_null(&oneaction->rel, rel) < 0)
     goto error;
@@ -155,10 +155,10 @@ int add_to_action_list(struct action **actions, const char *rel,
   return -1;
 }
 
-struct action *find_by_rel_in_action_list(struct action **actions,
+struct deltacloud_action *find_by_rel_in_action_list(struct deltacloud_action **actions,
 					  const char *rel)
 {
-  struct action *curr;
+  struct deltacloud_action *curr;
 
   curr = *actions;
   while (curr != NULL) {
@@ -170,9 +170,9 @@ struct action *find_by_rel_in_action_list(struct action **actions,
   return NULL;
 }
 
-static int copy_action_list(struct action **dst, struct action **src)
+static int copy_action_list(struct deltacloud_action **dst, struct deltacloud_action **src)
 {
-  struct action *curr;
+  struct deltacloud_action *curr;
 
   *dst = NULL;
 
@@ -190,9 +190,9 @@ static int copy_action_list(struct action **dst, struct action **src)
   return -1;
 }
 
-void print_action_list(struct action **actions, FILE *stream)
+void print_action_list(struct deltacloud_action **actions, FILE *stream)
 {
-  struct action *curr;
+  struct deltacloud_action *curr;
 
   if (stream == NULL)
     stream = stderr;
@@ -205,9 +205,9 @@ void print_action_list(struct action **actions, FILE *stream)
   }
 }
 
-void free_action_list(struct action **actions)
+void free_action_list(struct deltacloud_action **actions)
 {
-  struct action *curr, *next;
+  struct deltacloud_action *curr, *next;
 
   curr = *actions;
   while (curr != NULL) {
@@ -220,21 +220,21 @@ void free_action_list(struct action **actions)
   *actions = NULL;
 }
 
-int add_to_instance_list(struct instance **instances, const char *id,
+int add_to_instance_list(struct deltacloud_instance **instances, const char *id,
 			 const char *name, const char *owner_id,
 			 const char *image_href, const char *flavor_href,
 			 const char *realm_href, const char *state,
-			 struct action *actions,
-			 struct address *public_addresses,
-			 struct address *private_addresses)
+			 struct deltacloud_action *actions,
+			 struct deltacloud_address *public_addresses,
+			 struct deltacloud_address *private_addresses)
 {
-  struct instance *oneinstance, *curr, *last;
+  struct deltacloud_instance *oneinstance, *curr, *last;
 
-  oneinstance = malloc(sizeof(struct instance));
+  oneinstance = malloc(sizeof(struct deltacloud_instance));
   if (oneinstance == NULL)
     return -1;
 
-  memset(oneinstance, 0, sizeof(struct instance));
+  memset(oneinstance, 0, sizeof(struct deltacloud_instance));
 
   if (strdup_or_null(&oneinstance->id, id) < 0)
     goto error;
@@ -278,9 +278,9 @@ int add_to_instance_list(struct instance **instances, const char *id,
   return -1;
 }
 
-int copy_instance(struct instance *dst, struct instance *src)
+int copy_instance(struct deltacloud_instance *dst, struct deltacloud_instance *src)
 {
-  memset(dst, 0, sizeof(struct instance));
+  memset(dst, 0, sizeof(struct deltacloud_instance));
 
   if (strdup_or_null(&dst->id, src->id) < 0)
     goto error;
@@ -308,7 +308,7 @@ int copy_instance(struct instance *dst, struct instance *src)
   return -1;
 }
 
-void print_instance(struct instance *instance, FILE *stream)
+void print_instance(struct deltacloud_instance *instance, FILE *stream)
 {
   if (stream == NULL)
     stream = stderr;
@@ -325,9 +325,9 @@ void print_instance(struct instance *instance, FILE *stream)
   print_address_list(&instance->private_addresses, stream);
 }
 
-void print_instance_list(struct instance **instances, FILE *stream)
+void print_instance_list(struct deltacloud_instance **instances, FILE *stream)
 {
-  struct instance *curr;
+  struct deltacloud_instance *curr;
 
   if (stream == NULL)
     stream = stderr;
@@ -339,7 +339,7 @@ void print_instance_list(struct instance **instances, FILE *stream)
   }
 }
 
-void free_instance(struct instance *instance)
+void free_instance(struct deltacloud_instance *instance)
 {
   MY_FREE(instance->id);
   MY_FREE(instance->name);
@@ -353,9 +353,9 @@ void free_instance(struct instance *instance)
   free_address_list(&instance->private_addresses);
 }
 
-void free_instance_list(struct instance **instances)
+void free_instance_list(struct deltacloud_instance **instances)
 {
-  struct instance *curr, *next;
+  struct deltacloud_instance *curr, *next;
 
   curr = *instances;
   while (curr != NULL) {
