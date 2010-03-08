@@ -37,6 +37,9 @@ libdcloudapi_la_SOURCES =		\
   dcloudapi/storage_volume.h		\
   storage_volume.c
 
+rpm: clean
+	@(unset CDPATH ; $(MAKE) dist && rpmbuild -ta $(distdir).tar.gz)
+
 check_PROGRAMS = dcloud-client
 
 LDADD = $(lib_LTLIBRARIES)
