@@ -1487,11 +1487,7 @@ static int instance_action(struct deltacloud_api *api,
 {
   struct deltacloud_action *act;
   char *data;
-  xmlDocPtr xml = NULL;
-  xmlNodePtr root;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
-  xmlXPathContextPtr ctxt = NULL;
-  struct deltacloud_instance *tmpinstance = NULL;
 
   act = find_by_rel_in_action_list(&instance->actions, action_name);
   if (act == NULL) {
