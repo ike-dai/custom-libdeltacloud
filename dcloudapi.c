@@ -108,15 +108,32 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
   char *data;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
 
-  api->url = url;
-  api->user = user;
-  api->password = password;
+  memset(api, 0, sizeof(struct deltacloud_api));
+
+  api->url = strdup(url);
+  if (api->url == NULL) {
+    dcloudprintf("Failed to allocate memory for URL\n");
+    return DELTACLOUD_OOM_ERROR;
+  }
+  api->user = strdup(user);
+  if (api->user == NULL) {
+    dcloudprintf("Failed to allocate memory for user\n");
+    ret = DELTACLOUD_OOM_ERROR;
+    goto cleanup;
+  }
+  api->password = strdup(password);
+  if (api->password == NULL) {
+    dcloudprintf("Failed to allocate memory for password\n");
+    ret = DELTACLOUD_OOM_ERROR;
+    goto cleanup;
+  }
   api->links = NULL;
 
   data = get_url(api->url, api->user, api->password);
   if (data == NULL) {
     dcloudprintf("Failed to get XML for API from %s\n", api->url);
-    return DELTACLOUD_GET_URL_ERROR;
+    ret = DELTACLOUD_GET_URL_ERROR;
+    goto cleanup;
   }
 
   if (parse_xml(data, "api", (void **)&api->links, parse_api_xml) < 0) {
@@ -129,6 +146,8 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 
  cleanup:
   SAFE_FREE(data);
+  if (ret < 0)
+    deltacloud_free(api);
   return ret;
 }
 
@@ -1568,5 +1587,8 @@ const char *deltacloud_strerror(int error)
 void deltacloud_free(struct deltacloud_api *api)
 {
   free_link_list(&api->links);
+  SAFE_FREE(api->user);
+  SAFE_FREE(api->password);
+  SAFE_FREE(api->url);
   memset(api, 0, sizeof(struct deltacloud_api));
 }
