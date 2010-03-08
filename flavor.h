@@ -39,10 +39,11 @@ int copy_flavor(struct deltacloud_flavor *dst, struct deltacloud_flavor *src);
 int add_to_flavor_list(struct deltacloud_flavor **flavors, const char *href,
 		       const char *id, const char *memory, const char *storage,
 		       const char *architecture);
-void print_flavor(struct deltacloud_flavor *flavor, FILE *stream);
-void print_flavor_list(struct deltacloud_flavor **flavors, FILE *stream);
-void free_flavor(struct deltacloud_flavor *flavor);
-void free_flavor_list(struct deltacloud_flavor **flavors);
+void deltacloud_print_flavor(struct deltacloud_flavor *flavor, FILE *stream);
+void deltacloud_print_flavor_list(struct deltacloud_flavor **flavors,
+				  FILE *stream);
+void deltacloud_free_flavor(struct deltacloud_flavor *flavor);
+void deltacloud_free_flavor_list(struct deltacloud_flavor **flavors);
 
 #ifdef __cplusplus
 }

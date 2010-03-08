@@ -44,12 +44,12 @@ int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volume
 			       const char *instance_href);
 int copy_storage_volume(struct deltacloud_storage_volume *dst,
 			struct deltacloud_storage_volume *src);
-void print_storage_volume(struct deltacloud_storage_volume *storage_volume,
-			  FILE *stream);
-void print_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
-			       FILE *stream);
-void free_storage_volume(struct deltacloud_storage_volume *storage_volume);
-void free_storage_volume_list(struct deltacloud_storage_volume **storage_volumes);
+void deltacloud_print_storage_volume(struct deltacloud_storage_volume *storage_volume,
+				     FILE *stream);
+void deltacloud_print_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
+					  FILE *stream);
+void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_volume);
+void deltacloud_free_storage_volume_list(struct deltacloud_storage_volume **storage_volumes);
 
 #ifdef __cplusplus
 }

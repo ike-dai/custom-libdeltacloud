@@ -51,12 +51,12 @@ struct deltacloud_instance_state *find_by_name_in_instance_state_list(struct del
 							   const char *name);
 int copy_instance_state(struct deltacloud_instance_state *dst,
 			struct deltacloud_instance_state *src);
-void print_instance_state(struct deltacloud_instance_state *instance_states,
-			  FILE *stream);
-void print_instance_state_list(struct deltacloud_instance_state **instance_states,
-			       FILE *stream);
-void free_instance_state(struct deltacloud_instance_state *instance_state);
-void free_instance_state_list(struct deltacloud_instance_state **instance_states);
+void deltacloud_print_instance_state(struct deltacloud_instance_state *instance_states,
+				     FILE *stream);
+void deltacloud_print_instance_state_list(struct deltacloud_instance_state **instance_states,
+					  FILE *stream);
+void deltacloud_free_instance_state(struct deltacloud_instance_state *instance_state);
+void deltacloud_free_instance_state_list(struct deltacloud_instance_state **instance_states);
 
 #ifdef __cplusplus
 }

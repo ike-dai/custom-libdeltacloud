@@ -66,7 +66,7 @@ int add_to_link_list(struct deltacloud_link **links, char *href, char *rel)
   return -1;
 }
 
-void print_link_list(struct deltacloud_link **links, FILE *stream)
+void deltacloud_print_link_list(struct deltacloud_link **links, FILE *stream)
 {
   struct deltacloud_link *curr;
 

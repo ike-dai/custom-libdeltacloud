@@ -69,7 +69,7 @@ int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volume
   return 0;
 
  error:
-  free_storage_volume(onestorage_volume);
+  deltacloud_free_storage_volume(onestorage_volume);
   MY_FREE(onestorage_volume);
   return -1;
 }
@@ -98,12 +98,12 @@ int copy_storage_volume(struct deltacloud_storage_volume *dst,
   return 0;
 
  error:
-  free_storage_volume(dst);
+  deltacloud_free_storage_volume(dst);
   return -1;
 }
 
-void print_storage_volume(struct deltacloud_storage_volume *storage_volume,
-			  FILE *stream)
+void deltacloud_print_storage_volume(struct deltacloud_storage_volume *storage_volume,
+				     FILE *stream)
 {
   if (stream == NULL)
     stream = stderr;
@@ -117,8 +117,8 @@ void print_storage_volume(struct deltacloud_storage_volume *storage_volume,
   fprintf(stream, "Instance Href: %s\n", storage_volume->instance_href);
 }
 
-void print_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
-			       FILE *stream)
+void deltacloud_print_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
+					  FILE *stream)
 {
   struct deltacloud_storage_volume *curr;
 
@@ -127,12 +127,12 @@ void print_storage_volume_list(struct deltacloud_storage_volume **storage_volume
 
   curr = *storage_volumes;
   while (curr != NULL) {
-    print_storage_volume(curr, stream);
+    deltacloud_print_storage_volume(curr, stream);
     curr = curr->next;
   }
 }
 
-void free_storage_volume(struct deltacloud_storage_volume *storage_volume)
+void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_volume)
 {
   MY_FREE(storage_volume->href);
   MY_FREE(storage_volume->id);
@@ -143,14 +143,14 @@ void free_storage_volume(struct deltacloud_storage_volume *storage_volume)
   MY_FREE(storage_volume->instance_href);
 }
 
-void free_storage_volume_list(struct deltacloud_storage_volume **storage_volumes)
+void deltacloud_free_storage_volume_list(struct deltacloud_storage_volume **storage_volumes)
 {
   struct deltacloud_storage_volume *curr, *next;
 
   curr = *storage_volumes;
   while (curr != NULL) {
     next = curr->next;
-    free_storage_volume(curr);
+    deltacloud_free_storage_volume(curr);
     MY_FREE(curr);
     curr = next;
   }

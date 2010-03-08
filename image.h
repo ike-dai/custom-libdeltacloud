@@ -40,10 +40,10 @@ int add_to_image_list(struct deltacloud_image **images, const char *href, const 
 		      const char *description, const char *architecture,
 		      const char *owner_id, const char *name);
 int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src);
-void print_image(struct deltacloud_image *image, FILE *stream);
-void print_image_list(struct deltacloud_image **images, FILE *stream);
-void free_image(struct deltacloud_image *image);
-void free_image_list(struct deltacloud_image **images);
+void deltacloud_print_image(struct deltacloud_image *image, FILE *stream);
+void deltacloud_print_image_list(struct deltacloud_image **images, FILE *stream);
+void deltacloud_free_image(struct deltacloud_image *image);
+void deltacloud_free_image_list(struct deltacloud_image **images);
 
 #ifdef __cplusplus
 }

@@ -53,7 +53,8 @@ struct deltacloud_instance {
   struct deltacloud_instance *next;
 };
 
-int add_to_address_list(struct deltacloud_address **addreses, const char *address);
+int add_to_address_list(struct deltacloud_address **addreses,
+			const char *address);
 void print_address_list(struct deltacloud_address **addresses, FILE *stream);
 void free_address_list(struct deltacloud_address **addresses);
 
@@ -71,11 +72,14 @@ int add_to_instance_list(struct deltacloud_instance **instances, const char *id,
 			 struct deltacloud_action *actions,
 			 struct deltacloud_address *public_addresses,
 			 struct deltacloud_address *private_addresses);
-int copy_instance(struct deltacloud_instance *dst, struct deltacloud_instance *src);
-void print_instance(struct deltacloud_instance *instance, FILE *stream);
-void print_instance_list(struct deltacloud_instance **instances, FILE *stream);
+int copy_instance(struct deltacloud_instance *dst,
+		  struct deltacloud_instance *src);
+void deltacloud_print_instance(struct deltacloud_instance *instance,
+			       FILE *stream);
+void deltacloud_print_instance_list(struct deltacloud_instance **instances,
+				    FILE *stream);
 void deltacloud_free_instance(struct deltacloud_instance *instance);
-void free_instance_list(struct deltacloud_instance **instances);
+void deltacloud_free_instance_list(struct deltacloud_instance **instances);
 
 #ifdef __cplusplus
 }

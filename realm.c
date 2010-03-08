@@ -62,7 +62,7 @@ int add_to_realm_list(struct deltacloud_realm **realms, char *href, char *id,
   return 0;
 
  error:
-  free_realm(onerealm);
+  deltacloud_free_realm(onerealm);
   MY_FREE(onerealm);
   return -1;
 }
@@ -86,11 +86,11 @@ int copy_realm(struct deltacloud_realm *dst, struct deltacloud_realm *src)
   return 0;
 
  error:
-  free_realm(dst);
+  deltacloud_free_realm(dst);
   return -1;
 }
 
-void print_realm(struct deltacloud_realm *realm, FILE *stream)
+void deltacloud_print_realm(struct deltacloud_realm *realm, FILE *stream)
 {
   if (stream == NULL)
     stream = stderr;
@@ -102,7 +102,7 @@ void print_realm(struct deltacloud_realm *realm, FILE *stream)
   fprintf(stream, "State: %s\n", realm->state);
 }
 
-void print_realm_list(struct deltacloud_realm **realms, FILE *stream)
+void deltacloud_print_realm_list(struct deltacloud_realm **realms, FILE *stream)
 {
   struct deltacloud_realm *curr;
 
@@ -111,12 +111,12 @@ void print_realm_list(struct deltacloud_realm **realms, FILE *stream)
 
   curr = *realms;
   while (curr != NULL) {
-    print_realm(curr, stream);
+    deltacloud_print_realm(curr, stream);
     curr = curr->next;
   }
 }
 
-void free_realm(struct deltacloud_realm *realm)
+void deltacloud_free_realm(struct deltacloud_realm *realm)
 {
   MY_FREE(realm->href);
   MY_FREE(realm->id);
@@ -125,14 +125,14 @@ void free_realm(struct deltacloud_realm *realm)
   MY_FREE(realm->state);
 }
 
-void free_realm_list(struct deltacloud_realm **realms)
+void deltacloud_free_realm_list(struct deltacloud_realm **realms)
 {
   struct deltacloud_realm *curr, *next;
 
   curr = *realms;
   while (curr != NULL) {
     next = curr->next;
-    free_realm(curr);
+    deltacloud_free_realm(curr);
     MY_FREE(curr);
     curr = next;
   }

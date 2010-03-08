@@ -151,7 +151,7 @@ int add_to_instance_state_list(struct deltacloud_instance_state **instance_state
   return 0;
 
  error:
-  free_instance_state(oneinstance_state);
+  deltacloud_free_instance_state(oneinstance_state);
   MY_FREE(oneinstance_state);
   return -1;
 }
@@ -185,12 +185,12 @@ int copy_instance_state(struct deltacloud_instance_state *dst,
   return 0;
 
  error:
-  free_instance_state(dst);
+  deltacloud_free_instance_state(dst);
   return -1;
 }
 
-void print_instance_state(struct deltacloud_instance_state *instance_state,
-			  FILE *stream)
+void deltacloud_print_instance_state(struct deltacloud_instance_state *instance_state,
+				     FILE *stream)
 {
   if (stream == NULL)
     stream = stderr;
@@ -199,8 +199,8 @@ void print_instance_state(struct deltacloud_instance_state *instance_state,
   print_transition_list(&instance_state->transitions, stream);
 }
 
-void print_instance_state_list(struct deltacloud_instance_state **instance_states,
-			       FILE *stream)
+void deltacloud_print_instance_state_list(struct deltacloud_instance_state **instance_states,
+					  FILE *stream)
 {
   struct deltacloud_instance_state *curr;
 
@@ -209,25 +209,25 @@ void print_instance_state_list(struct deltacloud_instance_state **instance_state
 
   curr = *instance_states;
   while (curr != NULL) {
-    print_instance_state(curr, NULL);
+    deltacloud_print_instance_state(curr, NULL);
     curr = curr->next;
   }
 }
 
-void free_instance_state(struct deltacloud_instance_state *instance_state)
+void deltacloud_free_instance_state(struct deltacloud_instance_state *instance_state)
 {
   MY_FREE(instance_state->name);
   free_transition_list(&instance_state->transitions);
 }
 
-void free_instance_state_list(struct deltacloud_instance_state **instance_states)
+void deltacloud_free_instance_state_list(struct deltacloud_instance_state **instance_states)
 {
   struct deltacloud_instance_state *curr, *next;
 
   curr = *instance_states;
   while (curr != NULL) {
     next = curr->next;
-    free_instance_state(curr);
+    deltacloud_free_instance_state(curr);
     MY_FREE(curr);
     curr = next;
   }

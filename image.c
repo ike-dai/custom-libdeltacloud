@@ -65,7 +65,7 @@ int add_to_image_list(struct deltacloud_image **images, const char *href, const 
   return 0;
 
  error:
-  free_image(oneimage);
+  deltacloud_free_image(oneimage);
   MY_FREE(oneimage);
   return -1;
 }
@@ -91,11 +91,11 @@ int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src)
   return 0;
 
  error:
-  free_image(dst);
+  deltacloud_free_image(dst);
   return -1;
 }
 
-void print_image(struct deltacloud_image *image, FILE *stream)
+void deltacloud_print_image(struct deltacloud_image *image, FILE *stream)
 {
   if (stream == NULL)
     stream = stderr;
@@ -108,7 +108,7 @@ void print_image(struct deltacloud_image *image, FILE *stream)
   fprintf(stream, "Name: %s\n", image->name);
 }
 
-void print_image_list(struct deltacloud_image **images, FILE *stream)
+void deltacloud_print_image_list(struct deltacloud_image **images, FILE *stream)
 {
   struct deltacloud_image *curr;
 
@@ -117,12 +117,12 @@ void print_image_list(struct deltacloud_image **images, FILE *stream)
 
   curr = *images;
   while (curr != NULL) {
-    print_image(curr, NULL);
+    deltacloud_print_image(curr, NULL);
     curr = curr->next;
   }
 }
 
-void free_image(struct deltacloud_image *image)
+void deltacloud_free_image(struct deltacloud_image *image)
 {
   MY_FREE(image->href);
   MY_FREE(image->id);
@@ -132,14 +132,14 @@ void free_image(struct deltacloud_image *image)
   MY_FREE(image->name);
 }
 
-void free_image_list(struct deltacloud_image **images)
+void deltacloud_free_image_list(struct deltacloud_image **images)
 {
   struct deltacloud_image *curr, *next;
 
   curr = *images;
   while (curr != NULL) {
     next = curr->next;
-    free_image(curr);
+    deltacloud_free_image(curr);
     MY_FREE(curr);
     curr = next;
   }

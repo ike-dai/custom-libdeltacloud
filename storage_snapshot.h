@@ -41,12 +41,12 @@ int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_sn
 				 const char *storage_volume_href);
 int copy_storage_snapshot(struct deltacloud_storage_snapshot *dst,
 			  struct deltacloud_storage_snapshot *src);
-void print_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot,
-			    FILE *stream);
-void print_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots,
-				 FILE *stream);
-void free_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot);
-void free_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots);
+void deltacloud_print_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot,
+				       FILE *stream);
+void deltacloud_print_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots,
+					    FILE *stream);
+void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot);
+void deltacloud_free_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots);
 
 #ifdef __cplusplus
 }

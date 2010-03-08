@@ -43,7 +43,7 @@ int copy_flavor(struct deltacloud_flavor *dst, struct deltacloud_flavor *src)
   return 0;
 
  error:
-  free_flavor(dst);
+  deltacloud_free_flavor(dst);
   return -1;
 }
 
@@ -86,12 +86,12 @@ int add_to_flavor_list(struct deltacloud_flavor **flavors, const char *href,
   return 0;
 
  error:
-  free_flavor(oneflavor);
+  deltacloud_free_flavor(oneflavor);
   MY_FREE(oneflavor);
   return -1;
 }
 
-void print_flavor(struct deltacloud_flavor *flavor, FILE *stream)
+void deltacloud_print_flavor(struct deltacloud_flavor *flavor, FILE *stream)
 {
   if (stream == NULL)
     stream = stderr;
@@ -103,7 +103,8 @@ void print_flavor(struct deltacloud_flavor *flavor, FILE *stream)
   fprintf(stream, "Architecture: %s\n", flavor->architecture);
 }
 
-void print_flavor_list(struct deltacloud_flavor **flavors, FILE *stream)
+void deltacloud_print_flavor_list(struct deltacloud_flavor **flavors,
+				  FILE *stream)
 {
   struct deltacloud_flavor *curr;
 
@@ -112,12 +113,12 @@ void print_flavor_list(struct deltacloud_flavor **flavors, FILE *stream)
 
   curr = *flavors;
   while (curr != NULL) {
-    print_flavor(curr, stream);
+    deltacloud_print_flavor(curr, stream);
     curr = curr->next;
   }
 }
 
-void free_flavor(struct deltacloud_flavor *flavor)
+void deltacloud_free_flavor(struct deltacloud_flavor *flavor)
 {
   MY_FREE(flavor->href);
   MY_FREE(flavor->id);
@@ -126,14 +127,14 @@ void free_flavor(struct deltacloud_flavor *flavor)
   MY_FREE(flavor->architecture);
 }
 
-void free_flavor_list(struct deltacloud_flavor **flavors)
+void deltacloud_free_flavor_list(struct deltacloud_flavor **flavors)
 {
   struct deltacloud_flavor *curr, *next;
 
   curr = *flavors;
   while (curr != NULL) {
     next = curr->next;
-    free_flavor(curr);
+    deltacloud_free_flavor(curr);
     MY_FREE(curr);
     curr = next;
   }

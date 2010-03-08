@@ -307,7 +307,7 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
  cleanup:
   if (ret < 0)
-    free_instance_list(instances);
+    deltacloud_free_instance_list(instances);
   ctxt->node = oldnode;
 
   return ret;
@@ -355,7 +355,7 @@ static int parse_one_instance(const char *data,
   ret = 0;
 
  cleanup:
-  free_instance_list(&tmpinstance);
+  deltacloud_free_instance_list(&tmpinstance);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   if (xml)
@@ -481,7 +481,7 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
  cleanup:
   if (ret < 0)
-    free_realm_list(realms);
+    deltacloud_free_realm_list(realms);
   ctxt->node = oldnode;
 
   return ret;
@@ -581,7 +581,7 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
   ret = 0;
 
  cleanup:
-  free_realm_list(&tmprealm);
+  deltacloud_free_realm_list(&tmprealm);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   if (xml)
@@ -644,7 +644,7 @@ static int parse_flavor_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
  cleanup:
   ctxt->node = oldnode;
   if (ret < 0)
-    free_flavor_list(flavors);
+    deltacloud_free_flavor_list(flavors);
 
   return ret;
 }
@@ -724,7 +724,7 @@ int deltacloud_get_flavor_by_id(struct deltacloud_api *api, const char *id,
   ret = 0;
 
  cleanup:
-  free_flavor_list(&tmpflavor);
+  deltacloud_free_flavor_list(&tmpflavor);
   MY_FREE(data);
   MY_FREE(fullurl);
 
@@ -785,7 +785,7 @@ int deltacloud_get_flavor_by_uri(struct deltacloud_api *api, const char *url,
   ret = 0;
 
  cleanup:
-  free_flavor_list(&tmpflavor);
+  deltacloud_free_flavor_list(&tmpflavor);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   if (xml)
@@ -850,7 +850,7 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
  cleanup:
   ctxt->node = oldnode;
   if (ret < 0)
-    free_image_list(images);
+    deltacloud_free_image_list(images);
 
   return ret;
 }
@@ -949,7 +949,7 @@ int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
   ret = 0;
 
  cleanup:
-  free_image_list(&tmpimage);
+  deltacloud_free_image_list(&tmpimage);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   if (xml)
@@ -1003,7 +1003,7 @@ static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
  cleanup:
   if (ret < 0)
-    free_instance_state_list(instance_states);
+    deltacloud_free_instance_state_list(instance_states);
 
   return ret;
 }
@@ -1073,7 +1073,7 @@ int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
-  free_instance_state_list(&statelist);
+  deltacloud_free_instance_state_list(&statelist);
   return ret;
 }
 
@@ -1136,7 +1136,7 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
  cleanup:
   ctxt->node = oldnode;
   if (ret < 0)
-    free_storage_volume_list(storage_volumes);
+    deltacloud_free_storage_volume_list(storage_volumes);
 
   return ret;
 }
@@ -1237,7 +1237,7 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
-  free_storage_volume_list(&tmpstorage_volume);
+  deltacloud_free_storage_volume_list(&tmpstorage_volume);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   if (xml)
@@ -1301,7 +1301,7 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
  cleanup:
   ctxt->node = oldnode;
   if (ret < 0)
-    free_storage_snapshot_list(storage_snapshots);
+    deltacloud_free_storage_snapshot_list(storage_snapshots);
 
   return ret;
 }
@@ -1402,7 +1402,7 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
-  free_storage_snapshot_list(&tmpstorage_snapshot);
+  deltacloud_free_storage_snapshot_list(&tmpstorage_snapshot);
   if (ctxt != NULL)
     xmlXPathFreeContext(ctxt);
   if (xml)
