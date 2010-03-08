@@ -147,7 +147,7 @@ char *do_curl(const char *url, const char *user, const char *password, int post,
   res = curl_easy_perform(curl);
   if (res != CURLE_OK) {
     dcloudprintf("Failed to perform transfer: %s\n", curl_easy_strerror(res));
-    MY_FREE(chunk.data);
+    SAFE_FREE(chunk.data);
   }
 
  cleanup:

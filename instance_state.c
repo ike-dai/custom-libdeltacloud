@@ -26,8 +26,8 @@
 
 static void free_transition(struct transition *transition)
 {
-  MY_FREE(transition->action);
-  MY_FREE(transition->to);
+  SAFE_FREE(transition->action);
+  SAFE_FREE(transition->to);
 }
 
 int add_to_transition_list(struct transition **transitions, const char *action,
@@ -63,7 +63,7 @@ int add_to_transition_list(struct transition **transitions, const char *action,
 
  error:
   free_transition(onetransition);
-  MY_FREE(onetransition);
+  SAFE_FREE(onetransition);
   return -1;
 }
 
@@ -111,7 +111,7 @@ void free_transition_list(struct transition **transitions)
   while (curr != NULL) {
     next = curr->next;
     free_transition(curr);
-    MY_FREE(curr);
+    SAFE_FREE(curr);
     curr = next;
   }
 
@@ -152,7 +152,7 @@ int add_to_instance_state_list(struct deltacloud_instance_state **instance_state
 
  error:
   deltacloud_free_instance_state(oneinstance_state);
-  MY_FREE(oneinstance_state);
+  SAFE_FREE(oneinstance_state);
   return -1;
 }
 
@@ -216,7 +216,7 @@ void deltacloud_print_instance_state_list(struct deltacloud_instance_state **ins
 
 void deltacloud_free_instance_state(struct deltacloud_instance_state *instance_state)
 {
-  MY_FREE(instance_state->name);
+  SAFE_FREE(instance_state->name);
   free_transition_list(&instance_state->transitions);
 }
 
@@ -228,7 +228,7 @@ void deltacloud_free_instance_state_list(struct deltacloud_instance_state **inst
   while (curr != NULL) {
     next = curr->next;
     deltacloud_free_instance_state(curr);
-    MY_FREE(curr);
+    SAFE_FREE(curr);
     curr = next;
   }
 

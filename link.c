@@ -26,8 +26,8 @@
 
 static void free_link(struct deltacloud_link *link)
 {
-  MY_FREE(link->href);
-  MY_FREE(link->rel);
+  SAFE_FREE(link->href);
+  SAFE_FREE(link->rel);
 }
 
 int add_to_link_list(struct deltacloud_link **links, char *href, char *rel)
@@ -62,7 +62,7 @@ int add_to_link_list(struct deltacloud_link **links, char *href, char *rel)
 
  error:
   free_link(onelink);
-  MY_FREE(onelink);
+  SAFE_FREE(onelink);
   return -1;
 }
 
@@ -103,7 +103,7 @@ void free_link_list(struct deltacloud_link **links)
   while (curr != NULL) {
     next = curr->next;
     free_link(curr);
-    MY_FREE(curr);
+    SAFE_FREE(curr);
     curr = next;
   }
 

@@ -65,7 +65,7 @@ int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_sn
 
  error:
   deltacloud_free_storage_snapshot(onestorage_snapshot);
-  MY_FREE(onestorage_snapshot);
+  SAFE_FREE(onestorage_snapshot);
   return -1;
 }
 
@@ -124,11 +124,11 @@ void deltacloud_print_storage_snapshot_list(struct deltacloud_storage_snapshot *
 
 void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot)
 {
-  MY_FREE(storage_snapshot->href);
-  MY_FREE(storage_snapshot->id);
-  MY_FREE(storage_snapshot->created);
-  MY_FREE(storage_snapshot->state);
-  MY_FREE(storage_snapshot->storage_volume_href);
+  SAFE_FREE(storage_snapshot->href);
+  SAFE_FREE(storage_snapshot->id);
+  SAFE_FREE(storage_snapshot->created);
+  SAFE_FREE(storage_snapshot->state);
+  SAFE_FREE(storage_snapshot->storage_volume_href);
 }
 
 void deltacloud_free_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots)
@@ -139,7 +139,7 @@ void deltacloud_free_storage_snapshot_list(struct deltacloud_storage_snapshot **
   while (curr != NULL) {
     next = curr->next;
     deltacloud_free_storage_snapshot(curr);
-    MY_FREE(curr);
+    SAFE_FREE(curr);
     curr = next;
   }
 

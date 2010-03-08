@@ -26,7 +26,7 @@
 
 static void free_address(struct deltacloud_address *addr)
 {
-  MY_FREE(addr->address);
+  SAFE_FREE(addr->address);
 }
 
 int add_to_address_list(struct deltacloud_address **addresses,
@@ -60,7 +60,7 @@ int add_to_address_list(struct deltacloud_address **addresses,
 
  error:
   free_address(oneaddress);
-  MY_FREE(oneaddress);
+  SAFE_FREE(oneaddress);
   return -1;
 }
 
@@ -107,7 +107,7 @@ void free_address_list(struct deltacloud_address **addresses)
   while (curr != NULL) {
     next = curr->next;
     free_address(curr);
-    MY_FREE(curr);
+    SAFE_FREE(curr);
     curr = next;
   }
 
@@ -116,8 +116,8 @@ void free_address_list(struct deltacloud_address **addresses)
 
 static void free_action(struct deltacloud_action *action)
 {
-  MY_FREE(action->rel);
-  MY_FREE(action->href);
+  SAFE_FREE(action->rel);
+  SAFE_FREE(action->href);
 }
 
 int add_to_action_list(struct deltacloud_action **actions, const char *rel,
@@ -153,7 +153,7 @@ int add_to_action_list(struct deltacloud_action **actions, const char *rel,
 
  error:
   free_action(oneaction);
-  MY_FREE(oneaction);
+  SAFE_FREE(oneaction);
   return -1;
 }
 
@@ -216,7 +216,7 @@ void free_action_list(struct deltacloud_action **actions)
   while (curr != NULL) {
     next = curr->next;
     free_action(curr);
-    MY_FREE(curr);
+    SAFE_FREE(curr);
     curr = next;
   }
 
@@ -277,7 +277,7 @@ int add_to_instance_list(struct deltacloud_instance **instances, const char *id,
 
  error:
   deltacloud_free_instance(oneinstance);
-  MY_FREE(oneinstance);
+  SAFE_FREE(oneinstance);
   return -1;
 }
 
@@ -347,13 +347,13 @@ void deltacloud_print_instance_list(struct deltacloud_instance **instances,
 
 void deltacloud_free_instance(struct deltacloud_instance *instance)
 {
-  MY_FREE(instance->id);
-  MY_FREE(instance->name);
-  MY_FREE(instance->owner_id);
-  MY_FREE(instance->image_href);
-  MY_FREE(instance->flavor_href);
-  MY_FREE(instance->realm_href);
-  MY_FREE(instance->state);
+  SAFE_FREE(instance->id);
+  SAFE_FREE(instance->name);
+  SAFE_FREE(instance->owner_id);
+  SAFE_FREE(instance->image_href);
+  SAFE_FREE(instance->flavor_href);
+  SAFE_FREE(instance->realm_href);
+  SAFE_FREE(instance->state);
   free_action_list(&instance->actions);
   free_address_list(&instance->public_addresses);
   free_address_list(&instance->private_addresses);
@@ -367,7 +367,7 @@ void deltacloud_free_instance_list(struct deltacloud_instance **instances)
   while (curr != NULL) {
     next = curr->next;
     deltacloud_free_instance(curr);
-    MY_FREE(curr);
+    SAFE_FREE(curr);
     curr = next;
   }
 

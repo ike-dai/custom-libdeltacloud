@@ -30,7 +30,7 @@ extern "C" {
 
 int strdup_or_null(char **out, const char *in);
 
-#define MY_FREE(ptr) free_and_null(&(ptr))
+#define SAFE_FREE(ptr) free_and_null(&(ptr))
 void free_and_null(void *ptrptr);
 
 void dcloudprintf(const char *fmt, ...);

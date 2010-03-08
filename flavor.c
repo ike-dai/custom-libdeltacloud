@@ -87,7 +87,7 @@ int add_to_flavor_list(struct deltacloud_flavor **flavors, const char *href,
 
  error:
   deltacloud_free_flavor(oneflavor);
-  MY_FREE(oneflavor);
+  SAFE_FREE(oneflavor);
   return -1;
 }
 
@@ -120,11 +120,11 @@ void deltacloud_print_flavor_list(struct deltacloud_flavor **flavors,
 
 void deltacloud_free_flavor(struct deltacloud_flavor *flavor)
 {
-  MY_FREE(flavor->href);
-  MY_FREE(flavor->id);
-  MY_FREE(flavor->memory);
-  MY_FREE(flavor->storage);
-  MY_FREE(flavor->architecture);
+  SAFE_FREE(flavor->href);
+  SAFE_FREE(flavor->id);
+  SAFE_FREE(flavor->memory);
+  SAFE_FREE(flavor->storage);
+  SAFE_FREE(flavor->architecture);
 }
 
 void deltacloud_free_flavor_list(struct deltacloud_flavor **flavors)
@@ -135,7 +135,7 @@ void deltacloud_free_flavor_list(struct deltacloud_flavor **flavors)
   while (curr != NULL) {
     next = curr->next;
     deltacloud_free_flavor(curr);
-    MY_FREE(curr);
+    SAFE_FREE(curr);
     curr = next;
   }
 

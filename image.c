@@ -66,7 +66,7 @@ int add_to_image_list(struct deltacloud_image **images, const char *href, const 
 
  error:
   deltacloud_free_image(oneimage);
-  MY_FREE(oneimage);
+  SAFE_FREE(oneimage);
   return -1;
 }
 
@@ -124,12 +124,12 @@ void deltacloud_print_image_list(struct deltacloud_image **images, FILE *stream)
 
 void deltacloud_free_image(struct deltacloud_image *image)
 {
-  MY_FREE(image->href);
-  MY_FREE(image->id);
-  MY_FREE(image->description);
-  MY_FREE(image->architecture);
-  MY_FREE(image->owner_id);
-  MY_FREE(image->name);
+  SAFE_FREE(image->href);
+  SAFE_FREE(image->id);
+  SAFE_FREE(image->description);
+  SAFE_FREE(image->architecture);
+  SAFE_FREE(image->owner_id);
+  SAFE_FREE(image->name);
 }
 
 void deltacloud_free_image_list(struct deltacloud_image **images)
@@ -140,7 +140,7 @@ void deltacloud_free_image_list(struct deltacloud_image **images)
   while (curr != NULL) {
     next = curr->next;
     deltacloud_free_image(curr);
-    MY_FREE(curr);
+    SAFE_FREE(curr);
     curr = next;
   }
 

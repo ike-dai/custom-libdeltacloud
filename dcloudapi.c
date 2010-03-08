@@ -76,13 +76,13 @@ static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
       }
       if (rel == NULL) {
 	dcloudprintf("Did not see rel XML property\n");
-	MY_FREE(href);
+	SAFE_FREE(href);
 	goto cleanup;
       }
 
       listret = add_to_link_list(links, href, rel);
-      MY_FREE(href);
-      MY_FREE(rel);
+      SAFE_FREE(href);
+      SAFE_FREE(rel);
       if (listret < 0) {
 	dcloudprintf("Failed to add new link to list\n");
 	goto cleanup;
@@ -126,7 +126,7 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
   ret = 0;
 
  cleanup:
-  MY_FREE(data);
+  SAFE_FREE(data);
   return ret;
 }
 
@@ -179,7 +179,7 @@ static struct deltacloud_address *parse_addresses_xml(xmlNodePtr instance,
 	goto cleanup;
       }
       listret = add_to_address_list(&addresses, address);
-      MY_FREE(address);
+      SAFE_FREE(address);
       if (listret < 0) {
 	dcloudprintf("Failed to add new address to list\n");
 	goto cleanup;
@@ -216,8 +216,8 @@ static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
       /* FIXME: check for NULL rel and href here? */
 
       listret = add_to_action_list(&actions, rel, href);
-      MY_FREE(href);
-      MY_FREE(rel);
+      SAFE_FREE(href);
+      SAFE_FREE(rel);
       if (listret < 0) {
 	dcloudprintf("Failed to add new action to list\n");
 	goto cleanup;
@@ -285,13 +285,13 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       listret = add_to_instance_list(instances, id, name, owner_id, image_href,
 				     flavor_href, realm_href, state, actions,
 				     public_addresses, private_addresses);
-      MY_FREE(id);
-      MY_FREE(name);
-      MY_FREE(owner_id);
-      MY_FREE(image_href);
-      MY_FREE(flavor_href);
-      MY_FREE(realm_href);
-      MY_FREE(state);
+      SAFE_FREE(id);
+      SAFE_FREE(name);
+      SAFE_FREE(owner_id);
+      SAFE_FREE(image_href);
+      SAFE_FREE(flavor_href);
+      SAFE_FREE(realm_href);
+      SAFE_FREE(state);
       free_address_list(&public_addresses);
       free_address_list(&private_addresses);
       free_action_list(&actions);
@@ -394,7 +394,7 @@ int deltacloud_get_instances(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
-  MY_FREE(data);
+  SAFE_FREE(data);
 
   return ret;
 }
@@ -426,8 +426,8 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
   ret = 0;
 
  cleanup:
-  MY_FREE(data);
-  MY_FREE(url);
+  SAFE_FREE(data);
+  SAFE_FREE(url);
 
   return ret;
 }
@@ -464,11 +464,11 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	realm_cur = realm_cur->next;
       }
       listret = add_to_realm_list(realms, href, id, name, state, limit);
-      MY_FREE(href);
-      MY_FREE(id);
-      MY_FREE(name);
-      MY_FREE(state);
-      MY_FREE(limit);
+      SAFE_FREE(href);
+      SAFE_FREE(id);
+      SAFE_FREE(name);
+      SAFE_FREE(state);
+      SAFE_FREE(limit);
       if (listret < 0) {
 	dcloudprintf("Failed to add new realm to list\n");
 	goto cleanup;
@@ -516,7 +516,7 @@ int deltacloud_get_realms(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
-  MY_FREE(data);
+  SAFE_FREE(data);
 
   return ret;
 }
@@ -586,8 +586,8 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
     xmlXPathFreeContext(ctxt);
   if (xml)
     xmlFreeDoc(xml);
-  MY_FREE(data);
-  MY_FREE(url);
+  SAFE_FREE(data);
+  SAFE_FREE(url);
 
   return ret;
 }
@@ -626,11 +626,11 @@ static int parse_flavor_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       }
       listret = add_to_flavor_list(flavors, href, id, memory, storage,
 				   architecture);
-      MY_FREE(href);
-      MY_FREE(id);
-      MY_FREE(memory);
-      MY_FREE(storage);
-      MY_FREE(architecture);
+      SAFE_FREE(href);
+      SAFE_FREE(id);
+      SAFE_FREE(memory);
+      SAFE_FREE(storage);
+      SAFE_FREE(architecture);
       if (listret < 0) {
 	dcloudprintf("Failed to add new flavor to list\n");
 	goto cleanup;
@@ -678,7 +678,7 @@ int deltacloud_get_flavors(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
-  MY_FREE(data);
+  SAFE_FREE(data);
 
   return ret;
 }
@@ -725,8 +725,8 @@ int deltacloud_get_flavor_by_id(struct deltacloud_api *api, const char *id,
 
  cleanup:
   deltacloud_free_flavor_list(&tmpflavor);
-  MY_FREE(data);
-  MY_FREE(fullurl);
+  SAFE_FREE(data);
+  SAFE_FREE(fullurl);
 
   return ret;
 }
@@ -790,7 +790,7 @@ int deltacloud_get_flavor_by_uri(struct deltacloud_api *api, const char *url,
     xmlXPathFreeContext(ctxt);
   if (xml)
     xmlFreeDoc(xml);
-  MY_FREE(data);
+  SAFE_FREE(data);
 
   return ret;
 }
@@ -831,12 +831,12 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       }
       listret = add_to_image_list(images, href, id, description, architecture,
 				  owner_id, name);
-      MY_FREE(href);
-      MY_FREE(id);
-      MY_FREE(description);
-      MY_FREE(architecture);
-      MY_FREE(owner_id);
-      MY_FREE(name);
+      SAFE_FREE(href);
+      SAFE_FREE(id);
+      SAFE_FREE(description);
+      SAFE_FREE(architecture);
+      SAFE_FREE(owner_id);
+      SAFE_FREE(name);
       if (listret < 0) {
 	dcloudprintf("Failed to add new image to list\n");
 	goto cleanup;
@@ -884,7 +884,7 @@ int deltacloud_get_images(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
-  MY_FREE(data);
+  SAFE_FREE(data);
 
   return ret;
 }
@@ -954,8 +954,8 @@ int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
     xmlXPathFreeContext(ctxt);
   if (xml)
     xmlFreeDoc(xml);
-  MY_FREE(data);
-  MY_FREE(url);
+  SAFE_FREE(data);
+  SAFE_FREE(url);
 
   return ret;
 }
@@ -982,13 +982,13 @@ static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	  action = (char *)xmlGetProp(state_cur, BAD_CAST "action");
 	  to = (char *)xmlGetProp(state_cur, BAD_CAST "to");
 	  add_to_transition_list(&transitions, action, to);
-	  MY_FREE(action);
-	  MY_FREE(to);
+	  SAFE_FREE(action);
+	  SAFE_FREE(to);
 	}
 	state_cur = state_cur->next;
       }
       listret = add_to_instance_state_list(instance_states, name, transitions);
-      MY_FREE(name);
+      SAFE_FREE(name);
       free_transition_list(&transitions);
       if (listret < 0) {
 	dcloudprintf("Failed to add new instance_state to list\n");
@@ -1038,7 +1038,7 @@ int deltacloud_get_instance_states(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
-  MY_FREE(data);
+  SAFE_FREE(data);
 
   return ret;
 }
@@ -1116,13 +1116,13 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       listret = add_to_storage_volume_list(storage_volumes, href, id, created,
 					   state, capacity, device,
 					   instance_href);
-      MY_FREE(id);
-      MY_FREE(created);
-      MY_FREE(state);
-      MY_FREE(capacity);
-      MY_FREE(device);
-      MY_FREE(instance_href);
-      MY_FREE(href);
+      SAFE_FREE(id);
+      SAFE_FREE(created);
+      SAFE_FREE(state);
+      SAFE_FREE(capacity);
+      SAFE_FREE(device);
+      SAFE_FREE(instance_href);
+      SAFE_FREE(href);
       if (listret < 0) {
 	dcloudprintf("Failed to add new storage_volume to list\n");
 	goto cleanup;
@@ -1171,7 +1171,7 @@ int deltacloud_get_storage_volumes(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
-  MY_FREE(data);
+  SAFE_FREE(data);
 
   return ret;
 }
@@ -1242,8 +1242,8 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
     xmlXPathFreeContext(ctxt);
   if (xml)
     xmlFreeDoc(xml);
-  MY_FREE(data);
-  MY_FREE(url);
+  SAFE_FREE(data);
+  SAFE_FREE(url);
 
   return ret;
 }
@@ -1283,11 +1283,11 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       listret = add_to_storage_snapshot_list(storage_snapshots, href, id,
 					     created, state,
 					     storage_volume_href);
-      MY_FREE(id);
-      MY_FREE(created);
-      MY_FREE(state);
-      MY_FREE(storage_volume_href);
-      MY_FREE(href);
+      SAFE_FREE(id);
+      SAFE_FREE(created);
+      SAFE_FREE(state);
+      SAFE_FREE(storage_volume_href);
+      SAFE_FREE(href);
       if (listret < 0) {
 	dcloudprintf("Failed to add new storage_snapshot to list\n");
 	goto cleanup;
@@ -1336,7 +1336,7 @@ int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
-  MY_FREE(data);
+  SAFE_FREE(data);
 
   return ret;
 }
@@ -1407,8 +1407,8 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
     xmlXPathFreeContext(ctxt);
   if (xml)
     xmlFreeDoc(xml);
-  MY_FREE(data);
-  MY_FREE(url);
+  SAFE_FREE(data);
+  SAFE_FREE(url);
 
   return ret;
 }
@@ -1453,7 +1453,7 @@ struct deltacloud_instance *deltacloud_create_instance(struct deltacloud_api *ap
   fclose(paramfp);
 
   data = post_url(thislink->href, api->user, api->password, params, param_size);
-  MY_FREE(params);
+  SAFE_FREE(params);
   if (data == NULL) {
     dcloudprintf("Failed to post the XML for create_instance to %s\n",
 		 thislink->href);
@@ -1475,8 +1475,8 @@ struct deltacloud_instance *deltacloud_create_instance(struct deltacloud_api *ap
 
  cleanup:
   if (ret < 0)
-    MY_FREE(newinstance);
-  MY_FREE(data);
+    SAFE_FREE(newinstance);
+  SAFE_FREE(data);
 
   return newinstance;
 }
@@ -1517,7 +1517,7 @@ static int instance_action(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
-  MY_FREE(data);
+  SAFE_FREE(data);
 
   return ret;
 }

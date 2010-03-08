@@ -70,7 +70,7 @@ int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volume
 
  error:
   deltacloud_free_storage_volume(onestorage_volume);
-  MY_FREE(onestorage_volume);
+  SAFE_FREE(onestorage_volume);
   return -1;
 }
 
@@ -134,13 +134,13 @@ void deltacloud_print_storage_volume_list(struct deltacloud_storage_volume **sto
 
 void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_volume)
 {
-  MY_FREE(storage_volume->href);
-  MY_FREE(storage_volume->id);
-  MY_FREE(storage_volume->created);
-  MY_FREE(storage_volume->state);
-  MY_FREE(storage_volume->capacity);
-  MY_FREE(storage_volume->device);
-  MY_FREE(storage_volume->instance_href);
+  SAFE_FREE(storage_volume->href);
+  SAFE_FREE(storage_volume->id);
+  SAFE_FREE(storage_volume->created);
+  SAFE_FREE(storage_volume->state);
+  SAFE_FREE(storage_volume->capacity);
+  SAFE_FREE(storage_volume->device);
+  SAFE_FREE(storage_volume->instance_href);
 }
 
 void deltacloud_free_storage_volume_list(struct deltacloud_storage_volume **storage_volumes)
@@ -151,7 +151,7 @@ void deltacloud_free_storage_volume_list(struct deltacloud_storage_volume **stor
   while (curr != NULL) {
     next = curr->next;
     deltacloud_free_storage_volume(curr);
-    MY_FREE(curr);
+    SAFE_FREE(curr);
     curr = next;
   }
 
