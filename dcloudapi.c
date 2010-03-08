@@ -1434,34 +1434,32 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
   return ret;
 }
 
-struct deltacloud_instance *deltacloud_create_instance(struct deltacloud_api *api,
-					    const char *image_id,
-					    const char *name,
-					    const char *realm_id,
-					    const char *flavor_id)
+int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
+			       const char *name, const char *realm_id,
+			       const char *flavor_id,
+			       struct deltacloud_instance *inst)
 {
   struct deltacloud_link *thislink;
   char *data, *params;
   size_t param_size;
   FILE *paramfp;
-  struct deltacloud_instance *newinstance = NULL;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
 
   if (image_id == NULL) {
     dcloudprintf("Failed create_instance: image ID cannot be NULL\n");
-    return NULL;
+    return DELTACLOUD_INVALID_IMAGE_ERROR;
   }
 
   thislink = find_by_rel_in_link_list(&api->links, "instances");
   if (thislink == NULL) {
     dcloudprintf("Failed to find the link for 'instances'\n");
-    return NULL;
+    return DELTACLOUD_URL_DOES_NOT_EXIST;
   }
 
   paramfp = open_memstream(&params, &param_size);
   if (paramfp == NULL) {
     dcloudprintf("Failed to allocate memory for parameters\n");
-    return NULL;
+    return DELTACLOUD_OOM_ERROR;
   }
 
   fprintf(paramfp, "image_id=%s", image_id);
@@ -1478,28 +1476,23 @@ struct deltacloud_instance *deltacloud_create_instance(struct deltacloud_api *ap
   if (data == NULL) {
     dcloudprintf("Failed to post the XML for create_instance to %s\n",
 		 thislink->href);
-    return NULL;
+    return DELTACLOUD_POST_URL_ERROR;
   }
 
-  newinstance = malloc(sizeof(struct deltacloud_instance));
-  if (newinstance == NULL) {
-    dcloudprintf("Failed to allocate memory for new instance\n");
-    goto cleanup;
-  }
-
-  if (parse_one_instance(data, newinstance) < 0) {
-    dcloudprintf("Failed to parse instance XML\n");
-    goto cleanup;
+  if (inst != NULL) {
+    if (parse_one_instance(data, inst) < 0) {
+      dcloudprintf("Failed to parse instance XML\n");
+      ret = DELTACLOUD_XML_PARSE_ERROR;
+      goto cleanup;
+    }
   }
 
   ret = 0;
 
  cleanup:
-  if (ret < 0)
-    SAFE_FREE(newinstance);
   SAFE_FREE(data);
 
-  return newinstance;
+  return ret;
 }
 
 static int instance_action(struct deltacloud_api *api,
@@ -1569,6 +1562,7 @@ static const struct deltacloud_error_entry errors[] = {
   { DELTACLOUD_XML_PARSE_ERROR, "Failed to parse the XML" },
   { DELTACLOUD_URL_DOES_NOT_EXIST, "Failed to find required URL" },
   { DELTACLOUD_OOM_ERROR, "Out of memory" },
+  { DELTACLOUD_INVALID_IMAGE_ERROR, "Invalid image ID" },
   { 0, NULL },
 };
 

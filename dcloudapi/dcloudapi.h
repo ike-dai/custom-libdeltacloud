@@ -65,11 +65,10 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 					  const char *id,
 					  struct deltacloud_storage_snapshot *storage_snapshot);
 
-struct deltacloud_instance *deltacloud_create_instance(struct deltacloud_api *api,
-					    const char *image_id,
-					    const char *name,
-					    const char *realm_id,
-					    const char *flavor_id);
+int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
+			       const char *name, const char *realm_id,
+			       const char *flavor_id,
+			       struct deltacloud_instance *inst);
 int deltacloud_instance_stop(struct deltacloud_api *api,
 			     struct deltacloud_instance *instance);
 int deltacloud_instance_reboot(struct deltacloud_api *api,
@@ -89,6 +88,7 @@ const char *deltacloud_strerror(int error);
 #define DELTACLOUD_XML_PARSE_ERROR -7
 #define DELTACLOUD_URL_DOES_NOT_EXIST -8
 #define DELTACLOUD_OOM_ERROR -9
+#define DELTACLOUD_INVALID_IMAGE_ERROR -10
 
 #ifdef __cplusplus
 }
