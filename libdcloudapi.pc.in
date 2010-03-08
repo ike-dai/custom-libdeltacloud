@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libdcloudapi
+Description: A library for accessing deltacloud
+Version: @VERSION@
+Libs: -L${libdir} -ldcloudapi
+Cflags: -I${includedir}

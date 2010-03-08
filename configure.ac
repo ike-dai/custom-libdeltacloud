@@ -91,5 +91,5 @@ fi
 AC_SUBST([LIBCURL_CFLAGS])
 AC_SUBST([LIBCURL_LIBS])
 
-AC_CONFIG_FILES([Makefile])
-AC_OUTPUT
+#AC_CONFIG_FILES([Makefile])
+AC_OUTPUT(Makefile dcloudapi/Makefile libdcloudapi.pc)

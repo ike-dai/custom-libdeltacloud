@@ -5,6 +5,8 @@
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include "dcloudapi.h"
+#include "common.h"
+#include "geturl.h"
 
 typedef int (*parse_xml_callback)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data);
 
@@ -1566,5 +1568,5 @@ const char *deltacloud_strerror(int error)
 void deltacloud_free(struct deltacloud_api *api)
 {
   free_link_list(&api->links);
-  memset(&api, 0, sizeof(struct deltacloud_api));
+  memset(api, 0, sizeof(struct deltacloud_api));
 }

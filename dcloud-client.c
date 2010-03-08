@@ -93,12 +93,12 @@ int main(int argc, char *argv[])
   }
   if (deltacloud_get_flavor_by_uri(&api, fullurl, &flavor) < 0) {
     fprintf(stderr, "Failed to get 'c1-medium' flavor\n");
-    SAFE_FREE(fullurl);
+    free(fullurl);
     goto cleanup;
   }
   deltacloud_print_flavor(&flavor, NULL);
   deltacloud_free_flavor(&flavor);
-  SAFE_FREE(fullurl);
+  free(fullurl);
 
   fprintf(stderr, "--------------REALMS-------------------------\n");
   if (deltacloud_get_realms(&api, &realms) < 0) {
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
     fprintf(stderr, "Failed to reboot instance\n");
   deltacloud_print_instance(newinstance, NULL);
   deltacloud_free_instance(newinstance);
-  SAFE_FREE(newinstance);
+  free(newinstance);
 
   ret = 0;
 

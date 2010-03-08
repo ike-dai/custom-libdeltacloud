@@ -1,8 +1,6 @@
 #ifndef DCLOUD_API_H
 #define DCLOUD_API_H
 
-#include "common.h"
-#include "geturl.h"
 #include "link.h"
 #include "instance.h"
 #include "realm.h"
