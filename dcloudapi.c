@@ -453,6 +453,57 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
   return ret;
 }
 
+int deltacloud_get_instance_by_name(struct deltacloud_api *api,
+				    const char *name,
+				    struct deltacloud_instance *instance)
+{
+  struct deltacloud_link *thislink;
+  struct deltacloud_instance *instances = NULL;
+  struct deltacloud_instance *thisinst;
+  char *data;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
+
+  thislink = find_by_rel_in_link_list(&api->links, "instances");
+  if (thislink == NULL) {
+    dcloudprintf("Failed to find the link for 'instances'\n");
+    return DELTACLOUD_URL_DOES_NOT_EXIST;
+  }
+
+  data = get_url(thislink->href, api->user, api->password);
+  if (data == NULL) {
+    dcloudprintf("Failed to get the XML for instances from %s\n",
+		 thislink->href);
+    return DELTACLOUD_GET_URL_ERROR;
+  }
+
+  if (parse_xml(data, "instances", (void **)&instances, parse_instance_xml) < 0) {
+    dcloudprintf("Failed to parse 'instances' XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
+    goto cleanup;
+  }
+
+  thisinst = find_by_name_in_instance_list(&instances, name);
+  if (thisinst == NULL) {
+    dcloudprintf("Failed to find instance '%s'\n", name);
+    ret = DELTACLOUD_FIND_ERROR;
+    goto cleanup;
+  }
+
+  if (copy_instance(instance, thisinst) < 0) {
+    dcloudprintf("Failed to copy instance structure\n");
+    ret = DELTACLOUD_OOM_ERROR;
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  deltacloud_free_instance_list(&instances);
+  SAFE_FREE(data);
+
+  return ret;
+}
+
 static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			   void **data)
 {
@@ -1511,8 +1562,8 @@ static int instance_action(struct deltacloud_api *api,
 
   data = post_url(act->href, api->user, api->password, NULL, 0);
   if (data == NULL) {
-    dcloudprintf("Failed to post the XML for create_instance to %s\n",
-		 act->href);
+    dcloudprintf("Failed to post the XML for action %s to %s\n",
+		 action_name, act->href);
     return DELTACLOUD_POST_URL_ERROR;
   }
 
@@ -1563,6 +1614,7 @@ static const struct deltacloud_error_entry errors[] = {
   { DELTACLOUD_URL_DOES_NOT_EXIST, "Failed to find required URL" },
   { DELTACLOUD_OOM_ERROR, "Out of memory" },
   { DELTACLOUD_INVALID_IMAGE_ERROR, "Invalid image ID" },
+  { DELTACLOUD_FIND_ERROR, "Failed to find requested information" },
   { 0, NULL },
 };
 

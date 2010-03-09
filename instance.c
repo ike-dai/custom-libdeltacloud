@@ -158,7 +158,7 @@ int add_to_action_list(struct deltacloud_action **actions, const char *rel,
 }
 
 struct deltacloud_action *find_by_rel_in_action_list(struct deltacloud_action **actions,
-					  const char *rel)
+						     const char *rel)
 {
   struct deltacloud_action *curr;
 
@@ -310,6 +310,21 @@ int copy_instance(struct deltacloud_instance *dst,
  error:
   deltacloud_free_instance(dst);
   return -1;
+}
+
+struct deltacloud_instance *find_by_name_in_instance_list(struct deltacloud_instance **instances,
+							  const char *name)
+{
+  struct deltacloud_instance *curr;
+
+  curr = *instances;
+  while (curr != NULL) {
+    if (STREQ(curr->name, name))
+      return curr;
+    curr = curr->next;
+  }
+
+  return NULL;
 }
 
 void deltacloud_print_instance(struct deltacloud_instance *instance,
