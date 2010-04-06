@@ -7,6 +7,11 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_LIBTOOL
 AC_PROG_CC
 
+VERSION_SCRIPT_FLAGS=-Wl,--version-script=
+`/usr/bin/ld --help 2>&1 | grep -- --version-script >/dev/null` || \
+    VERSION_SCRIPT_FLAGS="-Wl,-M -Wl,"
+AC_SUBST(VERSION_SCRIPT_FLAGS)
+
 dnl
 dnl check for libxml2 library
 dnl
@@ -91,5 +96,4 @@ fi
 AC_SUBST([LIBCURL_CFLAGS])
 AC_SUBST([LIBCURL_LIBS])
 
-#AC_CONFIG_FILES([Makefile])
 AC_OUTPUT(Makefile dcloudapi/Makefile libdcloudapi.pc)
