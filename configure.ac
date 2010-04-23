@@ -1,4 +1,4 @@
-AC_INIT([libdcloudapi], [0.1], [deltacloud-devel@lists.fedoraproject.org])
+AC_INIT([libdcloudapi], [0.2], [deltacloud-devel@lists.fedoraproject.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([1.11.1 -Wall -Werror foreign color-tests])

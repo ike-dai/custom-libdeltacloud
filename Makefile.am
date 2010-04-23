@@ -5,7 +5,7 @@ SUBDIRS = dcloudapi
 
 AM_CPPFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) -Wall -I$(builddir)/dcloudapi
 libdcloudapi_la_LDFLAGS = $(LIBXML_LIBS) $(LIBCURL_LIBS) \
-	$(VERSION_SCRIPT_FLAGS)libdcloudapi.syms -version-info 0:0:0
+	$(VERSION_SCRIPT_FLAGS)libdcloudapi.syms -version-info 1:0:0
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libdcloudapi.pc
@@ -37,7 +37,7 @@ libdcloudapi_la_SOURCES =		\
   storage_volume.c                      \
   libdcloudapi.syms
 
-rpm: clean
+rpm: clean dist
 	@(unset CDPATH ; $(MAKE) dist && rpmbuild -ta $(distdir).tar.gz)
 
 check_PROGRAMS = dcloud-client

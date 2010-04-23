@@ -1,6 +1,6 @@
 Summary: A library for accessing deltacloud
 Name: libdcloudapi
-Version: 0.1
+Version: 0.2
 Release: 1%{?dist}
 License: LGPLv2+
 Group: System Environment/Libraries
@@ -67,7 +67,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0644,root,root) %{_includedir}/dcloudapi/link.h
 %attr(0644,root,root) %{_includedir}/dcloudapi/instance.h
 %attr(0644,root,root) %{_includedir}/dcloudapi/realm.h
-%attr(0644,root,root) %{_includedir}/dcloudapi/flavor.h
 %attr(0644,root,root) %{_includedir}/dcloudapi/image.h
 %attr(0644,root,root) %{_includedir}/dcloudapi/instance_state.h
 %attr(0644,root,root) %{_includedir}/dcloudapi/storage_volume.h
@@ -77,6 +76,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdcloudapi.pc
 
 %changelog
-* Mon Mar 08 2010 Chris Lalancette <clalance@redhat.com> 0.0.1-1
+* Fri Apr 23 2010 Chris Lalancette <clalance@redhat.com> 0.2-1
+- Bump version for new API (removed flavors)
+* Mon Mar 08 2010 Chris Lalancette <clalance@redhat.com> 0.1-1
 - Initial build.
 
