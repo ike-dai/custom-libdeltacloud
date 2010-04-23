@@ -29,12 +29,10 @@ int main(int argc, char *argv[])
   struct deltacloud_api api;
   struct deltacloud_instance *instances;
   struct deltacloud_image *images;
-  struct deltacloud_flavor *flavors;
   struct deltacloud_realm *realms;
   struct deltacloud_instance_state *instance_states;
   struct deltacloud_storage_volume *storage_volumes;
   struct deltacloud_storage_snapshot *storage_snapshots;
-  struct deltacloud_flavor flavor;
   struct deltacloud_instance_state instance_state;
   struct deltacloud_realm realm;
   struct deltacloud_image image;
@@ -42,7 +40,6 @@ int main(int argc, char *argv[])
   struct deltacloud_storage_volume storage_volume;
   struct deltacloud_storage_snapshot storage_snapshot;
   struct deltacloud_instance newinstance;
-  char *fullurl;
   int ret = 3;
   int rc;
 
@@ -76,39 +73,6 @@ int main(int argc, char *argv[])
   }
   deltacloud_print_image(&image, NULL);
   deltacloud_free_image(&image);
-
-  fprintf(stderr, "--------------FLAVORS------------------------\n");
-  rc = deltacloud_get_flavors(&api, &flavors);
-  if (rc < 0) {
-    fprintf(stderr, "Failed to get_flavors: %s\n", deltacloud_strerror(rc));
-    goto cleanup;
-  }
-  deltacloud_print_flavor_list(&flavors, NULL);
-  deltacloud_free_flavor_list(&flavors);
-
-  rc = deltacloud_get_flavor_by_id(&api, "m1-small", &flavor);
-  if (rc < 0) {
-    fprintf(stderr, "Failed to get 'm1-small' flavor: %s\n",
-	    deltacloud_strerror(rc));
-    goto cleanup;
-  }
-  deltacloud_print_flavor(&flavor, NULL);
-  deltacloud_free_flavor(&flavor);
-
-  if (asprintf(&fullurl, "%s/flavors/c1-medium", api.url) < 0) {
-    fprintf(stderr, "Failed to allocate fullurl\n");
-    goto cleanup;
-  }
-  rc = deltacloud_get_flavor_by_uri(&api, fullurl, &flavor);
-  if (rc < 0) {
-    fprintf(stderr, "Failed to get 'c1-medium' flavor: %s\n",
-	    deltacloud_strerror(rc));
-    free(fullurl);
-    goto cleanup;
-  }
-  deltacloud_print_flavor(&flavor, NULL);
-  deltacloud_free_flavor(&flavor);
-  free(fullurl);
 
   fprintf(stderr, "--------------REALMS-------------------------\n");
   rc = deltacloud_get_realms(&api, &realms);
@@ -203,7 +167,7 @@ int main(int argc, char *argv[])
   deltacloud_free_storage_snapshot(&storage_snapshot);
 
   fprintf(stderr, "--------------CREATE INSTANCE---------------\n");
-  rc = deltacloud_create_instance(&api, "img3", NULL, NULL, NULL, &newinstance);
+  rc = deltacloud_create_instance(&api, "img3", NULL, NULL, &newinstance);
   if (rc < 0) {
     fprintf(stderr, "Failed to create_instance: %s\n", deltacloud_strerror(rc));
     goto cleanup;

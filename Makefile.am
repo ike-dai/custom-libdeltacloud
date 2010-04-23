@@ -19,8 +19,6 @@ libdcloudapi_la_SOURCES =		\
   dcloudapi.c				\
   common.h				\
   common.c				\
-  dcloudapi/flavor.h			\
-  flavor.c				\
   geturl.h				\
   geturl.c				\
   dcloudapi/image.h			\

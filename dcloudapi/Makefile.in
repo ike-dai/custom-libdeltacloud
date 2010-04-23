@@ -190,7 +190,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 dcloudincdir = $(includedir)/dcloudapi
-dcloudinc_HEADERS = dcloudapi.h link.h instance.h realm.h flavor.h image.h \
+dcloudinc_HEADERS = dcloudapi.h link.h instance.h realm.h image.h \
 	instance_state.h storage_volume.h storage_snapshot.h
 
 all: all-am

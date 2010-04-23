@@ -262,7 +262,7 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   struct deltacloud_instance **instances = (struct deltacloud_instance **)data;
   xmlNodePtr oldnode, instance_cur;
   char *id = NULL, *name = NULL, *owner_id = NULL, *image_href = NULL;
-  char *flavor_href = NULL, *realm_href = NULL, *state = NULL;
+  char *realm_href = NULL, *state = NULL;
   struct deltacloud_action *actions = NULL;
   struct deltacloud_address *public_addresses = NULL;
   struct deltacloud_address *private_addresses = NULL;
@@ -287,8 +287,6 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	    owner_id = getXPathString("string(./owner_id)", ctxt);
 	  else if (STREQ((const char *)instance_cur->name, "image"))
 	    image_href = (char *)xmlGetProp(cur, BAD_CAST "href");
-	  else if (STREQ((const char *)instance_cur->name, "flavor"))
-	    flavor_href = (char *)xmlGetProp(cur, BAD_CAST "href");
 	  else if (STREQ((const char *)instance_cur->name, "realm"))
 	    realm_href = (char *)xmlGetProp(cur, BAD_CAST "href");
 	  else if (STREQ((const char *)instance_cur->name, "state"))
@@ -304,13 +302,12 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	instance_cur = instance_cur->next;
       }
       listret = add_to_instance_list(instances, id, name, owner_id, image_href,
-				     flavor_href, realm_href, state, actions,
+				     realm_href, state, actions,
 				     public_addresses, private_addresses);
       SAFE_FREE(id);
       SAFE_FREE(name);
       SAFE_FREE(owner_id);
       SAFE_FREE(image_href);
-      SAFE_FREE(flavor_href);
       SAFE_FREE(realm_href);
       SAFE_FREE(state);
       free_address_list(&public_addresses);
@@ -660,209 +657,6 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
     xmlFreeDoc(xml);
   SAFE_FREE(data);
   SAFE_FREE(url);
-
-  return ret;
-}
-
-static int parse_flavor_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
-			    void **data)
-{
-  struct deltacloud_flavor **flavors = (struct deltacloud_flavor **)data;
-  xmlNodePtr flavor_cur, oldnode;
-  char *href = NULL, *id = NULL, *memory = NULL, *storage = NULL;
-  char *architecture = NULL;
-  int listret;
-  int ret = -1;
-
-  oldnode = ctxt->node;
-
-  while (cur != NULL) {
-    if (cur->type == XML_ELEMENT_NODE &&
-	STREQ((const char *)cur->name, "flavor")) {
-      href = (char *)xmlGetProp(cur, BAD_CAST "href");
-
-      ctxt->node = cur;
-      flavor_cur = cur->children;
-      while (flavor_cur != NULL) {
-	if (flavor_cur->type == XML_ELEMENT_NODE) {
-	  if (STREQ((const char *)flavor_cur->name, "id"))
-	    id = getXPathString("string(./id)", ctxt);
-	  else if (STREQ((const char *)flavor_cur->name, "memory"))
-	    memory = getXPathString("string(./memory)", ctxt);
-	  else if (STREQ((const char *)flavor_cur->name, "storage"))
-	    storage = getXPathString("string(./storage)", ctxt);
-	  else if (STREQ((const char *)flavor_cur->name, "architecture"))
-	    architecture = getXPathString("string(./architecture)", ctxt);
-	}
-	flavor_cur = flavor_cur->next;
-      }
-      listret = add_to_flavor_list(flavors, href, id, memory, storage,
-				   architecture);
-      SAFE_FREE(href);
-      SAFE_FREE(id);
-      SAFE_FREE(memory);
-      SAFE_FREE(storage);
-      SAFE_FREE(architecture);
-      if (listret < 0) {
-	dcloudprintf("Failed to add new flavor to list\n");
-	goto cleanup;
-      }
-    }
-    cur = cur->next;
-  }
-
-  ret = 0;
-
- cleanup:
-  ctxt->node = oldnode;
-  if (ret < 0)
-    deltacloud_free_flavor_list(flavors);
-
-  return ret;
-}
-
-int deltacloud_get_flavors(struct deltacloud_api *api,
-			   struct deltacloud_flavor **flavors)
-{
-  struct deltacloud_link *thislink;
-  char *data;
-  int ret = DELTACLOUD_UNKNOWN_ERROR;
-
-  thislink = find_by_rel_in_link_list(&api->links, "flavors");
-  if (thislink == NULL) {
-    dcloudprintf("Failed to find the link for 'flavors'\n");
-    return DELTACLOUD_URL_DOES_NOT_EXIST;
-  }
-
-  data = get_url(thislink->href, api->user, api->password);
-  if (data == NULL) {
-    dcloudprintf("Failed to get the XML for flavors from %s\n", thislink->href);
-    return DELTACLOUD_GET_URL_ERROR;
-  }
-
-  *flavors = NULL;
-  if (parse_xml(data, "flavors", (void **)flavors, parse_flavor_xml) < 0) {
-    dcloudprintf("Failed to parse 'flavors' XML\n");
-    ret = DELTACLOUD_XML_PARSE_ERROR;
-    goto cleanup;
-  }
-
-  ret = 0;
-
- cleanup:
-  SAFE_FREE(data);
-
-  return ret;
-}
-
-int deltacloud_get_flavor_by_id(struct deltacloud_api *api, const char *id,
-				struct deltacloud_flavor *flavor)
-{
-  struct deltacloud_link *thislink;
-  char *data, *fullurl;
-  int ret = DELTACLOUD_UNKNOWN_ERROR;
-  struct deltacloud_flavor *tmpflavor = NULL;
-
-  thislink = find_by_rel_in_link_list(&api->links, "flavors");
-  if (thislink == NULL) {
-    dcloudprintf("Failed to find the link for 'flavors'\n");
-    return DELTACLOUD_URL_DOES_NOT_EXIST;
-  }
-
-  if (asprintf(&fullurl, "%s?id=%s", thislink->href, id) < 0) {
-    dcloudprintf("Failed to allocate memory for URL\n");
-    return DELTACLOUD_OOM_ERROR;
-  }
-
-  data = get_url(fullurl, api->user, api->password);
-  if (data == NULL) {
-    dcloudprintf("Failed to get the XML for flavor from %s\n", fullurl);
-    ret = DELTACLOUD_GET_URL_ERROR;
-    goto cleanup;
-  }
-
-  if (parse_xml(data, "flavors", (void **)&tmpflavor, parse_flavor_xml) < 0) {
-    dcloudprintf("Failed to parse 'flavors' XML\n");
-    ret = DELTACLOUD_XML_PARSE_ERROR;
-    goto cleanup;
-  }
-
-  if (copy_flavor(flavor, tmpflavor) < 0) {
-    dcloudprintf("Failed to copy flavor structure\n");
-    ret = DELTACLOUD_OOM_ERROR;
-    goto cleanup;
-  }
-
-  ret = 0;
-
- cleanup:
-  deltacloud_free_flavor_list(&tmpflavor);
-  SAFE_FREE(data);
-  SAFE_FREE(fullurl);
-
-  return ret;
-}
-
-int deltacloud_get_flavor_by_uri(struct deltacloud_api *api, const char *url,
-				 struct deltacloud_flavor *flavor)
-{
-  char *data;
-  struct deltacloud_flavor *tmpflavor = NULL;
-  xmlDocPtr xml = NULL;
-  xmlNodePtr root;
-  int ret = DELTACLOUD_UNKNOWN_ERROR;
-  xmlXPathContextPtr ctxt = NULL;
-
-  data = get_url(url, api->user, api->password);
-  if (data == NULL) {
-    dcloudprintf("Failed to get the XML for flavor from %s\n", url);
-    return DELTACLOUD_GET_URL_ERROR;
-  }
-
-  xml = xmlReadDoc(BAD_CAST data, "flavor.xml", NULL,
-		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
-		   XML_PARSE_NOWARNING);
-  if (!xml) {
-    dcloudprintf("Failed to parse flavor XML\n");
-    ret = DELTACLOUD_XML_PARSE_ERROR;
-    goto cleanup;
-  }
-
-  root = xmlDocGetRootElement(xml);
-  if (root == NULL) {
-    dcloudprintf("Failed to get the flavor root element\n");
-    ret = DELTACLOUD_XML_PARSE_ERROR;
-    goto cleanup;
-  }
-
-  ctxt = xmlXPathNewContext(xml);
-  if (ctxt == NULL) {
-    dcloudprintf("Failed to initialize XPath context for flavor\n");
-    ret = DELTACLOUD_XML_PARSE_ERROR;
-    goto cleanup;
-  }
-
-  if (parse_flavor_xml(root, ctxt, (void **)&tmpflavor) < 0) {
-    dcloudprintf("Failed to parse flavor XML\n");
-    ret = DELTACLOUD_XML_PARSE_ERROR;
-    goto cleanup;
-  }
-
-  if (copy_flavor(flavor, tmpflavor) < 0) {
-    dcloudprintf("Failed to copy flavor structure\n");
-    ret = DELTACLOUD_OOM_ERROR;
-    goto cleanup;
-  }
-
-  ret = 0;
-
- cleanup:
-  deltacloud_free_flavor_list(&tmpflavor);
-  if (ctxt != NULL)
-    xmlXPathFreeContext(ctxt);
-  if (xml)
-    xmlFreeDoc(xml);
-  SAFE_FREE(data);
 
   return ret;
 }
@@ -1487,7 +1281,6 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 
 int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       const char *name, const char *realm_id,
-			       const char *flavor_id,
 			       struct deltacloud_instance *inst)
 {
   struct deltacloud_link *thislink;
@@ -1518,8 +1311,6 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
     fprintf(paramfp, "&name=%s", name);
   if (realm_id != NULL)
     fprintf(paramfp, "&realm_id=%s", realm_id);
-  if (flavor_id != NULL)
-    fprintf(paramfp, "&flavor_id=%s", flavor_id);
   fclose(paramfp);
 
   data = post_url(thislink->href, api->user, api->password, params, param_size);

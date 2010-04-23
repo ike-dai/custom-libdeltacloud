@@ -4,7 +4,6 @@
 #include "link.h"
 #include "instance.h"
 #include "realm.h"
-#include "flavor.h"
 #include "image.h"
 #include "instance_state.h"
 #include "storage_volume.h"
@@ -38,13 +37,6 @@ int deltacloud_get_realms(struct deltacloud_api *api,
 int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
 			       struct deltacloud_realm *realm);
 
-int deltacloud_get_flavors(struct deltacloud_api *api,
-			   struct deltacloud_flavor **flavors);
-int deltacloud_get_flavor_by_id(struct deltacloud_api *api, const char *id,
-				struct deltacloud_flavor *flavor);
-int deltacloud_get_flavor_by_uri(struct deltacloud_api *api, const char *url,
-				 struct deltacloud_flavor *flavor);
-
 int deltacloud_get_images(struct deltacloud_api *api,
 			  struct deltacloud_image **images);
 int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
@@ -70,7 +62,6 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 
 int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       const char *name, const char *realm_id,
-			       const char *flavor_id,
 			       struct deltacloud_instance *inst);
 int deltacloud_instance_stop(struct deltacloud_api *api,
 			     struct deltacloud_instance *instance);
