@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
   struct deltacloud_instance newinstance;
   char *fullurl;
   int ret = 3;
+  int rc;
 
   if (argc != 4) {
     fprintf(stderr, "Usage: %s <url> <user> <password>\n", argv[0]);
@@ -51,37 +52,44 @@ int main(int argc, char *argv[])
   }
 
   fprintf(stderr, "--------------LINKS--------------------------\n");
-  if (deltacloud_initialize(&api, argv[1], argv[2], argv[3]) < 0) {
-    fprintf(stderr, "Failed to find links for the API\n");
+  rc = deltacloud_initialize(&api, argv[1], argv[2], argv[3]);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to find links for the API: %s\n",
+	    deltacloud_strerror(rc));
     return 2;
   }
   deltacloud_print_link_list(&api.links, NULL);
 
   fprintf(stderr, "--------------IMAGES-------------------------\n");
-  if (deltacloud_get_images(&api, &images) < 0) {
-    fprintf(stderr, "Failed to get_images\n");
+  rc = deltacloud_get_images(&api, &images);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get_images: %s\n", deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_image_list(&images, NULL);
   deltacloud_free_image_list(&images);
 
-  if (deltacloud_get_image_by_id(&api, "img1", &image) < 0) {
-    fprintf(stderr, "Failed to get image by id\n");
+  rc = deltacloud_get_image_by_id(&api, "img1", &image);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get image by id: %s\n", deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_image(&image, NULL);
   deltacloud_free_image(&image);
 
   fprintf(stderr, "--------------FLAVORS------------------------\n");
-  if (deltacloud_get_flavors(&api, &flavors) < 0) {
-    fprintf(stderr, "Failed to get_flavors\n");
+  rc = deltacloud_get_flavors(&api, &flavors);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get_flavors: %s\n", deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_flavor_list(&flavors, NULL);
   deltacloud_free_flavor_list(&flavors);
 
-  if (deltacloud_get_flavor_by_id(&api, "m1-small", &flavor) < 0) {
-    fprintf(stderr, "Failed to get 'm1-small' flavor\n");
+  rc = deltacloud_get_flavor_by_id(&api, "m1-small", &flavor);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get 'm1-small' flavor: %s\n",
+	    deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_flavor(&flavor, NULL);
@@ -91,8 +99,10 @@ int main(int argc, char *argv[])
     fprintf(stderr, "Failed to allocate fullurl\n");
     goto cleanup;
   }
-  if (deltacloud_get_flavor_by_uri(&api, fullurl, &flavor) < 0) {
-    fprintf(stderr, "Failed to get 'c1-medium' flavor\n");
+  rc = deltacloud_get_flavor_by_uri(&api, fullurl, &flavor);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get 'c1-medium' flavor: %s\n",
+	    deltacloud_strerror(rc));
     free(fullurl);
     goto cleanup;
   }
@@ -101,97 +111,119 @@ int main(int argc, char *argv[])
   free(fullurl);
 
   fprintf(stderr, "--------------REALMS-------------------------\n");
-  if (deltacloud_get_realms(&api, &realms) < 0) {
-    fprintf(stderr, "Failed to get_realms\n");
+  rc = deltacloud_get_realms(&api, &realms);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get_realms: %s\n", deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_realm_list(&realms, NULL);
   deltacloud_free_realm_list(&realms);
 
-  if (deltacloud_get_realm_by_id(&api, "us", &realm) < 0) {
-    fprintf(stderr, "Failed to get realm by id\n");
+  rc = deltacloud_get_realm_by_id(&api, "us", &realm);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get realm by id: %s\n", deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_realm(&realm, NULL);
   deltacloud_free_realm(&realm);
 
   fprintf(stderr, "--------------INSTANCE STATES----------------\n");
-  if (deltacloud_get_instance_states(&api, &instance_states) < 0) {
-    fprintf(stderr, "Failed to get_instance_states\n");
+  rc = deltacloud_get_instance_states(&api, &instance_states);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get_instance_states: %s\n",
+	    deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_instance_state_list(&instance_states, NULL);
   deltacloud_free_instance_state_list(&instance_states);
 
-  if (deltacloud_get_instance_state_by_name(&api, "start",
-					    &instance_state) < 0) {
-    fprintf(stderr, "Failed to get instance_state\n");
+  rc = deltacloud_get_instance_state_by_name(&api, "start", &instance_state);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get instance_state: %s\n",
+	    deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_instance_state(&instance_state, NULL);
   deltacloud_free_instance_state(&instance_state);
 
   fprintf(stderr, "--------------INSTANCES---------------------\n");
-  if (deltacloud_get_instances(&api, &instances) < 0) {
-    fprintf(stderr, "Failed to get_instances\n");
+  rc = deltacloud_get_instances(&api, &instances);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get_instances: %s\n", deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_instance_list(&instances, NULL);
   deltacloud_free_instance_list(&instances);
 
-  if (deltacloud_get_instance_by_id(&api, "inst1", &instance) < 0) {
-    fprintf(stderr, "Failed to get instance by id\n");
+  rc = deltacloud_get_instance_by_id(&api, "inst1", &instance);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get instance by id: %s\n",
+	    deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_instance(&instance, NULL);
   deltacloud_free_instance(&instance);
 
   fprintf(stderr, "--------------STORAGE VOLUMES---------------\n");
-  if (deltacloud_get_storage_volumes(&api, &storage_volumes) < 0) {
-    fprintf(stderr, "Failed to get_storage_volumes\n");
+  rc = deltacloud_get_storage_volumes(&api, &storage_volumes);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get_storage_volumes: %s\n",
+	    deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_storage_volume_list(&storage_volumes, NULL);
   deltacloud_free_storage_volume_list(&storage_volumes);
 
-  if (deltacloud_get_storage_volume_by_id(&api, "vol3", &storage_volume) < 0) {
-    fprintf(stderr, "Failed to get storage volume by ID\n");
+  rc = deltacloud_get_storage_volume_by_id(&api, "vol3", &storage_volume);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get storage volume by ID: %s\n",
+	    deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_storage_volume(&storage_volume, NULL);
   deltacloud_free_storage_volume(&storage_volume);
 
   fprintf(stderr, "--------------STORAGE SNAPSHOTS-------------\n");
-  if (deltacloud_get_storage_snapshots(&api, &storage_snapshots) < 0) {
-    fprintf(stderr, "Failed to get_storage_snapshots\n");
+  rc = deltacloud_get_storage_snapshots(&api, &storage_snapshots);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get_storage_snapshots: %s\n",
+	    deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_storage_snapshot_list(&storage_snapshots, NULL);
   deltacloud_free_storage_snapshot_list(&storage_snapshots);
 
-  if (deltacloud_get_storage_snapshot_by_id(&api, "snap2",
-					    &storage_snapshot) < 0) {
-    fprintf(stderr, "Failed to get storage_snapshot by ID\n");
+  rc = deltacloud_get_storage_snapshot_by_id(&api, "snap2", &storage_snapshot);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get storage_snapshot by ID: %s\n",
+	    deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_storage_snapshot(&storage_snapshot, NULL);
   deltacloud_free_storage_snapshot(&storage_snapshot);
 
   fprintf(stderr, "--------------CREATE INSTANCE---------------\n");
-  if (deltacloud_create_instance(&api, "img3", NULL, NULL, NULL,
-				 &newinstance) < 0) {
-    fprintf(stderr, "Failed to create_instance\n");
+  rc = deltacloud_create_instance(&api, "img3", NULL, NULL, NULL, &newinstance);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to create_instance: %s\n", deltacloud_strerror(rc));
     goto cleanup;
   }
   deltacloud_print_instance(&newinstance, NULL);
-  if (deltacloud_instance_stop(&api, &newinstance) < 0)
-    fprintf(stderr, "Failed to stop instance\n");
+  rc = deltacloud_instance_stop(&api, &newinstance);
+  if (rc < 0)
+    fprintf(stderr, "Failed to stop instance: %s\n", deltacloud_strerror(rc));
   deltacloud_print_instance(&newinstance, NULL);
-  if (deltacloud_instance_start(&api, &newinstance) < 0)
-    fprintf(stderr, "Failed to start instance\n");
+  rc = deltacloud_instance_start(&api, &newinstance);
+  if (rc < 0)
+    fprintf(stderr, "Failed to start instance: %s\n", deltacloud_strerror(rc));
   deltacloud_print_instance(&newinstance, NULL);
-  if (deltacloud_instance_reboot(&api, &newinstance) < 0)
-    fprintf(stderr, "Failed to reboot instance\n");
+  rc = deltacloud_instance_reboot(&api, &newinstance);
+  if (rc < 0)
+    fprintf(stderr, "Failed to reboot instance: %s\n", deltacloud_strerror(rc));
+  deltacloud_print_instance(&newinstance, NULL);
+  rc = deltacloud_instance_destroy(&api, &newinstance);
+  if (rc < 0)
+    fprintf(stderr, "Failed to destroy instance: %s\n", deltacloud_strerror(rc));
   deltacloud_print_instance(&newinstance, NULL);
   deltacloud_free_instance(&newinstance);
 
