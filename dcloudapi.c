@@ -1601,6 +1601,12 @@ int deltacloud_instance_start(struct deltacloud_api *api,
   return instance_action(api, instance, "start");
 }
 
+int deltacloud_instance_destroy(struct deltacloud_api *api,
+				struct deltacloud_instance *instance)
+{
+  return instance_action(api, instance, "destroy");
+}
+
 struct deltacloud_error_entry {
   int number;
   const char *desc;

@@ -78,6 +78,8 @@ int deltacloud_instance_reboot(struct deltacloud_api *api,
 			       struct deltacloud_instance *instance);
 int deltacloud_instance_start(struct deltacloud_api *api,
 			      struct deltacloud_instance *instance);
+int deltacloud_instance_destroy(struct deltacloud_api *api,
+				struct deltacloud_instance *instance);
 
 void deltacloud_free(struct deltacloud_api *api);
 
