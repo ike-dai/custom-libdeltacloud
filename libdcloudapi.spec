@@ -71,8 +71,8 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0644,root,root) %{_includedir}/dcloudapi/instance_state.h
 %attr(0644,root,root) %{_includedir}/dcloudapi/storage_volume.h
 %attr(0644,root,root) %{_includedir}/dcloudapi/storage_snapshot.h
+%attr(0755,root,root) %{_includedir}/dcloudapi/hardware_profile.h
 %attr(0755,root,root) %{_libdir}/libdcloudapi.so
-#% attr(0644,root,root) %{_datadir}/aclocal/cap-ng.m4
 %{_libdir}/pkgconfig/libdcloudapi.pc
 
 %changelog
