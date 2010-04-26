@@ -23,6 +23,8 @@ libdcloudapi_la_SOURCES =		\
   geturl.c				\
   dcloudapi/image.h			\
   image.c				\
+  dcloudapi/hardware_profile.h		\
+  hardware_profile.c			\
   dcloudapi/instance.h			\
   instance.c				\
   dcloudapi/instance_state.h		\

@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
   struct deltacloud_instance_state *instance_states;
   struct deltacloud_storage_volume *storage_volumes;
   struct deltacloud_storage_snapshot *storage_snapshots;
+  struct deltacloud_hardware_profile *profiles;
   struct deltacloud_instance_state instance_state;
   struct deltacloud_realm realm;
   struct deltacloud_image image;
@@ -56,6 +57,17 @@ int main(int argc, char *argv[])
     return 2;
   }
   deltacloud_print_link_list(&api.links, NULL);
+
+  fprintf(stderr, "--------------HARDWARE PROFILES--------------\n");
+  rc = deltacloud_get_hardware_profiles(&api, &profiles);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get_hardware_profiles: %s\n",
+	    deltacloud_strerror(rc));
+    goto cleanup;
+  }
+
+  deltacloud_print_hardware_profile_list(&profiles, NULL);
+  deltacloud_free_hardware_profile_list(&profiles);
 
   fprintf(stderr, "--------------IMAGES-------------------------\n");
   rc = deltacloud_get_images(&api, &images);
@@ -167,7 +179,7 @@ int main(int argc, char *argv[])
   deltacloud_free_storage_snapshot(&storage_snapshot);
 
   fprintf(stderr, "--------------CREATE INSTANCE---------------\n");
-  rc = deltacloud_create_instance(&api, "img3", NULL, NULL, &newinstance);
+  rc = deltacloud_create_instance(&api, "img3", NULL, NULL, NULL, &newinstance);
   if (rc < 0) {
     fprintf(stderr, "Failed to create_instance: %s\n", deltacloud_strerror(rc));
     goto cleanup;

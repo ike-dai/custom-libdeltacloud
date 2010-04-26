@@ -661,6 +661,258 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
   return ret;
 }
 
+static struct deltacloud_property_range *parse_hardware_profile_ranges(xmlNodePtr property)
+{
+  xmlNodePtr prop_cur;
+  struct deltacloud_property_range *ranges = NULL;
+  struct deltacloud_property_range *ret = NULL;
+  char *first = NULL, *last = NULL;
+  int listret;
+
+  prop_cur = property->children;
+
+  while (prop_cur != NULL) {
+    if (prop_cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)prop_cur->name, "range")) {
+
+      first = (char *)xmlGetProp(prop_cur, BAD_CAST "first");
+      last = (char *)xmlGetProp(prop_cur, BAD_CAST "last");
+
+      listret = add_to_range_list(&ranges, first, last);
+      SAFE_FREE(first);
+      SAFE_FREE(last);
+      if (listret < 0) {
+	dcloudprintf("Failed to add range to list\n");
+	free_range_list(&ranges);
+	goto cleanup;
+      }
+    }
+
+    prop_cur = prop_cur->next;
+  }
+
+  ret = ranges;
+
+ cleanup:
+  return ret;
+}
+
+static struct deltacloud_property_enum *parse_hardware_profile_enums(xmlNodePtr property)
+{
+  xmlNodePtr prop_cur, enum_cur;
+  struct deltacloud_property_enum *enums = NULL;
+  struct deltacloud_property_enum *ret = NULL;
+  char *enum_value = NULL;
+  int listret;
+
+  prop_cur = property->children;
+
+  while (prop_cur != NULL) {
+    if (prop_cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)prop_cur->name, "enum")) {
+
+      enum_cur = prop_cur->children;
+      while (enum_cur != NULL) {
+	if (enum_cur->type == XML_ELEMENT_NODE &&
+	    STREQ((const char *)enum_cur->name, "entry")) {
+	  enum_value = (char *)xmlGetProp(enum_cur, BAD_CAST "value");
+
+	  listret = add_to_enum_list(&enums, enum_value);
+	  SAFE_FREE(enum_value);
+	  if (listret < 0) {
+	    dcloudprintf("Failed to add enum to list\n");
+	    free_enum_list(&enums);
+	    goto cleanup;
+	  }
+	}
+
+	enum_cur = enum_cur->next;
+      }
+    }
+
+    prop_cur = prop_cur->next;
+  }
+
+  ret = enums;
+
+ cleanup:
+  return ret;
+}
+
+static struct deltacloud_property_param *parse_hardware_profile_params(xmlNodePtr property)
+{
+  xmlNodePtr prop_cur;
+  struct deltacloud_property_param *params = NULL;
+  struct deltacloud_property_param *ret = NULL;
+  char *param_href = NULL, *param_method = NULL, *param_name = NULL;
+  char *param_operation = NULL;
+  int listret;
+
+  prop_cur = property->children;
+
+  while (prop_cur != NULL) {
+    if (prop_cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)prop_cur->name, "param")) {
+
+      param_href = (char *)xmlGetProp(prop_cur, BAD_CAST "href");
+      param_method = (char *)xmlGetProp(prop_cur, BAD_CAST "method");
+      param_name = (char *)xmlGetProp(prop_cur, BAD_CAST "name");
+      param_operation = (char *)xmlGetProp(prop_cur, BAD_CAST "operation");
+
+      listret = add_to_param_list(&params, param_href,
+				  param_method, param_name,
+				  param_operation);
+      SAFE_FREE(param_href);
+      SAFE_FREE(param_method);
+      SAFE_FREE(param_name);
+      SAFE_FREE(param_operation);
+      if (listret < 0) {
+	dcloudprintf("Failed to add new property to list\n");
+	free_param_list(&params);
+	goto cleanup;
+      }
+    }
+    prop_cur = prop_cur->next;
+  }
+
+  ret = params;
+
+ cleanup:
+  return ret;
+}
+
+static struct deltacloud_property *parse_hardware_profile_properties(xmlNodePtr hwp)
+{
+  xmlNodePtr profile_cur;
+  struct deltacloud_property *props = NULL;
+  struct deltacloud_property *ret = NULL;
+  struct deltacloud_property_param *params = NULL;
+  struct deltacloud_property_enum *enums = NULL;
+  struct deltacloud_property_range *ranges = NULL;
+  char *kind = NULL, *name = NULL, *unit = NULL, *value = NULL;
+  int listret;
+
+  profile_cur = hwp->children;
+
+  while (profile_cur != NULL) {
+    if (profile_cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)profile_cur->name, "property")) {
+      kind = (char *)xmlGetProp(profile_cur, BAD_CAST "kind");
+      name = (char *)xmlGetProp(profile_cur, BAD_CAST "name");
+      unit = (char *)xmlGetProp(profile_cur, BAD_CAST "unit");
+      value = (char *)xmlGetProp(profile_cur, BAD_CAST "value");
+
+      params = parse_hardware_profile_params(profile_cur);
+      enums = parse_hardware_profile_enums(profile_cur);
+      ranges = parse_hardware_profile_ranges(profile_cur);
+
+      listret = add_to_property_list(&props, kind, name, unit, value, params,
+				     enums, ranges);
+      SAFE_FREE(kind);
+      SAFE_FREE(name);
+      SAFE_FREE(unit);
+      SAFE_FREE(value);
+      free_param_list(&params);
+      free_enum_list(&enums);
+      free_range_list(&ranges);
+      if (listret < 0) {
+	dcloudprintf("Failed to add new property to list\n");
+	free_property_list(&props);
+	goto cleanup;
+      }
+    }
+
+    profile_cur = profile_cur->next;
+  }
+
+  ret = props;
+
+ cleanup:
+  return ret;
+}
+
+static int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				      void **data)
+{
+  struct deltacloud_hardware_profile **profiles = (struct deltacloud_hardware_profile **)data;
+  struct deltacloud_property *props = NULL;
+  char *href = NULL, *id = NULL;
+  xmlNodePtr oldnode;
+  int ret = -1;
+  int listret;
+
+  oldnode = ctxt->node;
+
+  while (cur != NULL) {
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "hardware-profile")) {
+      ctxt->node = cur;
+
+      href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      id = getXPathString("string(./id)", ctxt);
+
+      props = parse_hardware_profile_properties(cur);
+
+      listret = add_to_hardware_profile_list(profiles, id, href, props);
+      SAFE_FREE(id);
+      SAFE_FREE(href);
+      free_property_list(&props);
+      if (listret < 0) {
+	dcloudprintf("Failed to add new hardware profile to list\n");
+	goto cleanup;
+      }
+    }
+
+    cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  ctxt->node = oldnode;
+  if (ret < 0)
+    deltacloud_free_hardware_profile_list(profiles);
+
+  return ret;
+}
+
+int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
+				     struct deltacloud_hardware_profile **profiles)
+{
+  struct deltacloud_link *thislink;
+  char *data;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
+
+  thislink = find_by_rel_in_link_list(&api->links, "hardware_profiles");
+  if (thislink == NULL) {
+    dcloudprintf("Failed to find the link for 'hardware_profiles'\n");
+    return DELTACLOUD_URL_DOES_NOT_EXIST;
+  }
+
+  data = get_url(thislink->href, api->user, api->password);
+  if (data == NULL) {
+    dcloudprintf("Failed to get the XML for flavors from %s\n", thislink->href);
+    return DELTACLOUD_GET_URL_ERROR;
+  }
+
+  fprintf(stderr, "Data is %s\n", data);
+
+  *profiles = NULL;
+  if (parse_xml(data, "hardware-profiles", (void **)profiles,
+		parse_hardware_profile_xml) < 0) {
+    dcloudprintf("Failed to parse 'hardware-profiles' XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(data);
+
+  return ret;
+}
+
 static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			   void **data)
 {
@@ -1281,6 +1533,7 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 
 int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       const char *name, const char *realm_id,
+			       const char *hardware_profile,
 			       struct deltacloud_instance *inst)
 {
   struct deltacloud_link *thislink;
@@ -1311,6 +1564,8 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
     fprintf(paramfp, "&name=%s", name);
   if (realm_id != NULL)
     fprintf(paramfp, "&realm_id=%s", realm_id);
+  if (hardware_profile != NULL)
+    fprintf(paramfp, "&hardware_profile_id=%s", hardware_profile);
   fclose(paramfp);
 
   data = post_url(thislink->href, api->user, api->password, params, param_size);

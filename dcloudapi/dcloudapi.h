@@ -8,6 +8,7 @@
 #include "instance_state.h"
 #include "storage_volume.h"
 #include "storage_snapshot.h"
+#include "hardware_profile.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,8 +61,12 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 					  const char *id,
 					  struct deltacloud_storage_snapshot *storage_snapshot);
 
+int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
+				     struct deltacloud_hardware_profile **hardware_profiles);
+
 int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       const char *name, const char *realm_id,
+			       const char *hardware_profile,
 			       struct deltacloud_instance *inst);
 int deltacloud_instance_stop(struct deltacloud_api *api,
 			     struct deltacloud_instance *instance);
