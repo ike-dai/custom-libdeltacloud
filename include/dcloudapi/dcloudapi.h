@@ -63,6 +63,9 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 
 int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
 				     struct deltacloud_hardware_profile **hardware_profiles);
+int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
+					  const char *id,
+					  struct deltacloud_hardware_profile *profile);
 
 int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       const char *name, const char *realm_id,

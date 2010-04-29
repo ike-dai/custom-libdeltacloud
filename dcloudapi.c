@@ -895,8 +895,6 @@ int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
     return DELTACLOUD_GET_URL_ERROR;
   }
 
-  fprintf(stderr, "Data is %s\n", data);
-
   *profiles = NULL;
   if (parse_xml(data, "hardware-profiles", (void **)profiles,
 		parse_hardware_profile_xml) < 0) {
@@ -909,6 +907,78 @@ int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
 
  cleanup:
   SAFE_FREE(data);
+
+  return ret;
+}
+
+int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
+					  const char *id,
+					  struct deltacloud_hardware_profile *profile)
+{
+  char *url, *data;
+  struct deltacloud_hardware_profile *tmpprofile = NULL;
+  xmlDocPtr xml = NULL;
+  xmlNodePtr root;
+  int ret = DELTACLOUD_UNKNOWN_ERROR;
+  xmlXPathContextPtr ctxt = NULL;
+
+  if (asprintf(&url, "%s/hardware_profiles/%s", api->url, id) < 0) {
+    dcloudprintf("Failed to allocate memory for URL\n");
+    return DELTACLOUD_OOM_ERROR;
+  }
+
+  data = get_url(url, api->user, api->password);
+  if (data == NULL) {
+    dcloudprintf("Failed to get the XML for image from %s\n", url);
+    ret = DELTACLOUD_GET_URL_ERROR;
+    goto cleanup;
+  }
+
+  xml = xmlReadDoc(BAD_CAST data, "hardware_profile.xml", NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    dcloudprintf("Failed to parse hardware_profile XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
+    goto cleanup;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    dcloudprintf("Failed to get the image root element\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    dcloudprintf("Failed to initialize XPath context for image\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
+    goto cleanup;
+  }
+
+  if (parse_hardware_profile_xml(root, ctxt, (void **)&tmpprofile) < 0) {
+    dcloudprintf("Failed to parse hardware profile XML\n");
+    ret = DELTACLOUD_XML_PARSE_ERROR;
+    goto cleanup;
+  }
+
+  if (copy_hardware_profile(profile, tmpprofile) < 0) {
+    dcloudprintf("Failed to copy hardware profile structure\n");
+    ret = DELTACLOUD_OOM_ERROR;
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  deltacloud_free_hardware_profile_list(&tmpprofile);
+  if (ctxt != NULL)
+    xmlXPathFreeContext(ctxt);
+  if (xml)
+    xmlFreeDoc(xml);
+  SAFE_FREE(data);
+  SAFE_FREE(url);
 
   return ret;
 }

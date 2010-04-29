@@ -62,7 +62,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %defattr(-,root,root,-)
-#% attr(0644,root,root) %{_mandir}/man3/*
 %attr(0644,root,root) %{_includedir}/dcloudapi/dcloudapi.h
 %attr(0644,root,root) %{_includedir}/dcloudapi/link.h
 %attr(0644,root,root) %{_includedir}/dcloudapi/instance.h
@@ -77,7 +76,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Fri Apr 23 2010 Chris Lalancette <clalance@redhat.com> 0.2-1
-- Bump version for new API (removed flavors)
+- Bump version for new API (removed flavors, added hardware profiles)
 * Mon Mar 08 2010 Chris Lalancette <clalance@redhat.com> 0.1-1
 - Initial build.
 

@@ -481,6 +481,26 @@ int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
   return -1;
 }
 
+int copy_hardware_profile(struct deltacloud_hardware_profile *dst,
+			  struct deltacloud_hardware_profile *src)
+{
+  memset(dst, 0, sizeof(struct deltacloud_hardware_profile));
+
+  if (strdup_or_null(&dst->href, src->href) < 0)
+    goto error;
+  if (strdup_or_null(&dst->id, src->id) < 0)
+    goto error;
+  if (copy_property_list(&dst->properties, &src->properties) < 0)
+    goto error;
+  dst->next = NULL;
+
+  return 0;
+
+ error:
+  deltacloud_free_hardware_profile(dst);
+  return -1;
+}
+
 void deltacloud_print_hardware_profile(struct deltacloud_hardware_profile *profile,
 				       FILE *stream)
 {

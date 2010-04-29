@@ -32,6 +32,7 @@ LIBDCLOUDAPI_1.0.0 {
 	deltacloud_get_instance_by_name;
 	deltacloud_get_realms;
 	deltacloud_get_realm_by_id;
+	deltacloud_get_hardware_profiles;
 	deltacloud_get_images;
 	deltacloud_get_image_by_id;
 	deltacloud_get_instance_states;
@@ -40,10 +41,12 @@ LIBDCLOUDAPI_1.0.0 {
 	deltacloud_get_storage_volume_by_id;
 	deltacloud_get_storage_snapshots;
 	deltacloud_get_storage_snapshot_by_id;
+	deltacloud_get_hardware_profiles;
 	deltacloud_create_instance;
 	deltacloud_instance_stop;
 	deltacloud_instance_reboot;
 	deltacloud_instance_start;
+	deltacloud_instance_destroy;
 	deltacloud_free;
 	deltacloud_strerror;
 };
