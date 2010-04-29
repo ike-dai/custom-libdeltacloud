@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
   struct deltacloud_hardware_profile *profiles;
   struct deltacloud_instance_state instance_state;
   struct deltacloud_realm realm;
+  struct deltacloud_hardware_profile hwp;
   struct deltacloud_image image;
   struct deltacloud_instance instance;
   struct deltacloud_storage_volume storage_volume;
@@ -68,6 +69,15 @@ int main(int argc, char *argv[])
 
   deltacloud_print_hardware_profile_list(&profiles, NULL);
   deltacloud_free_hardware_profile_list(&profiles);
+
+  rc = deltacloud_get_hardware_profile_by_id(&api, "m1-small", &hwp);
+  if (rc < 0) {
+    fprintf(stderr, "Failed to get hardware profile by id: %s\n",
+	    deltacloud_strerror(rc));
+    goto cleanup;
+  }
+  deltacloud_print_hardware_profile(&hwp, NULL);
+  deltacloud_free_hardware_profile(&hwp);
 
   fprintf(stderr, "--------------IMAGES-------------------------\n");
   rc = deltacloud_get_images(&api, &images);

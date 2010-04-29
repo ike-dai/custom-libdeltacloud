@@ -90,6 +90,8 @@ int add_to_property_list(struct deltacloud_property **props, const char *kind,
 			 struct deltacloud_property_enum *enums,
 			 struct deltacloud_property_range *ranges);
 void free_property_list(struct deltacloud_property **props);
+
+void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profile);
 int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
 				 const char *id, const char *href,
 				 struct deltacloud_property *props);

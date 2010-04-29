@@ -439,7 +439,6 @@ static int copy_property_list(struct deltacloud_property **dst,
   return -1;
 }
 
-static void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profile);
 int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
 				 const char *id, const char *href,
 				 struct deltacloud_property *props)
@@ -527,7 +526,7 @@ void deltacloud_print_hardware_profile_list(struct deltacloud_hardware_profile *
   }
 }
 
-static void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profile)
+void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profile)
 {
   SAFE_FREE(profile->id);
   SAFE_FREE(profile->href);
