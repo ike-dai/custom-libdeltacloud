@@ -3,7 +3,7 @@
 EXTRA_DIST = libdcloudapi.spec
 SUBDIRS = include/dcloudapi
 
-AM_CPPFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) -Wall -I$(builddir)/include/dcloudapi
+AM_CPPFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) -Wall -Iinclude/dcloudapi -fno-strict-aliasing
 libdcloudapi_la_LDFLAGS = $(LIBXML_LIBS) $(LIBCURL_LIBS) \
 	$(VERSION_SCRIPT_FLAGS)libdcloudapi.syms -version-info 1:0:0
 
