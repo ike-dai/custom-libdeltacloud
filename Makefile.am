@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-EXTRA_DIST = libdcloudapi.spec
+EXTRA_DIST = libdcloudapi.spec build-aux m4
 SUBDIRS = include/dcloudapi
 
 AM_CPPFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) -Wall -Iinclude/dcloudapi -fno-strict-aliasing
