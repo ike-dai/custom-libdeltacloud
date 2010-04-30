@@ -57,7 +57,7 @@ dnl
 dnl check for libcurl
 dnl
 
-LIBCURL_REQUIRED=7.19.7
+LIBCURL_REQUIRED=7.15
 LIBCURL_CONFIG="curl-config"
 LIBCURL_CFLAGS=""
 LIBCURL_LIBS=""
@@ -94,5 +94,7 @@ if test "$LIBCURL_FOUND" = "no" ; then
 fi
 AC_SUBST([LIBCURL_CFLAGS])
 AC_SUBST([LIBCURL_LIBS])
+
+AC_CHECK_DECL(CURLOPT_USERNAME, [AC_DEFINE(CURL_HAVE_USERNAME, [], [Description])], ,[#include <curl/curl.h>])
 
 AC_OUTPUT(Makefile include/dcloudapi/Makefile libdcloudapi.pc)

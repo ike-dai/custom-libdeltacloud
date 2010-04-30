@@ -18,6 +18,7 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
 #include <curl/curl.h>
@@ -85,6 +86,7 @@ char *do_curl(const char *url, const char *user, const char *password, int post,
     goto cleanup;
   }
 
+#ifdef CURL_HAVE_USERNAME
   if (user != NULL) {
     res = curl_easy_setopt(curl, CURLOPT_USERNAME, user);
     if (res != CURLE_OK) {
@@ -102,6 +104,23 @@ char *do_curl(const char *url, const char *user, const char *password, int post,
       goto cleanup;
     }
   }
+#else
+  if (user != NULL && password != NULL) {
+    char *userpwd;
+
+    if (asprintf(&userpwd, "%s:%s", user, password) < 0) {
+      dcloudprintf("Failed to allocate memory for userpwd\n");
+      goto cleanup;
+    }
+    res = curl_easy_setopt(curl, CURLOPT_USERPWD, userpwd);
+    SAFE_FREE(userpwd);
+    if (res != CURLE_OK) {
+      dcloudprintf("Failed to set username/password header: %s\n",
+                   curl_easy_strerror(res));
+      goto cleanup;
+    }
+  }
+#endif
 
   res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, memory_callback);
   if (res != CURLE_OK) {
