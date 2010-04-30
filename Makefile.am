@@ -46,7 +46,7 @@ check_PROGRAMS = dcloud-client
 
 LDADD = $(lib_LTLIBRARIES)
 
-generated_test_scripts = $(pathsubst %,%.sh,$(check_PROGRAMS))
+generated_test_scripts = $(check_PROGRAMS)
 TESTS = $(generated_test_scripts)
 
 DISTCLEANFILES = $(generated_test_scripts) *~ $(pkgconfig_DATA)
