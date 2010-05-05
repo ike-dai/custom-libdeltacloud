@@ -227,6 +227,7 @@ int add_to_instance_list(struct deltacloud_instance **instances, const char *id,
 			 const char *name, const char *owner_id,
 			 const char *image_href,
 			 const char *realm_href, const char *state,
+			 struct deltacloud_hardware_profile *hwp,
 			 struct deltacloud_action *actions,
 			 struct deltacloud_address *public_addresses,
 			 struct deltacloud_address *private_addresses)
@@ -250,6 +251,8 @@ int add_to_instance_list(struct deltacloud_instance **instances, const char *id,
   if (strdup_or_null(&oneinstance->realm_href, realm_href) < 0)
     goto error;
   if (strdup_or_null(&oneinstance->state, state) < 0)
+    goto error;
+  if (copy_hardware_profile(&oneinstance->hwp, hwp) < 0)
     goto error;
   if (copy_action_list(&oneinstance->actions, &actions) < 0)
     goto error;
@@ -335,6 +338,7 @@ void deltacloud_print_instance(struct deltacloud_instance *instance,
   fprintf(stream, "Image HREF: %s\n", instance->image_href);
   fprintf(stream, "Realm HREF: %s\n", instance->realm_href);
   fprintf(stream, "State: %s\n", instance->state);
+  deltacloud_print_hardware_profile(&instance->hwp, NULL);
   print_action_list(&instance->actions, stream);
   print_address_list(&instance->public_addresses, stream);
   print_address_list(&instance->private_addresses, stream);
@@ -363,6 +367,7 @@ void deltacloud_free_instance(struct deltacloud_instance *instance)
   SAFE_FREE(instance->image_href);
   SAFE_FREE(instance->realm_href);
   SAFE_FREE(instance->state);
+  deltacloud_free_hardware_profile(&instance->hwp);
   free_action_list(&instance->actions);
   free_address_list(&instance->public_addresses);
   free_address_list(&instance->private_addresses);

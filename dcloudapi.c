@@ -195,16 +195,15 @@ static struct deltacloud_address *parse_addresses_xml(xmlNodePtr instance,
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "address")) {
       address = getXPathString("string(./address)", ctxt);
-      if (address == NULL) {
-	dcloudprintf("Could not find XML for address\n");
-	goto cleanup;
+      if (address != NULL) {
+	listret = add_to_address_list(&addresses, address);
+	SAFE_FREE(address);
+	if (listret < 0) {
+	  dcloudprintf("Failed to add new address to list\n");
+	  goto cleanup;
+	}
       }
-      listret = add_to_address_list(&addresses, address);
-      SAFE_FREE(address);
-      if (listret < 0) {
-	dcloudprintf("Failed to add new address to list\n");
-	goto cleanup;
-      }
+      /* address is allowed to be NULL, so skip it here */
     }
     cur = cur->next;
   }
@@ -256,6 +255,8 @@ static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
   return actions;
 }
 
+static int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				      void **data);
 static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			      void **data)
 {
@@ -263,6 +264,7 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   xmlNodePtr oldnode, instance_cur;
   char *id = NULL, *name = NULL, *owner_id = NULL, *image_href = NULL;
   char *realm_href = NULL, *state = NULL;
+  struct deltacloud_hardware_profile *hwp = NULL;
   struct deltacloud_action *actions = NULL;
   struct deltacloud_address *public_addresses = NULL;
   struct deltacloud_address *private_addresses = NULL;
@@ -291,6 +293,8 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	    realm_href = (char *)xmlGetProp(cur, BAD_CAST "href");
 	  else if (STREQ((const char *)instance_cur->name, "state"))
 	    state = getXPathString("string(./state)", ctxt);
+	  else if (STREQ((const char *)instance_cur->name, "hardware-profile"))
+	    parse_hardware_profile_xml(instance_cur, ctxt, (void **)&hwp);
 	  else if (STREQ((const char *)instance_cur->name, "actions"))
 	    actions = parse_actions_xml(instance_cur);
 	  else if (STREQ((const char *)instance_cur->name, "public-addresses"))
@@ -302,7 +306,7 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	instance_cur = instance_cur->next;
       }
       listret = add_to_instance_list(instances, id, name, owner_id, image_href,
-				     realm_href, state, actions,
+				     realm_href, state, hwp, actions,
 				     public_addresses, private_addresses);
       SAFE_FREE(id);
       SAFE_FREE(name);
@@ -313,6 +317,7 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       free_address_list(&public_addresses);
       free_address_list(&private_addresses);
       free_action_list(&actions);
+      deltacloud_free_hardware_profile_list(&hwp);
       if (listret < 0) {
 	dcloudprintf("Failed to add new instance to list\n");
 	goto cleanup;

@@ -21,6 +21,8 @@
 #ifndef INSTANCES_H
 #define INSTANCES_H
 
+#include "hardware_profile.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,6 +47,7 @@ struct deltacloud_instance {
   char *image_href;
   char *realm_href;
   char *state;
+  struct deltacloud_hardware_profile hwp;
   struct deltacloud_action *actions;
   struct deltacloud_address *public_addresses;
   struct deltacloud_address *private_addresses;
@@ -68,6 +71,7 @@ int add_to_instance_list(struct deltacloud_instance **instances, const char *id,
 			 const char *name, const char *owner_id,
 			 const char *image_href,
 			 const char *realm_href, const char *state,
+			 struct deltacloud_hardware_profile *hwp,
 			 struct deltacloud_action *actions,
 			 struct deltacloud_address *public_addresses,
 			 struct deltacloud_address *private_addresses);
