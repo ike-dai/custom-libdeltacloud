@@ -51,8 +51,51 @@ static size_t memory_callback(void *ptr, size_t size, size_t nmemb, void *data)
   return realsize;
 }
 
-char *do_curl(const char *url, const char *user, const char *password, int post,
-	      char *data, int datalen)
+static int set_user_password(CURL *curl, const char *user, const char *password)
+{
+  CURLcode res;
+
+#ifdef CURL_HAVE_USERNAME
+  if (user != NULL) {
+    res = curl_easy_setopt(curl, CURLOPT_USERNAME, user);
+    if (res != CURLE_OK) {
+      dcloudprintf("Failed to set username header: %s\n",
+		   curl_easy_strerror(res));
+      return -1;
+    }
+  }
+
+  if (password != NULL) {
+    res = curl_easy_setopt(curl, CURLOPT_PASSWORD, password);
+    if (res != CURLE_OK) {
+      dcloudprintf("Failed to set password header: %s\n",
+		   curl_easy_strerror(res));
+      return -1;
+    }
+  }
+#else
+  if (user != NULL && password != NULL) {
+    char *userpwd;
+
+    if (asprintf(&userpwd, "%s:%s", user, password) < 0) {
+      dcloudprintf("Failed to allocate memory for userpwd\n");
+      return -1;
+    }
+    res = curl_easy_setopt(curl, CURLOPT_USERPWD, userpwd);
+    SAFE_FREE(userpwd);
+    if (res != CURLE_OK) {
+      dcloudprintf("Failed to set username/password header: %s\n",
+                   curl_easy_strerror(res));
+      return -1;
+    }
+  }
+#endif
+
+  return 0;
+}
+
+char *do_get_post_url(const char *url, const char *user, const char *password,
+		      int post, char *data, int datalen)
 {
   CURL *curl;
   CURLcode res;
@@ -86,41 +129,9 @@ char *do_curl(const char *url, const char *user, const char *password, int post,
     goto cleanup;
   }
 
-#ifdef CURL_HAVE_USERNAME
-  if (user != NULL) {
-    res = curl_easy_setopt(curl, CURLOPT_USERNAME, user);
-    if (res != CURLE_OK) {
-      dcloudprintf("Failed to set username header: %s\n",
-		   curl_easy_strerror(res));
-      goto cleanup;
-    }
-  }
-
-  if (password != NULL) {
-    res = curl_easy_setopt(curl, CURLOPT_PASSWORD, password);
-    if (res != CURLE_OK) {
-      dcloudprintf("Failed to set password header: %s\n",
-		   curl_easy_strerror(res));
-      goto cleanup;
-    }
-  }
-#else
-  if (user != NULL && password != NULL) {
-    char *userpwd;
-
-    if (asprintf(&userpwd, "%s:%s", user, password) < 0) {
-      dcloudprintf("Failed to allocate memory for userpwd\n");
-      goto cleanup;
-    }
-    res = curl_easy_setopt(curl, CURLOPT_USERPWD, userpwd);
-    SAFE_FREE(userpwd);
-    if (res != CURLE_OK) {
-      dcloudprintf("Failed to set username/password header: %s\n",
-                   curl_easy_strerror(res));
-      goto cleanup;
-    }
-  }
-#endif
+  if (set_user_password(curl, user, password) < 0)
+    /* set_user_password already printed the error */
+    goto cleanup;
 
   res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, memory_callback);
   if (res != CURLE_OK) {
@@ -174,4 +185,61 @@ char *do_curl(const char *url, const char *user, const char *password, int post,
   curl_easy_cleanup(curl);
 
   return chunk.data;
+}
+
+int delete_url(const char *url, const char *user, const char *password)
+{
+  CURL *curl;
+  CURLcode res;
+  struct curl_slist *reqlist = NULL;
+  int ret = -1;
+
+  curl = curl_easy_init();
+  if (curl == NULL) {
+    dcloudprintf("Failed to initialize curl\n");
+    return -1;
+  }
+
+  reqlist = curl_slist_append(reqlist, "Accept: application/xml");
+  if (reqlist == NULL) {
+    dcloudprintf("Failed to create request list\n");
+    goto cleanup;
+  }
+
+  if (set_user_password(curl, user, password) < 0)
+    /* set_user_password already printed the error */
+    goto cleanup;
+
+  res = curl_easy_setopt(curl, CURLOPT_URL, url);
+  if (res != CURLE_OK) {
+    dcloudprintf("Failed to set URL header: %s\n", curl_easy_strerror(res));
+    goto cleanup;
+  }
+
+  res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, reqlist);
+  if (res != CURLE_OK) {
+    dcloudprintf("Failed to set HTTP header: %s\n", curl_easy_strerror(res));
+    goto cleanup;
+  }
+
+  res = curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+  if (res != CURLE_OK) {
+    dcloudprintf("Failed to set custom request to DELETE: %s\n",
+		 curl_easy_strerror(res));
+    goto cleanup;
+  }
+
+  res = curl_easy_perform(curl);
+  if (res != CURLE_OK) {
+    dcloudprintf("Failed to perform transfer: %s\n", curl_easy_strerror(res));
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  curl_slist_free_all(reqlist);
+  curl_easy_cleanup(curl);
+
+  return ret;
 }

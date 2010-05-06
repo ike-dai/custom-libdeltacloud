@@ -19,8 +19,8 @@ libdcloudapi_la_SOURCES =		\
   include/dcloudapi/dcloudapi.h		\
   common.h				\
   common.c				\
-  geturl.h				\
-  geturl.c				\
+  curl_action.h				\
+  curl_action.c				\
   include/dcloudapi/image.h		\
   image.c				\
   include/dcloudapi/hardware_profile.h	\

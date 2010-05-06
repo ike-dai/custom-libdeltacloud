@@ -223,9 +223,9 @@ void free_action_list(struct deltacloud_action **actions)
   *actions = NULL;
 }
 
-int add_to_instance_list(struct deltacloud_instance **instances, const char *id,
-			 const char *name, const char *owner_id,
-			 const char *image_href,
+int add_to_instance_list(struct deltacloud_instance **instances,
+			 const char *href,const char *id, const char *name,
+			 const char *owner_id, const char *image_href,
 			 const char *realm_href, const char *state,
 			 struct deltacloud_hardware_profile *hwp,
 			 struct deltacloud_action *actions,
@@ -240,6 +240,8 @@ int add_to_instance_list(struct deltacloud_instance **instances, const char *id,
 
   memset(oneinstance, 0, sizeof(struct deltacloud_instance));
 
+  if (strdup_or_null(&oneinstance->href, href) < 0)
+    goto error;
   if (strdup_or_null(&oneinstance->id, id) < 0)
     goto error;
   if (strdup_or_null(&oneinstance->name, name) < 0)
@@ -287,6 +289,8 @@ int copy_instance(struct deltacloud_instance *dst,
 {
   memset(dst, 0, sizeof(struct deltacloud_instance));
 
+  if (strdup_or_null(&dst->href, src->href) < 0)
+    goto error;
   if (strdup_or_null(&dst->id, src->id) < 0)
     goto error;
   if (strdup_or_null(&dst->name, src->name) < 0)
@@ -299,6 +303,7 @@ int copy_instance(struct deltacloud_instance *dst,
     goto error;
   if (strdup_or_null(&dst->state, src->state) < 0)
     goto error;
+  copy_hardware_profile(&dst->hwp, &src->hwp);
   copy_action_list(&dst->actions, &src->actions);
   copy_address_list(&dst->public_addresses, &src->public_addresses);
   copy_address_list(&dst->private_addresses, &src->private_addresses);
@@ -332,6 +337,7 @@ void deltacloud_print_instance(struct deltacloud_instance *instance,
   if (stream == NULL)
     stream = stderr;
 
+  fprintf(stream, "HREF: %s\n", instance->href);
   fprintf(stream, "ID: %s\n", instance->id);
   fprintf(stream, "Name: %s\n", instance->name);
   fprintf(stream, "Owner ID: %s\n", instance->owner_id);
@@ -361,6 +367,7 @@ void deltacloud_print_instance_list(struct deltacloud_instance **instances,
 
 void deltacloud_free_instance(struct deltacloud_instance *instance)
 {
+  SAFE_FREE(instance->href);
   SAFE_FREE(instance->id);
   SAFE_FREE(instance->name);
   SAFE_FREE(instance->owner_id);

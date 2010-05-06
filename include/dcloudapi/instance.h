@@ -41,6 +41,7 @@ struct deltacloud_address {
 };
 
 struct deltacloud_instance {
+  char *href;
   char *id;
   char *name;
   char *owner_id;
@@ -67,9 +68,9 @@ struct deltacloud_action *find_by_rel_in_action_list(struct deltacloud_action **
 void print_action_list(struct deltacloud_action **actions, FILE *stream);
 void free_action_list(struct deltacloud_action **actions);
 
-int add_to_instance_list(struct deltacloud_instance **instances, const char *id,
-			 const char *name, const char *owner_id,
-			 const char *image_href,
+int add_to_instance_list(struct deltacloud_instance **instances,
+			 const char *href, const char *id, const char *name,
+			 const char *owner_id, const char *image_href,
 			 const char *realm_href, const char *state,
 			 struct deltacloud_hardware_profile *hwp,
 			 struct deltacloud_action *actions,

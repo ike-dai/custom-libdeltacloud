@@ -6,7 +6,7 @@
 #include <libxml/xpath.h>
 #include "dcloudapi.h"
 #include "common.h"
-#include "geturl.h"
+#include "curl_action.h"
 
 typedef int (*parse_xml_callback)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data);
 
@@ -262,8 +262,8 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 {
   struct deltacloud_instance **instances = (struct deltacloud_instance **)data;
   xmlNodePtr oldnode, instance_cur;
-  char *id = NULL, *name = NULL, *owner_id = NULL, *image_href = NULL;
-  char *realm_href = NULL, *state = NULL;
+  char *href = NULL, *id = NULL, *name = NULL, *owner_id = NULL;
+  char *image_href, *realm_href = NULL, *state = NULL;
   struct deltacloud_hardware_profile *hwp = NULL;
   struct deltacloud_action *actions = NULL;
   struct deltacloud_address *public_addresses = NULL;
@@ -276,6 +276,8 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "instance")) {
+
+      href = (char *)xmlGetProp(cur, BAD_CAST "href");
 
       ctxt->node = cur;
       instance_cur = cur->children;
@@ -305,15 +307,17 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
 	instance_cur = instance_cur->next;
       }
-      listret = add_to_instance_list(instances, id, name, owner_id, image_href,
-				     realm_href, state, hwp, actions,
-				     public_addresses, private_addresses);
+      listret = add_to_instance_list(instances, href, id, name, owner_id,
+				     image_href, realm_href, state, hwp,
+				     actions, public_addresses,
+				     private_addresses);
       SAFE_FREE(id);
       SAFE_FREE(name);
       SAFE_FREE(owner_id);
       SAFE_FREE(image_href);
       SAFE_FREE(realm_href);
       SAFE_FREE(state);
+      SAFE_FREE(href);
       free_address_list(&public_addresses);
       free_address_list(&private_addresses);
       free_action_list(&actions);
@@ -1725,7 +1729,10 @@ int deltacloud_instance_start(struct deltacloud_api *api,
 int deltacloud_instance_destroy(struct deltacloud_api *api,
 				struct deltacloud_instance *instance)
 {
-  return instance_action(api, instance, "destroy");
+  /* in deltacloud the destroy action is a DELETE method, so we need
+   * to use a different implementation
+   */
+  return delete_url(instance->href, api->user, api->password);
 }
 
 struct deltacloud_error_entry {
