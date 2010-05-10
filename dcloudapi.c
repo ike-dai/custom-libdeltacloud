@@ -1644,7 +1644,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   if (realm_id != NULL)
     fprintf(paramfp, "&realm_id=%s", realm_id);
   if (hardware_profile != NULL)
-    fprintf(paramfp, "&hardware_profile_id=%s", hardware_profile);
+    fprintf(paramfp, "&hwp_id=%s", hardware_profile);
   fclose(paramfp);
 
   data = post_url(thislink->href, api->user, api->password, params, param_size);
