@@ -69,6 +69,12 @@ int add_to_realm_list(struct deltacloud_realm **realms, char *href, char *id,
 
 int copy_realm(struct deltacloud_realm *dst, struct deltacloud_realm *src)
 {
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
+
   memset(dst, 0, sizeof(struct deltacloud_realm));
 
   if (strdup_or_null(&dst->href, src->href) < 0)

@@ -69,6 +69,12 @@ static int copy_address_list(struct deltacloud_address **dst,
 {
   struct deltacloud_address *curr;
 
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
+
   *dst = NULL;
 
   curr = *src;
@@ -176,6 +182,12 @@ static int copy_action_list(struct deltacloud_action **dst,
 			    struct deltacloud_action **src)
 {
   struct deltacloud_action *curr;
+
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
 
   *dst = NULL;
 
@@ -287,6 +299,12 @@ int add_to_instance_list(struct deltacloud_instance **instances,
 int copy_instance(struct deltacloud_instance *dst,
 		  struct deltacloud_instance *src)
 {
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
+
   memset(dst, 0, sizeof(struct deltacloud_instance));
 
   if (strdup_or_null(&dst->href, src->href) < 0)
@@ -303,10 +321,14 @@ int copy_instance(struct deltacloud_instance *dst,
     goto error;
   if (strdup_or_null(&dst->state, src->state) < 0)
     goto error;
-  copy_hardware_profile(&dst->hwp, &src->hwp);
-  copy_action_list(&dst->actions, &src->actions);
-  copy_address_list(&dst->public_addresses, &src->public_addresses);
-  copy_address_list(&dst->private_addresses, &src->private_addresses);
+  if (copy_hardware_profile(&dst->hwp, &src->hwp) < 0)
+    goto error;
+  if (copy_action_list(&dst->actions, &src->actions) < 0)
+    goto error;
+  if (copy_address_list(&dst->public_addresses, &src->public_addresses) < 0)
+    goto error;
+  if (copy_address_list(&dst->private_addresses, &src->private_addresses) < 0)
+    goto error;
   dst->next = NULL;
 
   return 0;

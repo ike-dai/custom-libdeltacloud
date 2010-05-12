@@ -68,9 +68,15 @@ int add_to_transition_list(struct transition **transitions, const char *action,
 }
 
 static int copy_transition_list(struct transition **dst,
-				 struct transition **src)
+				struct transition **src)
 {
   struct transition *curr;
+
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
 
   *dst = NULL;
 
@@ -174,6 +180,12 @@ struct deltacloud_instance_state *find_by_name_in_instance_state_list(struct del
 int copy_instance_state(struct deltacloud_instance_state *dst,
 			struct deltacloud_instance_state *src)
 {
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
+
   memset(dst, 0, sizeof(struct deltacloud_instance_state));
 
   if (strdup_or_null(&dst->name, src->name) < 0)

@@ -72,6 +72,12 @@ int add_to_image_list(struct deltacloud_image **images, const char *href, const 
 
 int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src)
 {
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
+
   memset(dst, 0, sizeof(struct deltacloud_image));
 
   if (strdup_or_null(&dst->href, src->href) < 0)

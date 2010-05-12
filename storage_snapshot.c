@@ -72,6 +72,12 @@ int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_sn
 int copy_storage_snapshot(struct deltacloud_storage_snapshot *dst,
 			  struct deltacloud_storage_snapshot *src)
 {
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
+
   memset(dst, 0, sizeof(struct deltacloud_storage_snapshot));
 
   if (strdup_or_null(&dst->href, src->href) < 0)

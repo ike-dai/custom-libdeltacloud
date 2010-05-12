@@ -231,9 +231,18 @@ static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "link")) {
-      rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      /* FIXME: check for NULL rel and href here? */
+      rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
+
+      if (href == NULL) {
+	dcloudprintf("Did not see href XML property\n");
+	goto cleanup;
+      }
+      if (rel == NULL) {
+	dcloudprintf("Did not see rel XML property\n");
+	SAFE_FREE(href);
+	goto cleanup;
+      }
 
       listret = add_to_action_list(&actions, rel, href);
       SAFE_FREE(href);
@@ -263,7 +272,7 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   struct deltacloud_instance **instances = (struct deltacloud_instance **)data;
   xmlNodePtr oldnode, instance_cur;
   char *href = NULL, *id = NULL, *name = NULL, *owner_id = NULL;
-  char *image_href, *realm_href = NULL, *state = NULL;
+  char *image_href = NULL, *realm_href = NULL, *state = NULL;
   struct deltacloud_hardware_profile *hwp = NULL;
   struct deltacloud_action *actions = NULL;
   struct deltacloud_address *public_addresses = NULL;
@@ -278,6 +287,10 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	STREQ((const char *)cur->name, "instance")) {
 
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      if (href == NULL) {
+	dcloudprintf("Did not see href XML property\n");
+	goto cleanup;
+      }
 
       ctxt->node = cur;
       instance_cur = cur->children;
@@ -525,6 +538,10 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "realm")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      if (href == NULL) {
+	dcloudprintf("Did not see href XML property\n");
+	goto cleanup;
+      }
 
       ctxt->node = cur;
       realm_cur = cur->children;
@@ -858,6 +875,11 @@ static int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       ctxt->node = cur;
 
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      if (href == NULL) {
+	dcloudprintf("Did not see href XML property\n");
+	goto cleanup;
+      }
+
       id = getXPathString("string(./id)", ctxt);
 
       props = parse_hardware_profile_properties(cur);
@@ -1008,6 +1030,10 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "image")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      if (href == NULL) {
+	dcloudprintf("Did not see href XML property\n");
+	goto cleanup;
+      }
 
       ctxt->node = cur;
       image_cur = cur->children;
@@ -1290,6 +1316,10 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "storage-volume")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      if (href == NULL) {
+	dcloudprintf("Did not see href XML property\n");
+	goto cleanup;
+      }
 
       ctxt->node = cur;
       storage_cur = cur->children;
@@ -1461,6 +1491,10 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "storage-snapshot")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      if (href == NULL) {
+	dcloudprintf("Did not see href XML property\n");
+	goto cleanup;
+      }
 
       ctxt->node = cur;
       snap_cur = cur->children;

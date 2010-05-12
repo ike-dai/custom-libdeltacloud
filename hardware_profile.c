@@ -89,6 +89,12 @@ static int copy_range_list(struct deltacloud_property_range **dst,
 {
   struct deltacloud_property_range *curr;
 
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
+
   *dst = NULL;
 
   curr = *src;
@@ -180,6 +186,12 @@ static int copy_enum_list(struct deltacloud_property_enum **dst,
 			  struct deltacloud_property_enum **src)
 {
   struct deltacloud_property_enum *curr;
+
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
 
   *dst = NULL;
 
@@ -285,6 +297,12 @@ static int copy_param_list(struct deltacloud_property_param **dst,
 			   struct deltacloud_property_param **src)
 {
   struct deltacloud_property_param *curr;
+
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
 
   *dst = NULL;
 
@@ -421,6 +439,12 @@ static int copy_property_list(struct deltacloud_property **dst,
 {
   struct deltacloud_property *curr;
 
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
+
   *dst = NULL;
 
   curr = *src;
@@ -483,6 +507,12 @@ int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
 int copy_hardware_profile(struct deltacloud_hardware_profile *dst,
 			  struct deltacloud_hardware_profile *src)
 {
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
+
   memset(dst, 0, sizeof(struct deltacloud_hardware_profile));
 
   if (strdup_or_null(&dst->href, src->href) < 0)

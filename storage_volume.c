@@ -77,6 +77,12 @@ int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volume
 int copy_storage_volume(struct deltacloud_storage_volume *dst,
 			struct deltacloud_storage_volume *src)
 {
+  /* with a NULL src, we just return success.  A NULL dst is an error */
+  if (src == NULL)
+    return 0;
+  if (dst == NULL)
+    return -1;
+
   memset(dst, 0, sizeof(struct deltacloud_storage_volume));
 
   if (strdup_or_null(&dst->href, src->href) < 0)
