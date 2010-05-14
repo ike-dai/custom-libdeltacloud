@@ -56,6 +56,14 @@ static int set_user_password(CURL *curl, const char *user, const char *password)
   CURLcode res;
 
 #ifdef CURL_HAVE_USERNAME
+  /* Note that we do not escape user or password, although they have been
+   * supplied by the user.  From what I can tell from:
+   *
+   * http://www.ietf.org/rfc/rfc2617.txt
+   *
+   * it seems that user/password are base64 encoded, so special characters
+   * should be automatically handled.
+   */
   if (user != NULL) {
     res = curl_easy_setopt(curl, CURLOPT_USERNAME, user);
     if (res != CURLE_OK) {

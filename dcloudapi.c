@@ -4,6 +4,7 @@
 #include <string.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
+#include <curl/curl.h>
 #include "dcloudapi.h"
 #include "common.h"
 #include "curl_action.h"
@@ -442,12 +443,21 @@ int deltacloud_get_instances(struct deltacloud_api *api,
 int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
 				  struct deltacloud_instance *instance)
 {
-  char *url, *data;
+  char *url = NULL;
+  char *data = NULL;
+  char *safeid;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
 
-  if (asprintf(&url, "%s/instances/%s", api->url, id) < 0) {
-    dcloudprintf("Failed to allocate memory for URL\n");
+  safeid = curl_escape(id, 0);
+  if (safeid == NULL) {
+    dcloudprintf("Failed to escape instance id\n");
     return DELTACLOUD_OOM_ERROR;
+  }
+
+  if (asprintf(&url, "%s/instances/%s", api->url, safeid) < 0) {
+    dcloudprintf("Failed to allocate memory for URL\n");
+    ret = DELTACLOUD_OOM_ERROR;
+    goto cleanup;
   }
 
   data = get_url(url, api->user, api->password);
@@ -468,6 +478,7 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
  cleanup:
   SAFE_FREE(data);
   SAFE_FREE(url);
+  curl_free(safeid);
 
   return ret;
 }
@@ -481,6 +492,10 @@ int deltacloud_get_instance_by_name(struct deltacloud_api *api,
   struct deltacloud_instance *thisinst;
   char *data;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
+
+  /* despite the fact that 'name' is an input from the user, we don't
+   * need to escape it since we are never using it as a URL
+   */
 
   thislink = find_by_rel_in_link_list(&api->links, "instances");
   if (thislink == NULL) {
@@ -619,16 +634,25 @@ int deltacloud_get_realms(struct deltacloud_api *api,
 int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
 			       struct deltacloud_realm *realm)
 {
-  char *url, *data;
+  char *url = NULL;
+  char *data = NULL;
+  char *safeid;
   struct deltacloud_realm *tmprealm = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
 
-  if (asprintf(&url, "%s/realms/%s", api->url, id) < 0) {
-    dcloudprintf("Failed to allocate memory for URL\n");
+  safeid = curl_escape(id, 0);
+  if (safeid == NULL) {
+    dcloudprintf("Failed to escape realm id\n");
     return DELTACLOUD_OOM_ERROR;
+  }
+
+  if (asprintf(&url, "%s/realms/%s", api->url, safeid) < 0) {
+    dcloudprintf("Failed to allocate memory for URL\n");
+    ret = DELTACLOUD_OOM_ERROR;
+    goto cleanup;
   }
 
   data = get_url(url, api->user, api->password);
@@ -683,6 +707,7 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
     xmlFreeDoc(xml);
   SAFE_FREE(data);
   SAFE_FREE(url);
+  curl_free(safeid);
 
   return ret;
 }
@@ -946,16 +971,25 @@ int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
 					  const char *id,
 					  struct deltacloud_hardware_profile *profile)
 {
-  char *url, *data;
+  char *url = NULL;
+  char *data = NULL;
+  char *safeid;
   struct deltacloud_hardware_profile *tmpprofile = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
 
-  if (asprintf(&url, "%s/hardware_profiles/%s", api->url, id) < 0) {
-    dcloudprintf("Failed to allocate memory for URL\n");
+  safeid = curl_escape(id, 0);
+  if (safeid == NULL) {
+    dcloudprintf("Failed to escape hardware profile id\n");
     return DELTACLOUD_OOM_ERROR;
+  }
+
+  if (asprintf(&url, "%s/hardware_profiles/%s", api->url, safeid) < 0) {
+    dcloudprintf("Failed to allocate memory for URL\n");
+    ret = DELTACLOUD_OOM_ERROR;
+    goto cleanup;
   }
 
   data = get_url(url, api->user, api->password);
@@ -1010,6 +1044,7 @@ int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
     xmlFreeDoc(xml);
   SAFE_FREE(data);
   SAFE_FREE(url);
+  curl_free(safeid);
 
   return ret;
 }
@@ -1115,16 +1150,25 @@ int deltacloud_get_images(struct deltacloud_api *api,
 int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
 			       struct deltacloud_image *image)
 {
-  char *url, *data;
+  char *url = NULL;
+  char *data = NULL;
+  char *safeid;
   struct deltacloud_image *tmpimage = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
 
-  if (asprintf(&url, "%s/images/%s", api->url, id) < 0) {
-    dcloudprintf("Failed to allocate memory for URL\n");
+  safeid = curl_escape(id, 0);
+  if (safeid == NULL) {
+    dcloudprintf("Failed to escape image id\n");
     return DELTACLOUD_OOM_ERROR;
+  }
+
+  if (asprintf(&url, "%s/images/%s", api->url, safeid) < 0) {
+    dcloudprintf("Failed to allocate memory for URL\n");
+    ret = DELTACLOUD_OOM_ERROR;
+    goto cleanup;
   }
 
   data = get_url(url, api->user, api->password);
@@ -1179,6 +1223,7 @@ int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
     xmlFreeDoc(xml);
   SAFE_FREE(data);
   SAFE_FREE(url);
+  curl_free(safeid);
 
   return ret;
 }
@@ -1274,6 +1319,10 @@ int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
   struct deltacloud_instance_state *found;
   int instance_ret;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
+
+  /* despite the fact that 'name' is an input from the user, we don't
+   * need to escape it since we are never using it as a URL
+   */
 
   instance_ret = deltacloud_get_instance_states(api, &statelist);
   if (instance_ret < 0) {
@@ -1407,16 +1456,25 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
 					const char *id,
 					struct deltacloud_storage_volume *storage_volume)
 {
-  char *url, *data;
+  char *url = NULL;
+  char *data = NULL;
+  char *safeid;
   struct deltacloud_storage_volume *tmpstorage_volume = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
 
-  if (asprintf(&url, "%s/storage_volumes/%s", api->url, id) < 0) {
-    dcloudprintf("Failed to allocate memory for URL\n");
+  safeid = curl_escape(id, 0);
+  if (safeid == NULL) {
+    dcloudprintf("Failed to escape storage volume id\n");
     return DELTACLOUD_OOM_ERROR;
+  }
+
+  if (asprintf(&url, "%s/storage_volumes/%s", api->url, safeid) < 0) {
+    dcloudprintf("Failed to allocate memory for URL\n");
+    ret = DELTACLOUD_OOM_ERROR;
+    goto cleanup;
   }
 
   data = get_url(url, api->user, api->password);
@@ -1471,6 +1529,7 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
     xmlFreeDoc(xml);
   SAFE_FREE(data);
   SAFE_FREE(url);
+  curl_free(safeid);
 
   return ret;
 }
@@ -1576,16 +1635,25 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 					  const char *id,
 					  struct deltacloud_storage_snapshot *storage_snapshot)
 {
-  char *url, *data;
+  char *url = NULL;
+  char *data = NULL;
+  char *safeid;
   struct deltacloud_storage_snapshot *tmpstorage_snapshot = NULL;
   xmlDocPtr xml = NULL;
   xmlNodePtr root;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
 
-  if (asprintf(&url, "%s/storage_snapshots/%s", api->url, id) < 0) {
-    dcloudprintf("Failed to allocate memory for URL\n");
+  safeid = curl_escape(id, 0);
+  if (safeid == NULL) {
+    dcloudprintf("Failed to escape storage snapshot id\n");
     return DELTACLOUD_OOM_ERROR;
+  }
+
+  if (asprintf(&url, "%s/storage_snapshots/%s", api->url, safeid) < 0) {
+    dcloudprintf("Failed to allocate memory for URL\n");
+    ret = DELTACLOUD_OOM_ERROR;
+    goto cleanup;
   }
 
   data = get_url(url, api->user, api->password);
@@ -1640,6 +1708,7 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
     xmlFreeDoc(xml);
   SAFE_FREE(data);
   SAFE_FREE(url);
+  curl_free(safeid);
 
   return ret;
 }
@@ -1650,10 +1719,15 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       struct deltacloud_instance *inst)
 {
   struct deltacloud_link *thislink;
-  char *data, *params;
   size_t param_size;
   FILE *paramfp;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
+  char *data = NULL;
+  char *params = NULL;
+  char *safename = NULL;
+  char *saferealm = NULL;
+  char *safehwp = NULL;
+  int error = 0;
 
   if (image_id == NULL) {
     dcloudprintf("Failed create_instance: image ID cannot be NULL\n");
@@ -1672,21 +1746,42 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
     return DELTACLOUD_OOM_ERROR;
   }
 
+  /* since image_id, name, realm_id, and hardware_profile come from the
+   * user, we must not trust them and URL escape them before use
+   */
+
   fprintf(paramfp, "image_id=%s", image_id);
-  if (name != NULL)
-    fprintf(paramfp, "&name=%s", name);
-  if (realm_id != NULL)
-    fprintf(paramfp, "&realm_id=%s", realm_id);
-  if (hardware_profile != NULL)
-    fprintf(paramfp, "&hwp_id=%s", hardware_profile);
+  if (name != NULL) {
+    safename = curl_escape(name, 0);
+    if (safename == NULL)
+      error = 1;
+    fprintf(paramfp, "&name=%s", safename);
+  }
+  if (realm_id != NULL) {
+    saferealm = curl_escape(realm_id, 0);
+    if (saferealm == NULL)
+      error = 1;
+    fprintf(paramfp, "&realm_id=%s", saferealm);
+  }
+  if (hardware_profile != NULL) {
+    safehwp = curl_escape(hardware_profile, 0);
+    if (safehwp == NULL)
+      error = 1;
+    fprintf(paramfp, "&hwp_id=%s", safehwp);
+  }
   fclose(paramfp);
 
+  if (error) {
+    dcloudprintf("Failed to escape input data\n");
+    goto cleanup;
+  }
+
   data = post_url(thislink->href, api->user, api->password, params, param_size);
-  SAFE_FREE(params);
   if (data == NULL) {
     dcloudprintf("Failed to post the XML for create_instance to %s\n",
 		 thislink->href);
-    return DELTACLOUD_POST_URL_ERROR;
+    ret = DELTACLOUD_POST_URL_ERROR;
+    goto cleanup;
   }
 
   if (inst != NULL) {
@@ -1700,6 +1795,10 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   ret = 0;
 
  cleanup:
+  SAFE_FREE(params);
+  curl_free(safename);
+  curl_free(saferealm);
+  curl_free(safehwp);
   SAFE_FREE(data);
 
   return ret;
