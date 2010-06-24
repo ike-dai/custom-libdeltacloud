@@ -100,6 +100,8 @@ void deltacloud_print_realm(struct deltacloud_realm *realm, FILE *stream)
 {
   if (stream == NULL)
     stream = stderr;
+  if (realm == NULL)
+    return;
 
   fprintf(stream, "Href: %s\n", realm->href);
   fprintf(stream, "ID: %s\n", realm->id);
@@ -114,6 +116,8 @@ void deltacloud_print_realm_list(struct deltacloud_realm **realms, FILE *stream)
 
   if (stream == NULL)
     stream = stderr;
+  if (realms == NULL)
+    return;
 
   curr = *realms;
   while (curr != NULL) {
@@ -124,6 +128,9 @@ void deltacloud_print_realm_list(struct deltacloud_realm **realms, FILE *stream)
 
 void deltacloud_free_realm(struct deltacloud_realm *realm)
 {
+  if (realm == NULL)
+    return;
+
   SAFE_FREE(realm->href);
   SAFE_FREE(realm->id);
   SAFE_FREE(realm->name);
@@ -134,6 +141,9 @@ void deltacloud_free_realm(struct deltacloud_realm *realm)
 void deltacloud_free_realm_list(struct deltacloud_realm **realms)
 {
   struct deltacloud_realm *curr, *next;
+
+  if (realms == NULL)
+    return;
 
   curr = *realms;
   while (curr != NULL) {

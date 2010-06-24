@@ -113,6 +113,8 @@ void deltacloud_print_storage_volume(struct deltacloud_storage_volume *storage_v
 {
   if (stream == NULL)
     stream = stderr;
+  if (storage_volume == NULL)
+    return;
 
   fprintf(stream, "Href: %s\n", storage_volume->href);
   fprintf(stream, "ID: %s\n", storage_volume->id);
@@ -130,6 +132,8 @@ void deltacloud_print_storage_volume_list(struct deltacloud_storage_volume **sto
 
   if (stream == NULL)
     stream = stderr;
+  if (storage_volumes == NULL)
+    return;
 
   curr = *storage_volumes;
   while (curr != NULL) {
@@ -140,6 +144,9 @@ void deltacloud_print_storage_volume_list(struct deltacloud_storage_volume **sto
 
 void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_volume)
 {
+  if (storage_volume == NULL)
+    return;
+
   SAFE_FREE(storage_volume->href);
   SAFE_FREE(storage_volume->id);
   SAFE_FREE(storage_volume->created);
@@ -152,6 +159,9 @@ void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_vo
 void deltacloud_free_storage_volume_list(struct deltacloud_storage_volume **storage_volumes)
 {
   struct deltacloud_storage_volume *curr, *next;
+
+  if (storage_volumes == NULL)
+    return;
 
   curr = *storage_volumes;
   while (curr != NULL) {

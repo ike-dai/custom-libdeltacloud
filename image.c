@@ -106,6 +106,9 @@ void deltacloud_print_image(struct deltacloud_image *image, FILE *stream)
   if (stream == NULL)
     stream = stderr;
 
+  if (image == NULL)
+    return;
+
   fprintf(stream, "Href: %s\n", image->href);
   fprintf(stream, "ID: %s\n", image->id);
   fprintf(stream, "Description: %s\n", image->description);
@@ -121,6 +124,9 @@ void deltacloud_print_image_list(struct deltacloud_image **images, FILE *stream)
   if (stream == NULL)
     stream = stderr;
 
+  if (images == NULL)
+    return;
+
   curr = *images;
   while (curr != NULL) {
     deltacloud_print_image(curr, NULL);
@@ -130,6 +136,9 @@ void deltacloud_print_image_list(struct deltacloud_image **images, FILE *stream)
 
 void deltacloud_free_image(struct deltacloud_image *image)
 {
+  if (image == NULL)
+    return;
+
   SAFE_FREE(image->href);
   SAFE_FREE(image->id);
   SAFE_FREE(image->description);
@@ -141,6 +150,9 @@ void deltacloud_free_image(struct deltacloud_image *image)
 void deltacloud_free_image_list(struct deltacloud_image **images)
 {
   struct deltacloud_image *curr, *next;
+
+  if (images == NULL)
+    return;
 
   curr = *images;
   while (curr != NULL) {

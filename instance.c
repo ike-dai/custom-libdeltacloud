@@ -359,6 +359,9 @@ void deltacloud_print_instance(struct deltacloud_instance *instance,
   if (stream == NULL)
     stream = stderr;
 
+  if (instance == NULL)
+    return;
+
   fprintf(stream, "HREF: %s\n", instance->href);
   fprintf(stream, "ID: %s\n", instance->id);
   fprintf(stream, "Name: %s\n", instance->name);
@@ -380,6 +383,9 @@ void deltacloud_print_instance_list(struct deltacloud_instance **instances,
   if (stream == NULL)
     stream = stderr;
 
+  if (instances == NULL)
+    return;
+
   curr = *instances;
   while (curr != NULL) {
     deltacloud_print_instance(curr, NULL);
@@ -389,6 +395,9 @@ void deltacloud_print_instance_list(struct deltacloud_instance **instances,
 
 void deltacloud_free_instance(struct deltacloud_instance *instance)
 {
+  if (instance == NULL)
+    return;
+
   SAFE_FREE(instance->href);
   SAFE_FREE(instance->id);
   SAFE_FREE(instance->name);
@@ -405,6 +414,9 @@ void deltacloud_free_instance(struct deltacloud_instance *instance)
 void deltacloud_free_instance_list(struct deltacloud_instance **instances)
 {
   struct deltacloud_instance *curr, *next;
+
+  if (instances == NULL)
+    return;
 
   curr = *instances;
   while (curr != NULL) {

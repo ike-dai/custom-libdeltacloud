@@ -104,6 +104,8 @@ void deltacloud_print_storage_snapshot(struct deltacloud_storage_snapshot *stora
 {
   if (stream == NULL)
     stream = stderr;
+  if (storage_snapshot == NULL)
+    return;
 
   fprintf(stream, "Href: %s\n", storage_snapshot->href);
   fprintf(stream, "ID: %s\n", storage_snapshot->id);
@@ -120,6 +122,8 @@ void deltacloud_print_storage_snapshot_list(struct deltacloud_storage_snapshot *
 
   if (stream == NULL)
     stream = stderr;
+  if (storage_snapshots == NULL)
+    return;
 
   curr = *storage_snapshots;
   while (curr != NULL) {
@@ -130,6 +134,9 @@ void deltacloud_print_storage_snapshot_list(struct deltacloud_storage_snapshot *
 
 void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot)
 {
+  if (storage_snapshot == NULL)
+    return;
+
   SAFE_FREE(storage_snapshot->href);
   SAFE_FREE(storage_snapshot->id);
   SAFE_FREE(storage_snapshot->created);
@@ -140,6 +147,9 @@ void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storag
 void deltacloud_free_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots)
 {
   struct deltacloud_storage_snapshot *curr, *next;
+
+  if (storage_snapshots == NULL)
+    return;
 
   curr = *storage_snapshots;
   while (curr != NULL) {

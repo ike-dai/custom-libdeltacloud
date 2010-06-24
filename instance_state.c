@@ -206,6 +206,8 @@ void deltacloud_print_instance_state(struct deltacloud_instance_state *instance_
 {
   if (stream == NULL)
     stream = stderr;
+  if (instance_state == NULL)
+    return;
 
   fprintf(stream, "Name: %s\n", instance_state->name);
   print_transition_list(&instance_state->transitions, stream);
@@ -218,6 +220,8 @@ void deltacloud_print_instance_state_list(struct deltacloud_instance_state **ins
 
   if (stream == NULL)
     stream = stderr;
+  if (instance_states == NULL)
+    return;
 
   curr = *instance_states;
   while (curr != NULL) {
@@ -228,6 +232,9 @@ void deltacloud_print_instance_state_list(struct deltacloud_instance_state **ins
 
 void deltacloud_free_instance_state(struct deltacloud_instance_state *instance_state)
 {
+  if (instance_state == NULL)
+    return;
+
   SAFE_FREE(instance_state->name);
   free_transition_list(&instance_state->transitions);
 }
@@ -235,6 +242,9 @@ void deltacloud_free_instance_state(struct deltacloud_instance_state *instance_s
 void deltacloud_free_instance_state_list(struct deltacloud_instance_state **instance_states)
 {
   struct deltacloud_instance_state *curr, *next;
+
+  if (instance_states == NULL)
+    return;
 
   curr = *instance_states;
   while (curr != NULL) {

@@ -94,6 +94,7 @@ const char *deltacloud_strerror(int error);
 #define DELTACLOUD_OOM_ERROR -9
 #define DELTACLOUD_INVALID_IMAGE_ERROR -10
 #define DELTACLOUD_FIND_ERROR -11
+#define DELTACLOUD_ARGUMENT_ERROR -12
 
 #ifdef __cplusplus
 }

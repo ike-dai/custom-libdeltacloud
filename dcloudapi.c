@@ -109,6 +109,23 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
   char *data;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
 
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (url == NULL) {
+    dcloudprintf("URL argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (user == NULL) {
+    dcloudprintf("User argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (password == NULL) {
+    dcloudprintf("Password argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+
   memset(api, 0, sizeof(struct deltacloud_api));
 
   api->url = strdup(url);
@@ -412,6 +429,15 @@ int deltacloud_get_instances(struct deltacloud_api *api,
   char *data;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
 
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (instances == NULL) {
+    dcloudprintf("Instances argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+
   thislink = find_by_rel_in_link_list(&api->links, "instances");
   if (thislink == NULL) {
     dcloudprintf("Failed to find the link for 'instances'\n");
@@ -448,6 +474,19 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
   char *safeid;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
 
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (id == NULL) {
+    dcloudprintf("Instance ID argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (instance == NULL) {
+    dcloudprintf("Instance argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+
   safeid = curl_escape(id, 0);
   if (safeid == NULL) {
     dcloudprintf("Failed to escape instance id\n");
@@ -467,6 +506,7 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
     goto cleanup;
   }
 
+  memset(instance, 0, sizeof(struct deltacloud_instance));
   if (parse_one_instance(data, instance) < 0) {
     dcloudprintf("Failed to parse the 'instance' XML\n");
     ret = DELTACLOUD_XML_PARSE_ERROR;
@@ -496,6 +536,19 @@ int deltacloud_get_instance_by_name(struct deltacloud_api *api,
   /* despite the fact that 'name' is an input from the user, we don't
    * need to escape it since we are never using it as a URL
    */
+
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (name == NULL) {
+    dcloudprintf("Instance name argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (instance == NULL) {
+    dcloudprintf("Instance argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
 
   thislink = find_by_rel_in_link_list(&api->links, "instances");
   if (thislink == NULL) {
@@ -604,6 +657,15 @@ int deltacloud_get_realms(struct deltacloud_api *api,
   char *data;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
 
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (realms == NULL) {
+    dcloudprintf("Realms argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+
   thislink = find_by_rel_in_link_list(&api->links, "realms");
   if (thislink == NULL) {
     dcloudprintf("Failed to find the link for 'realms'\n");
@@ -642,6 +704,19 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
   xmlNodePtr root;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
+
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (id == NULL) {
+    dcloudprintf("Realm ID argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (realm == NULL) {
+    dcloudprintf("Realm argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
 
   safeid = curl_escape(id, 0);
   if (safeid == NULL) {
@@ -939,6 +1014,15 @@ int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
   char *data;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
 
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (profiles == NULL) {
+    dcloudprintf("Hardware profiles argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+
   thislink = find_by_rel_in_link_list(&api->links, "hardware_profiles");
   if (thislink == NULL) {
     dcloudprintf("Failed to find the link for 'hardware_profiles'\n");
@@ -979,6 +1063,19 @@ int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
   xmlNodePtr root;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
+
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (id == NULL) {
+    dcloudprintf("Hardware profile ID argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (profile == NULL) {
+    dcloudprintf("Hardware profile argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
 
   safeid = curl_escape(id, 0);
   if (safeid == NULL) {
@@ -1120,6 +1217,15 @@ int deltacloud_get_images(struct deltacloud_api *api,
   char *data;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
 
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (images == NULL) {
+    dcloudprintf("Images argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+
   thislink = find_by_rel_in_link_list(&api->links, "images");
   if (thislink == NULL) {
     dcloudprintf("Failed to find the link for 'images'\n");
@@ -1158,6 +1264,19 @@ int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
   xmlNodePtr root;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
+
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (id == NULL) {
+    dcloudprintf("Image ID cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (image == NULL) {
+    dcloudprintf("Image argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
 
   safeid = curl_escape(id, 0);
   if (safeid == NULL) {
@@ -1283,6 +1402,15 @@ int deltacloud_get_instance_states(struct deltacloud_api *api,
   char *data;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
 
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (instance_states == NULL) {
+    dcloudprintf("Instance states argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+
   thislink = find_by_rel_in_link_list(&api->links, "instance_states");
   if (thislink == NULL) {
     dcloudprintf("Failed to find the link for 'instance-states'\n");
@@ -1323,6 +1451,19 @@ int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
   /* despite the fact that 'name' is an input from the user, we don't
    * need to escape it since we are never using it as a URL
    */
+
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (name == NULL) {
+    dcloudprintf("Instance state name argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (instance_state == NULL) {
+    dcloudprintf("Instance state argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
 
   instance_ret = deltacloud_get_instance_states(api, &statelist);
   if (instance_ret < 0) {
@@ -1424,6 +1565,15 @@ int deltacloud_get_storage_volumes(struct deltacloud_api *api,
   char *data;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
 
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (storage_volumes == NULL) {
+    dcloudprintf("Storage volumes argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+
   thislink = find_by_rel_in_link_list(&api->links, "storage_volumes");
   if (thislink == NULL) {
     dcloudprintf("Failed to find the link for 'storage_volumes'\n");
@@ -1464,6 +1614,19 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
   xmlNodePtr root;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
+
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (id == NULL) {
+    dcloudprintf("Storage volume ID cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (storage_volume == NULL) {
+    dcloudprintf("Storage volume argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
 
   safeid = curl_escape(id, 0);
   if (safeid == NULL) {
@@ -1603,6 +1766,15 @@ int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
   char *data;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
 
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (storage_snapshots == NULL) {
+    dcloudprintf("Storage snapshots argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+
   thislink = find_by_rel_in_link_list(&api->links, "storage_snapshots");
   if (thislink == NULL) {
     dcloudprintf("Failed to find the link for 'storage_snapshots'\n");
@@ -1643,6 +1815,19 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
   xmlNodePtr root;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
   xmlXPathContextPtr ctxt = NULL;
+
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (id == NULL) {
+    dcloudprintf("Storage snapshot ID cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (storage_snapshot == NULL) {
+    dcloudprintf("Storage snapshot argument cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
 
   safeid = curl_escape(id, 0);
   if (safeid == NULL) {
@@ -1729,8 +1914,12 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   char *safehwp = NULL;
   int error = 0;
 
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
   if (image_id == NULL) {
-    dcloudprintf("Failed create_instance: image ID cannot be NULL\n");
+    dcloudprintf("Image ID cannot be NULL\n");
     return DELTACLOUD_INVALID_IMAGE_ERROR;
   }
 
@@ -1785,6 +1974,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   }
 
   if (inst != NULL) {
+    memset(inst, 0, sizeof(struct deltacloud_instance));
     if (parse_one_instance(data, inst) < 0) {
       dcloudprintf("Failed to parse instance XML\n");
       ret = DELTACLOUD_XML_PARSE_ERROR;
@@ -1811,6 +2001,19 @@ static int instance_action(struct deltacloud_api *api,
   struct deltacloud_action *act;
   char *data;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
+
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (instance == NULL) {
+    dcloudprintf("Instance cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+
+  /* action_name can't possibly be NULL since it is not part of the
+   * external API
+   */
 
   act = find_by_rel_in_action_list(&instance->actions, action_name);
   if (act == NULL) {
@@ -1862,6 +2065,15 @@ int deltacloud_instance_start(struct deltacloud_api *api,
 int deltacloud_instance_destroy(struct deltacloud_api *api,
 				struct deltacloud_instance *instance)
 {
+  if (api == NULL) {
+    dcloudprintf("API cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+  if (instance == NULL) {
+    dcloudprintf("Instance cannot be NULL\n");
+    return DELTACLOUD_ARGUMENT_ERROR;
+  }
+
   /* in deltacloud the destroy action is a DELETE method, so we need
    * to use a different implementation
    */
@@ -1899,6 +2111,9 @@ const char *deltacloud_strerror(int error)
 
 void deltacloud_free(struct deltacloud_api *api)
 {
+  if (api == NULL)
+    return;
+
   free_link_list(&api->links);
   SAFE_FREE(api->user);
   SAFE_FREE(api->password);

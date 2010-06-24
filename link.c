@@ -73,6 +73,9 @@ void deltacloud_print_link_list(struct deltacloud_link **links, FILE *stream)
   if (stream == NULL)
     stream = stderr;
 
+  if (links == NULL)
+    return;
+
   curr = *links;
   while (curr != NULL) {
     fprintf(stream, "HREF %s, REL %s\n", curr->href, curr->rel);

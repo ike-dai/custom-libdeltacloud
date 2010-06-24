@@ -535,6 +535,8 @@ void deltacloud_print_hardware_profile(struct deltacloud_hardware_profile *profi
 {
   if (stream == NULL)
     stream = stderr;
+  if (profile == NULL)
+    return;
 
   fprintf(stream, "ID: %s\n", profile->id);
   fprintf(stream, "HREF: %s\n", profile->href);
@@ -549,6 +551,9 @@ void deltacloud_print_hardware_profile_list(struct deltacloud_hardware_profile *
   if (stream == NULL)
     stream = stderr;
 
+  if (profiles == NULL)
+    return;
+
   curr = *profiles;
   while (curr != NULL) {
     deltacloud_print_hardware_profile(curr, NULL);
@@ -558,6 +563,9 @@ void deltacloud_print_hardware_profile_list(struct deltacloud_hardware_profile *
 
 void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profile)
 {
+  if (profile == NULL)
+    return;
+
   SAFE_FREE(profile->id);
   SAFE_FREE(profile->href);
   free_property_list(&profile->properties);
@@ -566,6 +574,9 @@ void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profil
 void deltacloud_free_hardware_profile_list(struct deltacloud_hardware_profile **profiles)
 {
   struct deltacloud_hardware_profile *curr, *next;
+
+  if (profiles == NULL)
+    return;
 
   curr = *profiles;
   while (curr != NULL) {
