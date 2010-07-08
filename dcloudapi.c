@@ -326,13 +326,13 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	    realm_href = (char *)xmlGetProp(cur, BAD_CAST "href");
 	  else if (STREQ((const char *)instance_cur->name, "state"))
 	    state = getXPathString("string(./state)", ctxt);
-	  else if (STREQ((const char *)instance_cur->name, "hardware-profile"))
+	  else if (STREQ((const char *)instance_cur->name, "hardware_profile"))
 	    parse_hardware_profile_xml(instance_cur, ctxt, (void **)&hwp);
 	  else if (STREQ((const char *)instance_cur->name, "actions"))
 	    actions = parse_actions_xml(instance_cur);
-	  else if (STREQ((const char *)instance_cur->name, "public-addresses"))
+	  else if (STREQ((const char *)instance_cur->name, "public_addresses"))
 	    public_addresses = parse_addresses_xml(instance_cur, ctxt);
-	  else if (STREQ((const char *)instance_cur->name, "private-addresses"))
+	  else if (STREQ((const char *)instance_cur->name, "private_addresses"))
 	    private_addresses = parse_addresses_xml(instance_cur, ctxt);
 	}
 
@@ -971,7 +971,7 @@ static int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
-	STREQ((const char *)cur->name, "hardware-profile")) {
+	STREQ((const char *)cur->name, "hardware_profile")) {
       ctxt->node = cur;
 
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
@@ -1036,9 +1036,9 @@ int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
   }
 
   *profiles = NULL;
-  if (parse_xml(data, "hardware-profiles", (void **)profiles,
+  if (parse_xml(data, "hardware_profiles", (void **)profiles,
 		parse_hardware_profile_xml) < 0) {
-    dcloudprintf("Failed to parse 'hardware-profiles' XML\n");
+    dcloudprintf("Failed to parse 'hardware_profiles' XML\n");
     ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
   }
@@ -1413,7 +1413,7 @@ int deltacloud_get_instance_states(struct deltacloud_api *api,
 
   thislink = find_by_rel_in_link_list(&api->links, "instance_states");
   if (thislink == NULL) {
-    dcloudprintf("Failed to find the link for 'instance-states'\n");
+    dcloudprintf("Failed to find the link for 'instance_states'\n");
     return DELTACLOUD_URL_DOES_NOT_EXIST;
   }
 
@@ -1504,7 +1504,7 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
-	STREQ((const char *)cur->name, "storage-volume")) {
+	STREQ((const char *)cur->name, "storage_volume")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
       if (href == NULL) {
 	dcloudprintf("Did not see href XML property\n");
@@ -1588,7 +1588,7 @@ int deltacloud_get_storage_volumes(struct deltacloud_api *api,
   }
 
   *storage_volumes = NULL;
-  if (parse_xml(data, "storage-volumes", (void **)storage_volumes, parse_storage_volume_xml) < 0) {
+  if (parse_xml(data, "storage_volumes", (void **)storage_volumes, parse_storage_volume_xml) < 0) {
     dcloudprintf("Failed to parse 'storage_volumes' XML\n");
     ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
@@ -1711,7 +1711,7 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
-	STREQ((const char *)cur->name, "storage-snapshot")) {
+	STREQ((const char *)cur->name, "storage_snapshot")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
       if (href == NULL) {
 	dcloudprintf("Did not see href XML property\n");
@@ -1728,7 +1728,7 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	    created = getXPathString("string(./created)", ctxt);
 	  else if (STREQ((const char *)snap_cur->name, "state"))
 	    state = getXPathString("string(./state)", ctxt);
-	  else if (STREQ((const char *)snap_cur->name, "storage-volume"))
+	  else if (STREQ((const char *)snap_cur->name, "storage_volume"))
 	    storage_volume_href = (char *)xmlGetProp(snap_cur, BAD_CAST "href");
 	}
 	snap_cur = snap_cur->next;
@@ -1789,7 +1789,7 @@ int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
   }
 
   *storage_snapshots = NULL;
-  if (parse_xml(data, "storage-snapshots", (void **)storage_snapshots, parse_storage_snapshot_xml) < 0) {
+  if (parse_xml(data, "storage_snapshots", (void **)storage_snapshots, parse_storage_snapshot_xml) < 0) {
     dcloudprintf("Failed to parse 'storage_snapshots' XML\n");
     ret = DELTACLOUD_XML_PARSE_ERROR;
     goto cleanup;
