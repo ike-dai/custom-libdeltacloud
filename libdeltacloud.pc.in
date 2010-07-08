@@ -3,8 +3,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: libdcloudapi
+Name: libdeltacloud
 Description: A library for accessing deltacloud
 Version: @VERSION@
-Libs: -L${libdir} -ldcloudapi
+Libs: -L${libdir} -ldeltacloud
 Cflags: -I${includedir}

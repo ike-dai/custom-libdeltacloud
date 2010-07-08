@@ -5,7 +5,7 @@
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <curl/curl.h>
-#include "dcloudapi.h"
+#include "libdeltacloud.h"
 #include "common.h"
 #include "curl_action.h"
 

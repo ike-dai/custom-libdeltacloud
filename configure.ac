@@ -1,4 +1,4 @@
-AC_INIT([libdcloudapi], [0.2], [deltacloud-devel@lists.fedoraproject.org])
+AC_INIT([libdeltacloud], [0.3], [deltacloud-devel@lists.fedoraproject.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
@@ -25,7 +25,7 @@ AC_ARG_WITH([libxml], AC_HELP_STRING([--with-libxml=@<:@PFX@:>@],
             [libxml2 location]))
 if test "x$with_libxml" = xno ; then
     AC_MSG_CHECKING([for libxml2 libraries >= $LIBXML_REQUIRED])
-    AC_MSG_ERROR([libxml2 >= $LIBXML_REQUIRED is required for libdcloudapi])
+    AC_MSG_ERROR([libxml2 >= $LIBXML_REQUIRED is required for libdeltacloud])
 elif test "x$with_libxml" = "x" -a "x$PKG_CONFIG" != "x" ; then
     PKG_CHECK_MODULES([LIBXML], [libxml-2.0 >= $LIBXML_REQUIRED],
                       [LIBXML_FOUND=yes], [LIBXML_FOUND=no])
@@ -67,7 +67,7 @@ AC_ARG_WITH([libcurl], AC_HELP_STRING([--with-libcurl=@<:@PFX@:>@],
             [libcurl location]))
 if test "x$with_libcurl" = xno ; then
     AC_MSG_CHECKING([for libcurl libraries >= $LIBCURL_REQUIRED])
-    AC_MSG_ERROR([libcurl >= $LIBCURL_REQUIRED is required for libdcloudapi])
+    AC_MSG_ERROR([libcurl >= $LIBCURL_REQUIRED is required for libdeltacloud])
 elif test "x$with_libcurl" = "x" -a "x$PKG_CONFIG" != "x" ; then
     PKG_CHECK_MODULES([LIBCURL], [libcurl >= $LIBCURL_REQUIRED],
                       [LIBCURL_FOUND=yes], [LIBCURL_FOUND=no])
@@ -89,7 +89,7 @@ if test "$LIBCURL_FOUND" = "no" ; then
         AC_MSG_RESULT([yes])
     else
         AC_MSG_ERROR(
-          [You need at least libcurl $LIBCURL_REQUIRED for this version of libdcloudapi])
+          [You need at least libcurl $LIBCURL_REQUIRED for this version of libdeltacloud])
     fi
 fi
 AC_SUBST([LIBCURL_CFLAGS])
@@ -97,4 +97,4 @@ AC_SUBST([LIBCURL_LIBS])
 
 AC_CHECK_DECL(CURLOPT_USERNAME, [AC_DEFINE(CURL_HAVE_USERNAME, [], [Description])], ,[#include <curl/curl.h>])
 
-AC_OUTPUT(Makefile include/dcloudapi/Makefile libdcloudapi.pc)
+AC_OUTPUT(Makefile include/libdeltacloud/Makefile libdeltacloud.pc)
