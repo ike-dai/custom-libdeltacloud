@@ -71,12 +71,12 @@ static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "link")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
-
       if (href == NULL) {
 	dcloudprintf("Did not see href XML property\n");
 	goto cleanup;
       }
+
+      rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
       if (rel == NULL) {
 	dcloudprintf("Did not see rel XML property\n");
 	SAFE_FREE(href);
@@ -250,12 +250,12 @@ static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "link")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
-
       if (href == NULL) {
 	dcloudprintf("Did not see href XML property\n");
 	goto cleanup;
       }
+
+      rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
       if (rel == NULL) {
 	dcloudprintf("Did not see rel XML property\n");
 	SAFE_FREE(href);
@@ -310,13 +310,18 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	goto cleanup;
       }
 
+      id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      if (id == NULL) {
+	dcloudprintf("Did not see id XML property\n");
+	SAFE_FREE(href);
+	goto cleanup;
+      }
+
       ctxt->node = cur;
       instance_cur = cur->children;
       while (instance_cur != NULL) {
 	if (instance_cur->type == XML_ELEMENT_NODE) {
-	  if (STREQ((const char *)instance_cur->name, "id"))
-	    id = getXPathString("string(./id)", ctxt);
-	  else if (STREQ((const char *)instance_cur->name, "name"))
+	  if (STREQ((const char *)instance_cur->name, "name"))
 	    name = getXPathString("string(./name)", ctxt);
 	  else if (STREQ((const char *)instance_cur->name, "owner_id"))
 	    owner_id = getXPathString("string(./owner_id)", ctxt);
@@ -611,13 +616,18 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	goto cleanup;
       }
 
+      id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      if (id == NULL) {
+	dcloudprintf("Did not see id XML property\n");
+	SAFE_FREE(href);
+	goto cleanup;
+      }
+
       ctxt->node = cur;
       realm_cur = cur->children;
       while (realm_cur != NULL) {
 	if (realm_cur->type == XML_ELEMENT_NODE) {
-	  if (STREQ((const char *)realm_cur->name, "id"))
-	    id = getXPathString("string(./id)", ctxt);
-	  else if (STREQ((const char *)realm_cur->name, "name"))
+	  if (STREQ((const char *)realm_cur->name, "name"))
 	    name = getXPathString("string(./name)", ctxt);
 	  else if (STREQ((const char *)realm_cur->name, "state"))
 	    state = getXPathString("string(./state)", ctxt);
@@ -980,7 +990,12 @@ static int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	goto cleanup;
       }
 
-      id = getXPathString("string(./id)", ctxt);
+      id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      if (id == NULL) {
+	dcloudprintf("Did not see id XML property\n");
+	SAFE_FREE(href);
+	goto cleanup;
+      }
 
       props = parse_hardware_profile_properties(cur);
 
@@ -1167,13 +1182,18 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	goto cleanup;
       }
 
+      id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      if (id == NULL) {
+	dcloudprintf("Did not see id XML property\n");
+	SAFE_FREE(href);
+	goto cleanup;
+      }
+
       ctxt->node = cur;
       image_cur = cur->children;
       while (image_cur != NULL) {
 	if (image_cur->type == XML_ELEMENT_NODE) {
-	  if (STREQ((const char *)image_cur->name, "id"))
-	    id = getXPathString("string(./id)", ctxt);
-	  else if (STREQ((const char *)image_cur->name, "description"))
+	  if (STREQ((const char *)image_cur->name, "description"))
 	    description = getXPathString("string(./description)", ctxt);
 	  else if (STREQ((const char *)image_cur->name, "architecture"))
 	    architecture = getXPathString("string(./architecture)", ctxt);
@@ -1511,13 +1531,18 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	goto cleanup;
       }
 
+      id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      if (id == NULL) {
+	dcloudprintf("Did not see id XML property\n");
+	SAFE_FREE(href);
+	goto cleanup;
+      }
+
       ctxt->node = cur;
       storage_cur = cur->children;
       while (storage_cur != NULL) {
 	if (storage_cur->type == XML_ELEMENT_NODE) {
-	  if (STREQ((const char *)storage_cur->name, "id"))
-	    id = getXPathString("string(./id)", ctxt);
-	  else if (STREQ((const char *)storage_cur->name, "created"))
+	  if (STREQ((const char *)storage_cur->name, "created"))
 	    created = getXPathString("string(./created)", ctxt);
 	  else if (STREQ((const char *)storage_cur->name, "state"))
 	    state = getXPathString("string(./state)", ctxt);
@@ -1718,13 +1743,18 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	goto cleanup;
       }
 
+      id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      if (id == NULL) {
+	dcloudprintf("Did not see id XML property\n");
+	SAFE_FREE(href);
+	goto cleanup;
+      }
+
       ctxt->node = cur;
       snap_cur = cur->children;
       while (snap_cur != NULL) {
 	if (snap_cur->type == XML_ELEMENT_NODE) {
-	  if (STREQ((const char *)snap_cur->name, "id"))
-	    id = getXPathString("string(./id)", ctxt);
-	  else if (STREQ((const char *)snap_cur->name, "created"))
+	  if (STREQ((const char *)snap_cur->name, "created"))
 	    created = getXPathString("string(./created)", ctxt);
 	  else if (STREQ((const char *)snap_cur->name, "state"))
 	    state = getXPathString("string(./state)", ctxt);
