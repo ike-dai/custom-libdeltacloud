@@ -5,9 +5,129 @@
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <curl/curl.h>
+#include <pthread.h>
 #include "libdeltacloud.h"
 #include "common.h"
 #include "curl_action.h"
+
+/***************** ERROR HANDLING ROUTINES ***************************/
+/* On fist initialization of the library we setup a per-thread local
+ * variable to hold errors.  If one of the API calls subsequently fails,
+ * then we set the per-thread variable with details of the failure.
+ */
+static int tlsinitialized = 0;
+static pthread_key_t deltacloud_last_error;
+
+struct deltacloud_error {
+  int error_num;
+  char *details;
+};
+
+static void deltacloud_error_free_data(void *data)
+{
+  struct deltacloud_error *err = data;
+
+  if (err == NULL)
+    return;
+
+  SAFE_FREE(err->details);
+  SAFE_FREE(err);
+}
+
+static void set_error(int errnum, const char *details)
+{
+  struct deltacloud_error *err;
+  struct deltacloud_error *last;
+
+  err = (struct deltacloud_error *)malloc(sizeof(struct deltacloud_error));
+  if (err == NULL) {
+    /* if we failed to allocate memory here, there's not a lot we can do */
+    dcloudprintf("Failed to allocate memory in an error path; error information will be unreliable!\n");
+    return;
+  }
+  memset(err, 0, sizeof(struct deltacloud_error));
+
+  err->error_num = errnum;
+  err->details = strdup(details);
+
+  dcloudprintf("%s\n", err->details);
+
+  last = pthread_getspecific(deltacloud_last_error);
+  if (last != NULL)
+    deltacloud_error_free_data(last);
+
+  pthread_setspecific(deltacloud_last_error, err);
+}
+
+static void get_url_error(const char *type, const char *url)
+{
+  char *tmp;
+  int alloc_fail = 0;
+
+  if (asprintf(&tmp, "Failed to get the XML for %s from %s", type, url) < 0) {
+    tmp = "Failed to get the XML";
+    alloc_fail = 1;
+  }
+
+  set_error(DELTACLOUD_GET_URL_ERROR, tmp);
+  if (!alloc_fail)
+    SAFE_FREE(tmp);
+}
+
+static void post_url_error(const char *type, const char *url)
+{
+  char *tmp;
+  int alloc_fail = 0;
+
+  if (asprintf(&tmp, "Failed to post the XML for %s from %s", type, url) < 0) {
+    tmp = "Failed to post the XML";
+    alloc_fail = 1;
+  }
+
+  set_error(DELTACLOUD_POST_URL_ERROR, tmp);
+  if (!alloc_fail)
+    SAFE_FREE(tmp);
+}
+
+static void xml_error(const char *name, const char *type, const char *details)
+{
+  char *tmp;
+  int alloc_fail = 0;
+
+  if (asprintf(&tmp, "%s for %s: %s", name, type, details) < 0) {
+    tmp = "Failed parsing XML";
+    alloc_fail = 1;
+  }
+
+  set_error(DELTACLOUD_XML_ERROR, tmp);
+  if (!alloc_fail)
+    SAFE_FREE(tmp);
+}
+
+static void link_error(const char *name)
+{
+  char *tmp;
+  int alloc_fail = 0;
+
+  if (asprintf(&tmp, "Failed to find the link for '%s'", name) < 0) {
+    tmp = "Failed to find the link";
+    alloc_fail = 1;
+  }
+
+  set_error(DELTACLOUD_URL_DOES_NOT_EXIST_ERROR, tmp);
+  if (!alloc_fail)
+    SAFE_FREE(tmp);
+}
+
+static void oom_error(void)
+{
+  set_error(DELTACLOUD_OOM_ERROR, "Failed to allocate memory");
+}
+
+static void invalid_argument_error(const char *details)
+{
+  set_error(DELTACLOUD_INVALID_ARGUMENT_ERROR, details);
+}
 
 typedef int (*parse_xml_callback)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data);
 
@@ -108,6 +228,14 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 {
   char *data;
   int ret = DELTACLOUD_UNKNOWN_ERROR;
+
+  if (!tlsinitialized) {
+    tlsinitialized = 1;
+    if (pthread_key_create(&deltacloud_last_error, deltacloud_error_free_data) != 0) {
+      dcloudprintf("Failed to initialize error handler\n");
+      return DELTACLOUD_UNKNOWN_ERROR;
+    }
+  }
 
   if (api == NULL) {
     dcloudprintf("API cannot be NULL\n");

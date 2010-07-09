@@ -96,6 +96,10 @@ const char *deltacloud_strerror(int error);
 #define DELTACLOUD_FIND_ERROR -11
 #define DELTACLOUD_ARGUMENT_ERROR -12
 
+#define DELTACLOUD_XML_ERROR -7
+#define DELTACLOUD_URL_DOES_NOT_EXIST_ERROR -8
+#define DELTACLOUD_INVALID_ARGUMENT_ERROR -12
+
 #ifdef __cplusplus
 }
 #endif

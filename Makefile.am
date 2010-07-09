@@ -4,7 +4,7 @@ EXTRA_DIST = libdeltacloud.spec build-aux m4
 SUBDIRS = include/libdeltacloud
 
 AM_CPPFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) -Wall -Iinclude/libdeltacloud -fno-strict-aliasing
-libdeltacloud_la_LDFLAGS = $(LIBXML_LIBS) $(LIBCURL_LIBS) \
+libdeltacloud_la_LDFLAGS = $(LIBXML_LIBS) $(LIBCURL_LIBS) -lpthread \
 	$(VERSION_SCRIPT_FLAGS)libdeltacloud.syms -version-info 1:0:0
 
 pkgconfigdir = $(libdir)/pkgconfig
