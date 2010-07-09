@@ -129,6 +129,21 @@ static void link_error(const char *name)
     SAFE_FREE(tmp);
 }
 
+static void find_by_name_error(const char *name, const char *type)
+{
+  char *tmp;
+  int alloc_fail = 0;
+
+  if (asprintf(&tmp, "Failed to find '%s' in '%s' list", name, type) < 0) {
+    tmp = "Failed to find the link";
+    alloc_fail = 1;
+  }
+
+  set_error(DELTACLOUD_NAME_NOT_FOUND_ERROR, tmp);
+  if (!alloc_fail)
+    SAFE_FREE(tmp);
+}
+
 static void oom_error(void)
 {
   set_error(DELTACLOUD_OOM_ERROR, "Failed to allocate memory");
@@ -693,7 +708,7 @@ int deltacloud_get_instance_by_name(struct deltacloud_api *api,
 
   thisinst = find_by_name_in_instance_list(&instances, name);
   if (thisinst == NULL) {
-    link_error("instances");
+    find_by_name_error(name, "instances");
     goto cleanup;
   }
 
@@ -1491,7 +1506,7 @@ int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
 
   found = find_by_name_in_instance_state_list(&statelist, name);
   if (found == NULL) {
-    link_error("instance_state");
+    find_by_name_error(name, "instance_state");
     goto cleanup;
   }
   if (copy_instance_state(instance_state, found) < 0) {
