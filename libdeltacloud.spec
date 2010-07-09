@@ -7,6 +7,7 @@ Group: System Environment/Libraries
 URL: http://people.redhat.com/clalance/libdeltacloud
 Source0: http://people.redhat.com/clalance/libdeltacloud/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Obsoletes: libdcloudapi
 
 %description
 Libdeltacloud is a library for accessing deltacloud via a
