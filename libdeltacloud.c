@@ -18,11 +18,6 @@
 static int tlsinitialized = 0;
 static pthread_key_t deltacloud_last_error;
 
-struct deltacloud_error {
-  int error_num;
-  char *details;
-};
-
 static void deltacloud_error_free_data(void *data)
 {
   struct deltacloud_error *err = data;
@@ -32,6 +27,21 @@ static void deltacloud_error_free_data(void *data)
 
   SAFE_FREE(err->details);
   SAFE_FREE(err);
+}
+
+struct deltacloud_error *deltacloud_get_last_error(void)
+{
+  return pthread_getspecific(deltacloud_last_error);
+}
+
+const char *deltacloud_get_last_error_string(void)
+{
+  struct deltacloud_error *last;
+
+  last = deltacloud_get_last_error();
+  if (last != NULL)
+    return last->details;
+  return NULL;
 }
 
 static void set_error(int errnum, const char *details)
@@ -1997,35 +2007,6 @@ int deltacloud_instance_destroy(struct deltacloud_api *api,
    * to use a different implementation
    */
   return delete_url(instance->href, api->user, api->password);
-}
-
-struct deltacloud_error_entry {
-  int number;
-  const char *desc;
-};
-
-static const struct deltacloud_error_entry errors[] = {
-  { DELTACLOUD_UNKNOWN_ERROR, "Unknown error" },
-  { DELTACLOUD_GET_URL_ERROR, "Failed to get url" },
-  { DELTACLOUD_POST_URL_ERROR, "Failed to post data to url" },
-  { DELTACLOUD_XML_PARSE_ERROR, "Failed to parse the XML" },
-  { DELTACLOUD_URL_DOES_NOT_EXIST, "Failed to find required URL" },
-  { DELTACLOUD_OOM_ERROR, "Out of memory" },
-  { DELTACLOUD_INVALID_IMAGE_ERROR, "Invalid image ID" },
-  { DELTACLOUD_FIND_ERROR, "Failed to find requested information" },
-  { 0, NULL },
-};
-
-const char *deltacloud_strerror(int error)
-{
-  const struct deltacloud_error_entry *p;
-
-  for (p = errors; p->desc != NULL; p++) {
-    if (p->number == error)
-      return p->desc;
-  }
-
-  return "Unknown Error";
 }
 
 void deltacloud_free(struct deltacloud_api *api)

@@ -22,6 +22,11 @@ struct deltacloud_api {
   struct deltacloud_link *links;
 };
 
+struct deltacloud_error {
+  int error_num;
+  char *details;
+};
+
 int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 			  char *password);
 
@@ -80,25 +85,20 @@ int deltacloud_instance_start(struct deltacloud_api *api,
 int deltacloud_instance_destroy(struct deltacloud_api *api,
 				struct deltacloud_instance *instance);
 
-void deltacloud_free(struct deltacloud_api *api);
+struct deltacloud_error *deltacloud_get_last_error(void);
+const char *deltacloud_get_last_error_string(void);
 
-const char *deltacloud_strerror(int error);
+void deltacloud_free(struct deltacloud_api *api);
 
 /* Error codes */
 #define DELTACLOUD_UNKNOWN_ERROR -1
 /* ERROR codes -2, -3, and -4 are reserved for future use */
 #define DELTACLOUD_GET_URL_ERROR -5
 #define DELTACLOUD_POST_URL_ERROR -6
-#define DELTACLOUD_XML_PARSE_ERROR -7
-#define DELTACLOUD_URL_DOES_NOT_EXIST -8
-#define DELTACLOUD_OOM_ERROR -9
-#define DELTACLOUD_INVALID_IMAGE_ERROR -10
-#define DELTACLOUD_FIND_ERROR -11
-#define DELTACLOUD_ARGUMENT_ERROR -12
-
 #define DELTACLOUD_XML_ERROR -7
 #define DELTACLOUD_URL_DOES_NOT_EXIST_ERROR -8
-#define DELTACLOUD_INVALID_ARGUMENT_ERROR -12
+#define DELTACLOUD_OOM_ERROR -9
+#define DELTACLOUD_INVALID_ARGUMENT_ERROR -10
 
 #ifdef __cplusplus
 }
