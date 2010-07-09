@@ -215,13 +215,13 @@ static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 	STREQ((const char *)cur->name, "link")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
       if (href == NULL) {
-	dcloudprintf("Did not see href XML property\n");
+	xml_error("api", "Failed to parse XML", "did not see href property");
 	goto cleanup;
       }
 
       rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
       if (rel == NULL) {
-	dcloudprintf("Did not see rel XML property\n");
+	xml_error("api", "Failed to parse XML", "did not see rel property");
 	SAFE_FREE(href);
 	goto cleanup;
       }
@@ -230,7 +230,7 @@ static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
       SAFE_FREE(href);
       SAFE_FREE(rel);
       if (listret < 0) {
-	dcloudprintf("Failed to add new link to list\n");
+	oom_error();
 	goto cleanup;
       }
     }
@@ -320,10 +320,8 @@ static char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
   xmlNodePtr relnode;
   char *ret;
 
-  if ((ctxt == NULL) || (xpath == NULL)) {
-    dcloudprintf("Invalid parameter to virXPathString\n");
+  if ((ctxt == NULL) || (xpath == NULL))
     return NULL;
-  }
 
   relnode = ctxt->node;
   obj = xmlXPathEval(BAD_CAST xpath, ctxt);
@@ -335,8 +333,6 @@ static char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
   }
   ret = strdup((char *) obj->stringval);
   xmlXPathFreeObject(obj);
-  if (ret == NULL)
-    dcloudprintf("Failed to copy XPath string\n");
 
   return ret;
 }
@@ -362,7 +358,7 @@ static struct deltacloud_address *parse_addresses_xml(xmlNodePtr instance,
 	listret = add_to_address_list(&addresses, address);
 	SAFE_FREE(address);
 	if (listret < 0) {
-	  dcloudprintf("Failed to add new address to list\n");
+	  oom_error();
 	  goto cleanup;
 	}
       }
@@ -396,13 +392,13 @@ static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
 	STREQ((const char *)cur->name, "link")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
       if (href == NULL) {
-	dcloudprintf("Did not see href XML property\n");
+	xml_error("actions", "Failed to parse XML", "did not see href property");
 	goto cleanup;
       }
 
       rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
       if (rel == NULL) {
-	dcloudprintf("Did not see rel XML property\n");
+	xml_error("actions", "Failed to parse XML", "did not see rel property");
 	SAFE_FREE(href);
 	goto cleanup;
       }
@@ -411,7 +407,7 @@ static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
       SAFE_FREE(href);
       SAFE_FREE(rel);
       if (listret < 0) {
-	dcloudprintf("Failed to add new action to list\n");
+	oom_error();
 	goto cleanup;
       }
     }
@@ -451,13 +447,13 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
       if (href == NULL) {
-	dcloudprintf("Did not see href XML property\n");
+	xml_error("instance", "Failed to parse XML", "did not see rel property");
 	goto cleanup;
       }
 
       id = (char *)xmlGetProp(cur, BAD_CAST "id");
       if (id == NULL) {
-	dcloudprintf("Did not see id XML property\n");
+	xml_error("instance", "Failed to parse XML", "did not see id property");
 	SAFE_FREE(href);
 	goto cleanup;
       }
@@ -504,7 +500,7 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       free_action_list(&actions);
       deltacloud_free_hardware_profile_list(&hwp);
       if (listret < 0) {
-	dcloudprintf("Failed to add new instance to list\n");
+	oom_error();
 	goto cleanup;
       }
     }
@@ -716,13 +712,13 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	STREQ((const char *)cur->name, "realm")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
       if (href == NULL) {
-	dcloudprintf("Did not see href XML property\n");
+	xml_error("realm", "Failed to parse XML", "did not see href property");
 	goto cleanup;
       }
 
       id = (char *)xmlGetProp(cur, BAD_CAST "id");
       if (id == NULL) {
-	dcloudprintf("Did not see id XML property\n");
+	xml_error("realm", "Failed to parse XML", "did not see id property");
 	SAFE_FREE(href);
 	goto cleanup;
       }
@@ -747,7 +743,7 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       SAFE_FREE(state);
       SAFE_FREE(limit);
       if (listret < 0) {
-	dcloudprintf("Failed to add new realm to list\n");
+	oom_error();
 	goto cleanup;
       }
     }
@@ -883,7 +879,7 @@ static struct deltacloud_property_range *parse_hardware_profile_ranges(xmlNodePt
       SAFE_FREE(first);
       SAFE_FREE(last);
       if (listret < 0) {
-	dcloudprintf("Failed to add range to list\n");
+	oom_error();
 	free_range_list(&ranges);
 	goto cleanup;
       }
@@ -921,7 +917,7 @@ static struct deltacloud_property_enum *parse_hardware_profile_enums(xmlNodePtr 
 	  listret = add_to_enum_list(&enums, enum_value);
 	  SAFE_FREE(enum_value);
 	  if (listret < 0) {
-	    dcloudprintf("Failed to add enum to list\n");
+	    oom_error();
 	    free_enum_list(&enums);
 	    goto cleanup;
 	  }
@@ -968,7 +964,7 @@ static struct deltacloud_property_param *parse_hardware_profile_params(xmlNodePt
       SAFE_FREE(param_name);
       SAFE_FREE(param_operation);
       if (listret < 0) {
-	dcloudprintf("Failed to add new property to list\n");
+	oom_error();
 	free_param_list(&params);
 	goto cleanup;
       }
@@ -1017,7 +1013,7 @@ static struct deltacloud_property *parse_hardware_profile_properties(xmlNodePtr 
       free_enum_list(&enums);
       free_range_list(&ranges);
       if (listret < 0) {
-	dcloudprintf("Failed to add new property to list\n");
+	oom_error();
 	free_property_list(&props);
 	goto cleanup;
       }
@@ -1051,13 +1047,15 @@ static int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
       if (href == NULL) {
-	dcloudprintf("Did not see href XML property\n");
+	xml_error("hardware_profile", "Failed to parse XML",
+		  "did not see href property");
 	goto cleanup;
       }
 
       id = (char *)xmlGetProp(cur, BAD_CAST "id");
       if (id == NULL) {
-	dcloudprintf("Did not see id XML property\n");
+	xml_error("hardware_profile", "Failed to parse XML",
+		  "did not see id property");
 	SAFE_FREE(href);
 	goto cleanup;
       }
@@ -1069,7 +1067,7 @@ static int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       SAFE_FREE(href);
       free_property_list(&props);
       if (listret < 0) {
-	dcloudprintf("Failed to add new hardware profile to list\n");
+	oom_error();
 	goto cleanup;
       }
     }
@@ -1205,13 +1203,13 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	STREQ((const char *)cur->name, "image")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
       if (href == NULL) {
-	dcloudprintf("Did not see href XML property\n");
+	xml_error("image", "Failed to parse XML", "did not see href property");
 	goto cleanup;
       }
 
       id = (char *)xmlGetProp(cur, BAD_CAST "id");
       if (id == NULL) {
-	dcloudprintf("Did not see id XML property\n");
+	xml_error("image", "Failed to parse XML", "did not see id property");
 	SAFE_FREE(href);
 	goto cleanup;
       }
@@ -1240,7 +1238,7 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       SAFE_FREE(owner_id);
       SAFE_FREE(name);
       if (listret < 0) {
-	dcloudprintf("Failed to add new image to list\n");
+	oom_error();
 	goto cleanup;
       }
     }
@@ -1386,7 +1384,7 @@ static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       SAFE_FREE(name);
       free_transition_list(&transitions);
       if (listret < 0) {
-	dcloudprintf("Failed to add new instance_state to list\n");
+	oom_error();
 	goto cleanup;
       }
       transitions = NULL;
@@ -1510,13 +1508,15 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	STREQ((const char *)cur->name, "storage_volume")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
       if (href == NULL) {
-	dcloudprintf("Did not see href XML property\n");
+	xml_error("storage_volume", "Failed to parse XML",
+		  "did not see href property");
 	goto cleanup;
       }
 
       id = (char *)xmlGetProp(cur, BAD_CAST "id");
       if (id == NULL) {
-	dcloudprintf("Did not see id XML property\n");
+	xml_error("storage_volume", "Failed to parse XML",
+		  "did not see id property");
 	SAFE_FREE(href);
 	goto cleanup;
       }
@@ -1549,7 +1549,7 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       SAFE_FREE(instance_href);
       SAFE_FREE(href);
       if (listret < 0) {
-	dcloudprintf("Failed to add new storage_volume to list\n");
+	oom_error();
 	goto cleanup;
       }
     }
@@ -1684,13 +1684,15 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	STREQ((const char *)cur->name, "storage_snapshot")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
       if (href == NULL) {
-	dcloudprintf("Did not see href XML property\n");
+	xml_error("storage_snapshot", "Failed to parse XML",
+		  "did not see href property");
 	goto cleanup;
       }
 
       id = (char *)xmlGetProp(cur, BAD_CAST "id");
       if (id == NULL) {
-	dcloudprintf("Did not see id XML property\n");
+	xml_error("storage_snapshot", "Failed to parse XML",
+		  "did not see id property");
 	SAFE_FREE(href);
 	goto cleanup;
       }
@@ -1717,7 +1719,7 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       SAFE_FREE(storage_volume_href);
       SAFE_FREE(href);
       if (listret < 0) {
-	dcloudprintf("Failed to add new storage_snapshot to list\n");
+	oom_error();
 	goto cleanup;
       }
     }
