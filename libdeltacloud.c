@@ -249,7 +249,7 @@ static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 			  char *password)
 {
-  char *data;
+  char *data = NULL;
   int ret = -1;
 
   if (!tlsinitialized) {
