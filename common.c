@@ -60,7 +60,10 @@ void dcloudprintf(const char *fmt, ...)
 
 #ifdef DEBUG
 
+#ifndef FAILRATE
 #define FAILRATE 1000
+#endif
+
 static void seed_random(void)
 {
   static int done = 0;
