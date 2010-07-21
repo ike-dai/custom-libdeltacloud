@@ -7,6 +7,8 @@ Group: System Environment/Libraries
 URL: http://people.redhat.com/clalance/libdeltacloud
 Source0: http://people.redhat.com/clalance/libdeltacloud/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildRequires: libcurl-devel
+BuildRequires: libxml2-devel
 Obsoletes: libdcloudapi
 
 %description
