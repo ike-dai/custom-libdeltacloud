@@ -1998,7 +1998,6 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   char *safename = NULL;
   char *saferealm = NULL;
   char *safehwp = NULL;
-  int error = 0;
 
   if (api == NULL) {
     invalid_argument_error("API cannot be NULL");
@@ -2028,29 +2027,30 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   fprintf(paramfp, "image_id=%s", image_id);
   if (name != NULL) {
     safename = curl_escape(name, 0);
-    if (safename == NULL)
-      error = 1;
+    if (safename == NULL) {
+      oom_error();
+      goto cleanup;
+    }
     fprintf(paramfp, "&name=%s", safename);
   }
   if (realm_id != NULL) {
     saferealm = curl_escape(realm_id, 0);
-    if (saferealm == NULL)
-      error = 1;
+    if (saferealm == NULL) {
+      oom_error();
+      goto cleanup;
+    }
     fprintf(paramfp, "&realm_id=%s", saferealm);
   }
   if (hardware_profile != NULL) {
     safehwp = curl_escape(hardware_profile, 0);
-    if (safehwp == NULL)
-      error = 1;
+    if (safehwp == NULL) {
+      oom_error();
+      goto cleanup;
+    }
     fprintf(paramfp, "&hwp_id=%s", safehwp);
   }
   fclose(paramfp);
-
-  if (error) {
-    /* FIXME: need a proper error here */
-    dcloudprintf("Failed to escape input data\n");
-    goto cleanup;
-  }
+  paramfp = NULL;
 
   data = post_url(thislink->href, api->user, api->password, params, param_size);
   if (data == NULL) {
@@ -2072,6 +2072,8 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   ret = 0;
 
  cleanup:
+  if (paramfp != NULL)
+    fclose(paramfp);
   SAFE_FREE(params);
   curl_free(safename);
   curl_free(saferealm);
