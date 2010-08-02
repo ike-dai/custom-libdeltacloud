@@ -155,6 +155,28 @@ static void invalid_argument_error(const char *details)
 }
 
 /********************** XML PARSING *********************************/
+static char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
+{
+  xmlXPathObjectPtr obj;
+  xmlNodePtr relnode;
+  char *ret;
+
+  if ((ctxt == NULL) || (xpath == NULL))
+    return NULL;
+
+  relnode = ctxt->node;
+  obj = xmlXPathEval(BAD_CAST xpath, ctxt);
+  ctxt->node = relnode;
+  if ((obj == NULL) || (obj->type != XPATH_STRING) ||
+      (obj->stringval == NULL) || (obj->stringval[0] == 0)) {
+    xmlXPathFreeObject(obj);
+    return NULL;
+  }
+  ret = strdup((char *) obj->stringval);
+  xmlXPathFreeObject(obj);
+
+  return ret;
+}
 
 typedef int (*parse_xml_callback)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data);
 
@@ -231,6 +253,49 @@ static int parse_xml(const char *xml_string, const char *name, void **data,
   xmlFreeDoc(xml);
 
   return ret;
+}
+
+static int parse_error_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
+{
+  char **msg = (char **)data;
+  xmlNodePtr oldnode;
+
+  oldnode = ctxt->node;
+
+  *msg = NULL;
+
+  while (cur != NULL) {
+    ctxt->node = cur;
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "message")) {
+      *msg = getXPathString("string(.)", ctxt);
+      break;
+    }
+    cur = cur->next;
+  }
+
+  if (*msg == NULL)
+    *msg = strdup("Unknown error");
+
+  ctxt->node = oldnode;
+
+  return 0;
+}
+
+static int is_error_xml(const char *xml)
+{
+  return STRPREFIX(xml, "<error");
+}
+static void set_xml_error(const char *xml, int type)
+{
+  char *errmsg = NULL;
+
+  if (parse_xml(xml, "error", (void **)&errmsg, parse_error_xml, 1) < 0)
+    errmsg = strdup("Unknown error");
+
+  set_error(type, errmsg);
+
+  SAFE_FREE(errmsg);
 }
 
 static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
@@ -332,6 +397,11 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
     goto cleanup;
   }
 
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
   if (parse_xml(data, "api", (void **)&api->links, parse_api_xml, 1) < 0)
     goto cleanup;
 
@@ -341,29 +411,6 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
   SAFE_FREE(data);
   if (ret < 0)
     deltacloud_free(api);
-  return ret;
-}
-
-static char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
-{
-  xmlXPathObjectPtr obj;
-  xmlNodePtr relnode;
-  char *ret;
-
-  if ((ctxt == NULL) || (xpath == NULL))
-    return NULL;
-
-  relnode = ctxt->node;
-  obj = xmlXPathEval(BAD_CAST xpath, ctxt);
-  ctxt->node = relnode;
-  if ((obj == NULL) || (obj->type != XPATH_STRING) ||
-      (obj->stringval == NULL) || (obj->stringval[0] == 0)) {
-    xmlXPathFreeObject(obj);
-    return NULL;
-  }
-  ret = strdup((char *) obj->stringval);
-  xmlXPathFreeObject(obj);
-
   return ret;
 }
 
@@ -598,6 +645,11 @@ int deltacloud_get_instances(struct deltacloud_api *api,
     return -1;
   }
 
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
   *instances = NULL;
   if (parse_xml(data, "instances", (void **)instances,
 		parse_instance_xml, 1) < 0)
@@ -646,6 +698,11 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
   data = get_url(url, api->user, api->password);
   if (data == NULL) {
     get_url_error("instance", url);
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
     goto cleanup;
   }
 
@@ -700,6 +757,11 @@ int deltacloud_get_instance_by_name(struct deltacloud_api *api,
   if (data == NULL) {
     get_url_error("instances", thislink->href);
     return -1;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
   }
 
   if (parse_xml(data, "instances", (void **)&instances,
@@ -818,6 +880,11 @@ int deltacloud_get_realms(struct deltacloud_api *api,
     return -1;
   }
 
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
   *realms = NULL;
   if (parse_xml(data, "realms", (void **)realms, parse_realm_xml, 1) < 0)
     goto cleanup;
@@ -866,6 +933,11 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
   data = get_url(url, api->user, api->password);
   if (data == NULL) {
     get_url_error("realm", url);
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
     goto cleanup;
   }
 
@@ -1143,6 +1215,11 @@ int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
     return -1;
   }
 
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
   *profiles = NULL;
   if (parse_xml(data, "hardware_profiles", (void **)profiles,
 		parse_hardware_profile_xml, 1) < 0)
@@ -1193,6 +1270,11 @@ int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
   data = get_url(url, api->user, api->password);
   if (data == NULL) {
     get_url_error("image", url);
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
     goto cleanup;
   }
 
@@ -1313,6 +1395,11 @@ int deltacloud_get_images(struct deltacloud_api *api,
     return -1;
   }
 
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
   *images = NULL;
   if (parse_xml(data, "images", (void **)images, parse_image_xml, 1) < 0)
     goto cleanup;
@@ -1361,6 +1448,11 @@ int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
   data = get_url(url, api->user, api->password);
   if (data == NULL) {
     get_url_error("image", url);
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
     goto cleanup;
   }
 
@@ -1457,6 +1549,11 @@ int deltacloud_get_instance_states(struct deltacloud_api *api,
   if (data == NULL) {
     get_url_error("instance_states", thislink->href);
     return -1;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
   }
 
   *instance_states = NULL;
@@ -1624,6 +1721,11 @@ int deltacloud_get_storage_volumes(struct deltacloud_api *api,
     return -1;
   }
 
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
   *storage_volumes = NULL;
   if (parse_xml(data, "storage_volumes", (void **)storage_volumes,
 		parse_storage_volume_xml, 1) < 0)
@@ -1674,6 +1776,11 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
   data = get_url(url, api->user, api->password);
   if (data == NULL) {
     get_url_error("storage_volume", url);
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
     goto cleanup;
   }
 
@@ -1794,6 +1901,11 @@ int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
     return -1;
   }
 
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
   *storage_snapshots = NULL;
   if (parse_xml(data, "storage_snapshots", (void **)storage_snapshots,
 		parse_storage_snapshot_xml, 1) < 0)
@@ -1844,6 +1956,11 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
   data = get_url(url, api->user, api->password);
   if (data == NULL) {
     get_url_error("storage_snapshot", url);
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
     goto cleanup;
   }
 
@@ -1941,6 +2058,11 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
     goto cleanup;
   }
 
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
+    goto cleanup;
+  }
+
   if (inst != NULL) {
     memset(inst, 0, sizeof(struct deltacloud_instance));
     if (parse_one_instance(data, inst) < 0)
@@ -1990,6 +2112,11 @@ static int instance_action(struct deltacloud_api *api,
   if (data == NULL) {
     post_url_error("action_name", act->href);
     return -1;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
+    goto cleanup;
   }
 
   deltacloud_free_instance(instance);

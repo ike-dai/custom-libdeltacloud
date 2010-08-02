@@ -27,6 +27,7 @@ extern "C" {
 
 #define STREQ(a,b) (strcmp(a,b) == 0)
 #define STRNEQ(a,b) (strcmp(a,b) != 0)
+#define STRPREFIX(a,b) (strncmp(a,b,strlen(b)) == 0)
 
 int strdup_or_null(char **out, const char *in);
 
