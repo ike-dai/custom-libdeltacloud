@@ -341,6 +341,8 @@ static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
   return ret;
 }
 
+#define valid_arg(x) ((x == NULL) ? invalid_argument_error(#x " cannot be NULL"), 0 : 1)
+
 int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 			  char *password)
 {
@@ -355,22 +357,9 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
     }
   }
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(url) || !valid_arg(user) ||
+      !valid_arg(password))
     return -1;
-  }
-  if (url == NULL) {
-    invalid_argument_error("URL argument cannot be NULL");
-    return -1;
-  }
-  if (user == NULL) {
-    invalid_argument_error("User cannot be NULL");
-    return -1;
-  }
-  if (password == NULL) {
-    invalid_argument_error("Password cannot be NULL");
-    return -1;
-  }
 
   memset(api, 0, sizeof(struct deltacloud_api));
 
@@ -624,14 +613,8 @@ int deltacloud_get_instances(struct deltacloud_api *api,
   char *data;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(instances))
     return -1;
-  }
-  if (instances == NULL) {
-    invalid_argument_error("Instances argument cannot be NULL");
-    return -1;
-  }
 
   thislink = find_by_rel_in_link_list(&api->links, "instances");
   if (thislink == NULL) {
@@ -671,18 +654,8 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
   char *safeid;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(instance))
     return -1;
-  }
-  if (id == NULL) {
-    invalid_argument_error("Instance ID argument cannot be NULL");
-    return -1;
-  }
-  if (instance == NULL) {
-    invalid_argument_error("Instance argument cannot be NULL");
-    return -1;
-  }
 
   safeid = curl_escape(id, 0);
   if (safeid == NULL) {
@@ -734,18 +707,8 @@ int deltacloud_get_instance_by_name(struct deltacloud_api *api,
    * need to escape it since we are never using it as a URL
    */
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(name) || !valid_arg(instance))
     return -1;
-  }
-  if (name == NULL) {
-    invalid_argument_error("Instance name argument cannot be NULL");
-    return -1;
-  }
-  if (instance == NULL) {
-    invalid_argument_error("Instance argument cannot be NULL");
-    return -1;
-  }
 
   thislink = find_by_rel_in_link_list(&api->links, "instances");
   if (thislink == NULL) {
@@ -859,14 +822,8 @@ int deltacloud_get_realms(struct deltacloud_api *api,
   char *data;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(realms))
     return -1;
-  }
-  if (realms == NULL) {
-    invalid_argument_error("Realms argument cannot be NULL");
-    return -1;
-  }
 
   thislink = find_by_rel_in_link_list(&api->links, "realms");
   if (thislink == NULL) {
@@ -906,18 +863,8 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
   struct deltacloud_realm *tmprealm = NULL;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(realm))
     return -1;
-  }
-  if (id == NULL) {
-    invalid_argument_error("Realm ID argument cannot be NULL");
-    return -1;
-  }
-  if (realm == NULL) {
-    invalid_argument_error("Realm argument cannot be NULL");
-    return -1;
-  }
 
   safeid = curl_escape(id, 0);
   if (safeid == NULL) {
@@ -1194,14 +1141,8 @@ int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
   char *data;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(profiles))
     return -1;
-  }
-  if (profiles == NULL) {
-    invalid_argument_error("Hardware profiles argument cannot be NULL");
-    return -1;
-  }
 
   thislink = find_by_rel_in_link_list(&api->links, "hardware_profiles");
   if (thislink == NULL) {
@@ -1243,18 +1184,8 @@ int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
   struct deltacloud_hardware_profile *tmpprofile = NULL;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(profile))
     return -1;
-  }
-  if (id == NULL) {
-    invalid_argument_error("Hardware profile ID argument cannot be NULL");
-    return -1;
-  }
-  if (profile == NULL) {
-    invalid_argument_error("Hardware profile argument cannot be NULL");
-    return -1;
-  }
 
   safeid = curl_escape(id, 0);
   if (safeid == NULL) {
@@ -1374,14 +1305,8 @@ int deltacloud_get_images(struct deltacloud_api *api,
   char *data;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(images))
     return -1;
-  }
-  if (images == NULL) {
-    invalid_argument_error("Images argument cannot be NULL");
-    return -1;
-  }
 
   thislink = find_by_rel_in_link_list(&api->links, "images");
   if (thislink == NULL) {
@@ -1421,18 +1346,8 @@ int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
   struct deltacloud_image *tmpimage = NULL;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(image))
     return -1;
-  }
-  if (id == NULL) {
-    invalid_argument_error("Image ID cannot be NULL");
-    return -1;
-  }
-  if (image == NULL) {
-    invalid_argument_error("Image argument cannot be NULL");
-    return -1;
-  }
 
   safeid = curl_escape(id, 0);
   if (safeid == NULL) {
@@ -1530,14 +1445,8 @@ int deltacloud_get_instance_states(struct deltacloud_api *api,
   char *data;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(instance_states))
     return -1;
-  }
-  if (instance_states == NULL) {
-    invalid_argument_error("Instance states argument cannot be NULL");
-    return -1;
-  }
 
   thislink = find_by_rel_in_link_list(&api->links, "instance_states");
   if (thislink == NULL) {
@@ -1582,18 +1491,8 @@ int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
    * need to escape it since we are never using it as a URL
    */
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(name) || !valid_arg(instance_state))
     return -1;
-  }
-  if (name == NULL) {
-    invalid_argument_error("Instance state name argument cannot be NULL");
-    return -1;
-  }
-  if (instance_state == NULL) {
-    invalid_argument_error("Instance state argument cannot be NULL");
-    return -1;
-  }
 
   instance_ret = deltacloud_get_instance_states(api, &statelist);
   if (instance_ret < 0) {
@@ -1700,14 +1599,8 @@ int deltacloud_get_storage_volumes(struct deltacloud_api *api,
   char *data;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(storage_volumes))
     return -1;
-  }
-  if (storage_volumes == NULL) {
-    invalid_argument_error("Storage volumes argument cannot be NULL");
-    return -1;
-  }
 
   thislink = find_by_rel_in_link_list(&api->links, "storage_volumes");
   if (thislink == NULL) {
@@ -1749,18 +1642,8 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
   struct deltacloud_storage_volume *tmpstorage_volume = NULL;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(storage_volume))
     return -1;
-  }
-  if (id == NULL) {
-    invalid_argument_error("Storage volume ID cannot be NULL");
-    return -1;
-  }
-  if (storage_volume == NULL) {
-    invalid_argument_error("Storage volume argument cannot be NULL");
-    return -1;
-  }
 
   safeid = curl_escape(id, 0);
   if (safeid == NULL) {
@@ -1880,14 +1763,8 @@ int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
   char *data;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(storage_snapshots))
     return -1;
-  }
-  if (storage_snapshots == NULL) {
-    invalid_argument_error("Storage snapshots argument cannot be NULL");
-    return -1;
-  }
 
   thislink = find_by_rel_in_link_list(&api->links, "storage_snapshots");
   if (thislink == NULL) {
@@ -1929,18 +1806,8 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
   struct deltacloud_storage_snapshot *tmpstorage_snapshot = NULL;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(storage_snapshot))
     return -1;
-  }
-  if (id == NULL) {
-    invalid_argument_error("Storage snapshot ID cannot be NULL");
-    return -1;
-  }
-  if (storage_snapshot == NULL) {
-    invalid_argument_error("Storage snapshot argument cannot be NULL");
-    return -1;
-  }
 
   safeid = curl_escape(id, 0);
   if (safeid == NULL) {
@@ -2091,14 +1958,8 @@ static int instance_action(struct deltacloud_api *api,
   char *data;
   int ret = -1;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(instance))
     return -1;
-  }
-  if (instance == NULL) {
-    invalid_argument_error("Instance cannot be NULL");
-    return -1;
-  }
 
   /* action_name can't possibly be NULL since it is not part of the
    * external API
@@ -2155,14 +2016,8 @@ int deltacloud_instance_start(struct deltacloud_api *api,
 int deltacloud_instance_destroy(struct deltacloud_api *api,
 				struct deltacloud_instance *instance)
 {
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(instance))
     return -1;
-  }
-  if (instance == NULL) {
-    invalid_argument_error("Instance cannot be NULL");
-    return -1;
-  }
 
   /* in deltacloud the destroy action is a DELETE method, so we need
    * to use a different implementation
