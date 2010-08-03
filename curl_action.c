@@ -22,7 +22,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <curl/curl.h>
+#include "libdeltacloud.h"
 #include "common.h"
+
+void set_curl_error(int errcode, const char *header, CURLcode res)
+{
+  char *errstr;
+  int alloc_fail = 0;
+
+  if (asprintf(&errstr, "%s: %s", header, curl_easy_strerror(res)) < 0) {
+    errstr = "Failed to set URL header";
+    alloc_fail = 1;
+  }
+
+  set_error(errcode, errstr);
+
+  if (!alloc_fail)
+    SAFE_FREE(errstr);
+}
 
 struct memory {
   char *data;
@@ -67,8 +84,8 @@ static int set_user_password(CURL *curl, const char *user, const char *password)
   if (user != NULL) {
     res = curl_easy_setopt(curl, CURLOPT_USERNAME, user);
     if (res != CURLE_OK) {
-      dcloudprintf("Failed to set username header: %s\n",
-		   curl_easy_strerror(res));
+      set_curl_error(DELTACLOUD_OOM_ERROR, "Failed to set username header",
+		     res);
       return -1;
     }
   }
@@ -76,8 +93,8 @@ static int set_user_password(CURL *curl, const char *user, const char *password)
   if (password != NULL) {
     res = curl_easy_setopt(curl, CURLOPT_PASSWORD, password);
     if (res != CURLE_OK) {
-      dcloudprintf("Failed to set password header: %s\n",
-		   curl_easy_strerror(res));
+      set_curl_error(DELTACLOUD_OOM_ERROR, "Failed to set password header",
+		     res);
       return -1;
     }
   }
@@ -86,14 +103,14 @@ static int set_user_password(CURL *curl, const char *user, const char *password)
     char *userpwd;
 
     if (asprintf(&userpwd, "%s:%s", user, password) < 0) {
-      dcloudprintf("Failed to allocate memory for userpwd\n");
+      set_error(DELTACLOUD_OOM_ERROR, "Failed to allocate memory");
       return -1;
     }
     res = curl_easy_setopt(curl, CURLOPT_USERPWD, userpwd);
     SAFE_FREE(userpwd);
     if (res != CURLE_OK) {
-      dcloudprintf("Failed to set username/password header: %s\n",
-                   curl_easy_strerror(res));
+      set_curl_error(DELTACLOUD_OOM_ERROR,
+		     "Failed to set username/password header", res);
       return -1;
     }
   }
@@ -112,7 +129,8 @@ char *do_get_post_url(const char *url, const char *user, const char *password,
 
   curl = curl_easy_init();
   if (curl == NULL) {
-    dcloudprintf("Failed to initialize curl\n");
+    set_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
+	      "Failed to initialize curl library");
     return NULL;
   }
 
@@ -121,19 +139,22 @@ char *do_get_post_url(const char *url, const char *user, const char *password,
 
   reqlist = curl_slist_append(reqlist, "Accept: application/xml");
   if (reqlist == NULL) {
-    dcloudprintf("Failed to create request list\n");
+    set_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
+	      "Failed to create request list");
     goto cleanup;
   }
 
   res = curl_easy_setopt(curl, CURLOPT_URL, url);
   if (res != CURLE_OK) {
-    dcloudprintf("Failed to set URL header: %s\n", curl_easy_strerror(res));
+    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
+		   "Failed to set URL header", res);
     goto cleanup;
   }
 
   res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, reqlist);
   if (res != CURLE_OK) {
-    dcloudprintf("Failed to set HTTP header: %s\n", curl_easy_strerror(res));
+    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
+		   "Failed to set HTTP header", res);
     goto cleanup;
   }
 
@@ -143,13 +164,15 @@ char *do_get_post_url(const char *url, const char *user, const char *password,
 
   res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, memory_callback);
   if (res != CURLE_OK) {
-    dcloudprintf("Failed to set data callback: %s\n", curl_easy_strerror(res));
+    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
+		   "Failed to set data callback", res);
     goto cleanup;
   }
 
   res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
   if (res != CURLE_OK) {
-    dcloudprintf("Failed to set data pointer: %s\n", curl_easy_strerror(res));
+    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
+		   "Failed to set data pointer", res);
     goto cleanup;
   }
 
@@ -159,7 +182,8 @@ char *do_get_post_url(const char *url, const char *user, const char *password,
      */
     res = curl_easy_setopt(curl, CURLOPT_POST, 1);
     if (res != CURLE_OK) {
-      dcloudprintf("Failed to set header POST: %s\n", curl_easy_strerror(res));
+      set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
+		     "Failed to set header POST", res);
       goto cleanup;
     }
 
@@ -168,15 +192,15 @@ char *do_get_post_url(const char *url, const char *user, const char *password,
      */
     res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, datalen);
     if (res != CURLE_OK) {
-      dcloudprintf("Failed to set post field size: %s\n",
-		   curl_easy_strerror(res));
+      set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
+		     "Failed to set post field size", res);
       goto cleanup;
     }
     if (data != NULL) {
       res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
       if (res != CURLE_OK) {
-	dcloudprintf("Failed to set header post fields: %s\n",
-		     curl_easy_strerror(res));
+	set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
+		       "Failed to set header post fields", res);
 	goto cleanup;
       }
     }
@@ -184,7 +208,8 @@ char *do_get_post_url(const char *url, const char *user, const char *password,
 
   res = curl_easy_perform(curl);
   if (res != CURLE_OK) {
-    dcloudprintf("Failed to perform transfer: %s\n", curl_easy_strerror(res));
+    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
+		   "Failed to perform transfer", res);
     SAFE_FREE(chunk.data);
   }
 
@@ -204,13 +229,13 @@ int delete_url(const char *url, const char *user, const char *password)
 
   curl = curl_easy_init();
   if (curl == NULL) {
-    dcloudprintf("Failed to initialize curl\n");
+    set_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to initialize curl library");
     return -1;
   }
 
   reqlist = curl_slist_append(reqlist, "Accept: application/xml");
   if (reqlist == NULL) {
-    dcloudprintf("Failed to create request list\n");
+    set_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to create request list");
     goto cleanup;
   }
 
@@ -220,26 +245,29 @@ int delete_url(const char *url, const char *user, const char *password)
 
   res = curl_easy_setopt(curl, CURLOPT_URL, url);
   if (res != CURLE_OK) {
-    dcloudprintf("Failed to set URL header: %s\n", curl_easy_strerror(res));
+    set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to set URL header",
+		   res);
     goto cleanup;
   }
 
   res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, reqlist);
   if (res != CURLE_OK) {
-    dcloudprintf("Failed to set HTTP header: %s\n", curl_easy_strerror(res));
+    set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to set HTTP header",
+		   res);
     goto cleanup;
   }
 
   res = curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
   if (res != CURLE_OK) {
-    dcloudprintf("Failed to set custom request to DELETE: %s\n",
-		 curl_easy_strerror(res));
+    set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to set custom request to DELETE",
+		   res);
     goto cleanup;
   }
 
   res = curl_easy_perform(curl);
   if (res != CURLE_OK) {
-    dcloudprintf("Failed to perform transfer: %s\n", curl_easy_strerror(res));
+    set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to perform transfer",
+		   res);
     goto cleanup;
   }
 
