@@ -36,6 +36,10 @@ void free_and_null(void *ptrptr);
 
 void dcloudprintf(const char *fmt, ...);
 
+extern pthread_key_t deltacloud_last_error;
+void deltacloud_error_free_data(void *data);
+void set_error(int errnum, const char *details);
+
 #ifdef __cplusplus
 }
 #endif

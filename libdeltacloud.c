@@ -16,18 +16,6 @@
  * then we set the per-thread variable with details of the failure.
  */
 static int tlsinitialized = 0;
-static pthread_key_t deltacloud_last_error;
-
-static void deltacloud_error_free_data(void *data)
-{
-  struct deltacloud_error *err = data;
-
-  if (err == NULL)
-    return;
-
-  SAFE_FREE(err->details);
-  SAFE_FREE(err);
-}
 
 struct deltacloud_error *deltacloud_get_last_error(void)
 {
@@ -42,31 +30,6 @@ const char *deltacloud_get_last_error_string(void)
   if (last != NULL)
     return last->details;
   return NULL;
-}
-
-static void set_error(int errnum, const char *details)
-{
-  struct deltacloud_error *err;
-  struct deltacloud_error *last;
-
-  err = (struct deltacloud_error *)malloc(sizeof(struct deltacloud_error));
-  if (err == NULL) {
-    /* if we failed to allocate memory here, there's not a lot we can do */
-    dcloudprintf("Failed to allocate memory in an error path; error information will be unreliable!\n");
-    return;
-  }
-  memset(err, 0, sizeof(struct deltacloud_error));
-
-  err->error_num = errnum;
-  err->details = strdup(details);
-
-  dcloudprintf("%s\n", err->details);
-
-  last = pthread_getspecific(deltacloud_last_error);
-  if (last != NULL)
-    deltacloud_error_free_data(last);
-
-  pthread_setspecific(deltacloud_last_error, err);
 }
 
 static void get_url_error(const char *type, const char *url)

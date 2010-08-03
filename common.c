@@ -24,7 +24,11 @@
 #include <string.h>
 #include <time.h>
 #include <stdarg.h>
+#include <pthread.h>
+#include "libdeltacloud.h"
 #include "common.h"
+
+pthread_key_t deltacloud_last_error;
 
 void free_and_null(void *ptrptr)
 {
@@ -56,6 +60,42 @@ void dcloudprintf(const char *fmt, ...)
     vfprintf(stderr, fmt, va_args);
     va_end(va_args);
   }
+}
+
+void deltacloud_error_free_data(void *data)
+{
+  struct deltacloud_error *err = data;
+
+  if (err == NULL)
+    return;
+
+  SAFE_FREE(err->details);
+  SAFE_FREE(err);
+}
+
+void set_error(int errnum, const char *details)
+{
+  struct deltacloud_error *err;
+  struct deltacloud_error *last;
+
+  err = (struct deltacloud_error *)malloc(sizeof(struct deltacloud_error));
+  if (err == NULL) {
+    /* if we failed to allocate memory here, there's not a lot we can do */
+    dcloudprintf("Failed to allocate memory in an error path; error information will be unreliable!\n");
+    return;
+  }
+  memset(err, 0, sizeof(struct deltacloud_error));
+
+  err->error_num = errnum;
+  err->details = strdup(details);
+
+  dcloudprintf("%s\n", err->details);
+
+  last = pthread_getspecific(deltacloud_last_error);
+  if (last != NULL)
+    deltacloud_error_free_data(last);
+
+  pthread_setspecific(deltacloud_last_error, err);
 }
 
 #ifdef DEBUG
