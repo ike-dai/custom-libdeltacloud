@@ -1495,10 +1495,8 @@ int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
     return -1;
 
   instance_ret = deltacloud_get_instance_states(api, &statelist);
-  if (instance_ret < 0) {
-    dcloudprintf("Failed to get instance_states\n");
+  if (instance_ret < 0)
     return instance_ret;
-  }
 
   found = find_by_name_in_instance_state_list(&statelist, name);
   if (found == NULL) {
