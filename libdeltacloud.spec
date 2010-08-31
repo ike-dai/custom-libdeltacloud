@@ -1,6 +1,6 @@
 Summary: A library for accessing deltacloud
 Name: libdeltacloud
-Version: 0.3
+Version: 0.4
 Release: 1%{?dist}
 License: LGPLv2+
 Group: System Environment/Libraries
