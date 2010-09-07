@@ -47,6 +47,7 @@ struct deltacloud_instance {
   char *owner_id;
   char *image_href;
   char *realm_href;
+  char *key_name;
   char *state;
   struct deltacloud_hardware_profile hwp;
   struct deltacloud_action *actions;

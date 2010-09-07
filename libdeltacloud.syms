@@ -77,3 +77,7 @@ LIBDCLOUDAPI_2.0.0 {
 	deltacloud_get_last_error_string;
 	deltacloud_free;
 };
+LIBDCLOUDAPI_3.0.0 {
+    global:
+        deltacloud_create_instance;
+};

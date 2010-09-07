@@ -1815,6 +1815,7 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       const char *name, const char *realm_id,
 			       const char *hardware_profile,
+			       const char *keyname,
 			       struct deltacloud_instance *inst)
 {
   struct deltacloud_link *thislink;
@@ -1826,6 +1827,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   char *safename = NULL;
   char *saferealm = NULL;
   char *safehwp = NULL;
+  char *safekeyname = NULL;
 
   if (api == NULL) {
     invalid_argument_error("API cannot be NULL");
@@ -1868,6 +1870,14 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
       goto cleanup;
     }
     fprintf(paramfp, "&realm_id=%s", saferealm);
+  }
+  if (keyname != NULL) {
+    safekeyname = curl_escape(keyname, 0);
+    if (safekeyname == NULL) {
+      oom_error();
+      goto cleanup;
+    }
+    fprintf(paramfp, "&keyname=%s", safekeyname);
   }
   if (hardware_profile != NULL) {
     safehwp = curl_escape(hardware_profile, 0);

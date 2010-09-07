@@ -75,6 +75,7 @@ int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
 int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       const char *name, const char *realm_id,
 			       const char *hardware_profile,
+			       const char *keyname,
 			       struct deltacloud_instance *inst);
 int deltacloud_instance_stop(struct deltacloud_api *api,
 			     struct deltacloud_instance *instance);
