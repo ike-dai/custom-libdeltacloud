@@ -1,4 +1,4 @@
-AC_INIT([libdeltacloud], [0.4], [deltacloud-devel@lists.fedoraproject.org])
+AC_INIT([libdeltacloud], [0.5], [deltacloud-devel@lists.fedoraproject.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
