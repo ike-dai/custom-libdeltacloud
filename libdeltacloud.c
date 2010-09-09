@@ -458,7 +458,8 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			      void **data)
 {
   struct deltacloud_instance **instances = (struct deltacloud_instance **)data;
-  xmlNodePtr oldnode, instance_cur;
+  xmlNodePtr oldnode;
+  xmlXPathObjectPtr hwpset, actionset, pubset, privset;
   char *href = NULL, *id = NULL, *name = NULL, *owner_id = NULL;
   char *image_href = NULL, *realm_href = NULL, *state = NULL;
   struct deltacloud_hardware_profile *hwp = NULL;
@@ -488,31 +489,40 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       }
 
       ctxt->node = cur;
-      instance_cur = cur->children;
-      while (instance_cur != NULL) {
-	if (instance_cur->type == XML_ELEMENT_NODE) {
-	  if (STREQ((const char *)instance_cur->name, "name"))
-	    name = getXPathString("string(./name)", ctxt);
-	  else if (STREQ((const char *)instance_cur->name, "owner_id"))
-	    owner_id = getXPathString("string(./owner_id)", ctxt);
-	  else if (STREQ((const char *)instance_cur->name, "image"))
-	    image_href = (char *)xmlGetProp(cur, BAD_CAST "href");
-	  else if (STREQ((const char *)instance_cur->name, "realm"))
-	    realm_href = (char *)xmlGetProp(cur, BAD_CAST "href");
-	  else if (STREQ((const char *)instance_cur->name, "state"))
-	    state = getXPathString("string(./state)", ctxt);
-	  else if (STREQ((const char *)instance_cur->name, "hardware_profile"))
-	    parse_hardware_profile_xml(instance_cur, ctxt, (void **)&hwp);
-	  else if (STREQ((const char *)instance_cur->name, "actions"))
-	    actions = parse_actions_xml(instance_cur);
-	  else if (STREQ((const char *)instance_cur->name, "public_addresses"))
-	    public_addresses = parse_addresses_xml(instance_cur, ctxt);
-	  else if (STREQ((const char *)instance_cur->name, "private_addresses"))
-	    private_addresses = parse_addresses_xml(instance_cur, ctxt);
-	}
 
-	instance_cur = instance_cur->next;
-      }
+      name = getXPathString("string(./name[1])", ctxt);
+      owner_id = getXPathString("string(./owner_id[1])", ctxt);
+      image_href = getXPathString("string(./image[1]/@href)", ctxt);
+      realm_href = getXPathString("string(./realm[1]/@href)", ctxt);
+      state = getXPathString("string(./state[1])", ctxt);
+
+      hwpset = xmlXPathEval(BAD_CAST "./hardware_profile[1]", ctxt);
+      if (hwpset && hwpset->type == XPATH_NODESET && hwpset->nodesetval &&
+	  hwpset->nodesetval->nodeNr == 1)
+	parse_hardware_profile_xml(hwpset->nodesetval->nodeTab[0], ctxt,
+				   (void **)&hwp);
+      xmlXPathFreeObject(hwpset);
+
+      actionset = xmlXPathEval(BAD_CAST "./actions[1]", ctxt);
+      if (actionset && actionset->type == XPATH_NODESET &&
+	  actionset->nodesetval && actionset->nodesetval->nodeNr == 1)
+	actions = parse_actions_xml(actionset->nodesetval->nodeTab[0]);
+      xmlXPathFreeObject(actionset);
+
+      pubset = xmlXPathEval(BAD_CAST "./public_addresses[1]", ctxt);
+      if (pubset && pubset->type == XPATH_NODESET && pubset->nodesetval &&
+	  pubset->nodesetval->nodeNr == 1)
+	public_addresses = parse_addresses_xml(pubset->nodesetval->nodeTab[0],
+					       ctxt);
+      xmlXPathFreeObject(pubset);
+
+      privset = xmlXPathEval(BAD_CAST "./private_addresses[1]", ctxt);
+      if (privset && privset->type == XPATH_NODESET && privset->nodesetval &&
+	  privset->nodesetval->nodeNr == 1)
+	private_addresses = parse_addresses_xml(privset->nodesetval->nodeTab[0],
+						ctxt);
+      xmlXPathFreeObject(privset);
+
       listret = add_to_instance_list(instances, href, id, name, owner_id,
 				     image_href, realm_href, state, hwp,
 				     actions, public_addresses,
