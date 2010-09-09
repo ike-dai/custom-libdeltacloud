@@ -225,7 +225,7 @@ void deltacloud_print_instance_state_list(struct deltacloud_instance_state **ins
 
   curr = *instance_states;
   while (curr != NULL) {
-    deltacloud_print_instance_state(curr, NULL);
+    deltacloud_print_instance_state(curr, stream);
     curr = curr->next;
   }
 }

@@ -556,7 +556,7 @@ void deltacloud_print_hardware_profile_list(struct deltacloud_hardware_profile *
 
   curr = *profiles;
   while (curr != NULL) {
-    deltacloud_print_hardware_profile(curr, NULL);
+    deltacloud_print_hardware_profile(curr, stream);
     curr = curr->next;
   }
 }

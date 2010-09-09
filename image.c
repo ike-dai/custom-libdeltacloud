@@ -129,7 +129,7 @@ void deltacloud_print_image_list(struct deltacloud_image **images, FILE *stream)
 
   curr = *images;
   while (curr != NULL) {
-    deltacloud_print_image(curr, NULL);
+    deltacloud_print_image(curr, stream);
     curr = curr->next;
   }
 }

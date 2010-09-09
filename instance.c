@@ -388,7 +388,7 @@ void deltacloud_print_instance_list(struct deltacloud_instance **instances,
 
   curr = *instances;
   while (curr != NULL) {
-    deltacloud_print_instance(curr, NULL);
+    deltacloud_print_instance(curr, stream);
     curr = curr->next;
   }
 }

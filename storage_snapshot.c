@@ -127,7 +127,7 @@ void deltacloud_print_storage_snapshot_list(struct deltacloud_storage_snapshot *
 
   curr = *storage_snapshots;
   while (curr != NULL) {
-    deltacloud_print_storage_snapshot(curr, NULL);
+    deltacloud_print_storage_snapshot(curr, stream);
     curr = curr->next;
   }
 }
