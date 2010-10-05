@@ -25,7 +25,7 @@
 #include "libdeltacloud.h"
 #include "common.h"
 
-void set_curl_error(int errcode, const char *header, CURLcode res)
+static void set_curl_error(int errcode, const char *header, CURLcode res)
 {
   char *errstr;
   int alloc_fail = 0;

@@ -32,36 +32,6 @@ const char *deltacloud_get_last_error_string(void)
   return NULL;
 }
 
-static void get_url_error(const char *type, const char *url)
-{
-  char *tmp;
-  int alloc_fail = 0;
-
-  if (asprintf(&tmp, "Failed to get the XML for %s from %s", type, url) < 0) {
-    tmp = "Failed to get the XML";
-    alloc_fail = 1;
-  }
-
-  set_error(DELTACLOUD_GET_URL_ERROR, tmp);
-  if (!alloc_fail)
-    SAFE_FREE(tmp);
-}
-
-static void post_url_error(const char *type, const char *url)
-{
-  char *tmp;
-  int alloc_fail = 0;
-
-  if (asprintf(&tmp, "Failed to post the XML for %s from %s", type, url) < 0) {
-    tmp = "Failed to post the XML";
-    alloc_fail = 1;
-  }
-
-  set_error(DELTACLOUD_POST_URL_ERROR, tmp);
-  if (!alloc_fail)
-    SAFE_FREE(tmp);
-}
-
 static void xml_error(const char *name, const char *type, const char *details)
 {
   char *tmp;
@@ -344,10 +314,9 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
   api->links = NULL;
 
   data = get_url(api->url, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("API", api->url);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     goto cleanup;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -596,10 +565,9 @@ int deltacloud_get_instances(struct deltacloud_api *api,
   }
 
   data = get_url(thislink->href, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("instances", thislink->href);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     return -1;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -642,10 +610,9 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
   }
 
   data = get_url(url, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("instance", url);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     goto cleanup;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -690,10 +657,9 @@ int deltacloud_get_instance_by_name(struct deltacloud_api *api,
   }
 
   data = get_url(thislink->href, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("instances", thislink->href);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     return -1;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -805,10 +771,9 @@ int deltacloud_get_realms(struct deltacloud_api *api,
   }
 
   data = get_url(thislink->href, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("realms", thislink->href);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     return -1;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -851,10 +816,9 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
   }
 
   data = get_url(url, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("realm", url);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     goto cleanup;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -1124,10 +1088,9 @@ int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
   }
 
   data = get_url(thislink->href, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("hardware_profiles", thislink->href);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     return -1;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -1172,10 +1135,9 @@ int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
   }
 
   data = get_url(url, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("image", url);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     goto cleanup;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -1288,10 +1250,9 @@ int deltacloud_get_images(struct deltacloud_api *api,
   }
 
   data = get_url(thislink->href, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("images", thislink->href);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     return -1;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -1334,10 +1295,9 @@ int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
   }
 
   data = get_url(url, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("image", url);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     goto cleanup;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -1428,10 +1388,9 @@ int deltacloud_get_instance_states(struct deltacloud_api *api,
   }
 
   data = get_url(thislink->href, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("instance_states", thislink->href);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     return -1;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -1580,10 +1539,9 @@ int deltacloud_get_storage_volumes(struct deltacloud_api *api,
   }
 
   data = get_url(thislink->href, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("storage_volumes", thislink->href);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     return -1;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -1628,10 +1586,9 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
   }
 
   data = get_url(url, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("storage_volume", url);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     goto cleanup;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -1744,10 +1701,9 @@ int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
   }
 
   data = get_url(thislink->href, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("storage_snapshots", thislink->href);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     return -1;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -1792,10 +1748,9 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
   }
 
   data = get_url(url, api->user, api->password);
-  if (data == NULL) {
-    get_url_error("storage_snapshot", url);
+  if (data == NULL)
+    /* get_url sets its own errors, so don't overwrite it here */
     goto cleanup;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
@@ -1901,10 +1856,9 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   paramfp = NULL;
 
   data = post_url(thislink->href, api->user, api->password, params, param_size);
-  if (data == NULL) {
-    post_url_error("create_instance", thislink->href);
+  if (data == NULL)
+    /* post_url sets its own errors, so don't overwrite it here */
     goto cleanup;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
@@ -1953,10 +1907,9 @@ static int instance_action(struct deltacloud_api *api,
   }
 
   data = post_url(act->href, api->user, api->password, NULL, 0);
-  if (data == NULL) {
-    post_url_error("action_name", act->href);
+  if (data == NULL)
+    /* post_url sets its own errors, so don't overwrite it here */
     return -1;
-  }
 
   if (is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
