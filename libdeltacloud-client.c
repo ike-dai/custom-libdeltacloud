@@ -82,7 +82,8 @@ int main(int argc, char *argv[])
   fprintf(stderr, "--------------IMAGES-------------------------\n");
   rc = deltacloud_get_images(&api, &images);
   if (rc < 0) {
-    fprintf(stderr, "Failed to get_images: %s\n", deltacloud_get_last_error_string());
+    fprintf(stderr, "Failed to get_images: %s\n",
+	    deltacloud_get_last_error_string());
     goto cleanup;
   }
   deltacloud_print_image_list(&images, NULL);
@@ -90,7 +91,8 @@ int main(int argc, char *argv[])
 
   rc = deltacloud_get_image_by_id(&api, "img1", &image);
   if (rc < 0) {
-    fprintf(stderr, "Failed to get image by id: %s\n", deltacloud_get_last_error_string());
+    fprintf(stderr, "Failed to get image by id: %s\n",
+	    deltacloud_get_last_error_string());
     goto cleanup;
   }
   deltacloud_print_image(&image, NULL);
@@ -99,7 +101,8 @@ int main(int argc, char *argv[])
   fprintf(stderr, "--------------REALMS-------------------------\n");
   rc = deltacloud_get_realms(&api, &realms);
   if (rc < 0) {
-    fprintf(stderr, "Failed to get_realms: %s\n", deltacloud_get_last_error_string());
+    fprintf(stderr, "Failed to get_realms: %s\n",
+	    deltacloud_get_last_error_string());
     goto cleanup;
   }
   deltacloud_print_realm_list(&realms, NULL);
@@ -107,7 +110,8 @@ int main(int argc, char *argv[])
 
   rc = deltacloud_get_realm_by_id(&api, "us", &realm);
   if (rc < 0) {
-    fprintf(stderr, "Failed to get realm by id: %s\n", deltacloud_get_last_error_string());
+    fprintf(stderr, "Failed to get realm by id: %s\n",
+	    deltacloud_get_last_error_string());
     goto cleanup;
   }
   deltacloud_print_realm(&realm, NULL);
@@ -135,7 +139,8 @@ int main(int argc, char *argv[])
   fprintf(stderr, "--------------INSTANCES---------------------\n");
   rc = deltacloud_get_instances(&api, &instances);
   if (rc < 0) {
-    fprintf(stderr, "Failed to get_instances: %s\n", deltacloud_get_last_error_string());
+    fprintf(stderr, "Failed to get_instances: %s\n",
+	    deltacloud_get_last_error_string());
     goto cleanup;
   }
   deltacloud_print_instance_list(&instances, NULL);
@@ -191,25 +196,30 @@ int main(int argc, char *argv[])
   fprintf(stderr, "--------------CREATE INSTANCE---------------\n");
   rc = deltacloud_create_instance(&api, "img3", NULL, NULL, NULL, NULL, &newinstance);
   if (rc < 0) {
-    fprintf(stderr, "Failed to create_instance: %s\n", deltacloud_get_last_error_string());
+    fprintf(stderr, "Failed to create_instance: %s\n",
+	    deltacloud_get_last_error_string());
     goto cleanup;
   }
   deltacloud_print_instance(&newinstance, NULL);
   rc = deltacloud_instance_stop(&api, &newinstance);
   if (rc < 0)
-    fprintf(stderr, "Failed to stop instance: %s\n", deltacloud_get_last_error_string());
+    fprintf(stderr, "Failed to stop instance: %s\n",
+	    deltacloud_get_last_error_string());
   deltacloud_print_instance(&newinstance, NULL);
   rc = deltacloud_instance_start(&api, &newinstance);
   if (rc < 0)
-    fprintf(stderr, "Failed to start instance: %s\n", deltacloud_get_last_error_string());
+    fprintf(stderr, "Failed to start instance: %s\n",
+	    deltacloud_get_last_error_string());
   deltacloud_print_instance(&newinstance, NULL);
   rc = deltacloud_instance_reboot(&api, &newinstance);
   if (rc < 0)
-    fprintf(stderr, "Failed to reboot instance: %s\n", deltacloud_get_last_error_string());
+    fprintf(stderr, "Failed to reboot instance: %s\n",
+	    deltacloud_get_last_error_string());
   deltacloud_print_instance(&newinstance, NULL);
   rc = deltacloud_instance_destroy(&api, &newinstance);
   if (rc < 0)
-    fprintf(stderr, "Failed to destroy instance: %s\n", deltacloud_get_last_error_string());
+    fprintf(stderr, "Failed to destroy instance: %s\n",
+	    deltacloud_get_last_error_string());
   deltacloud_print_instance(&newinstance, NULL);
   deltacloud_free_instance(&newinstance);
 
