@@ -1950,13 +1950,30 @@ int deltacloud_instance_start(struct deltacloud_api *api,
 int deltacloud_instance_destroy(struct deltacloud_api *api,
 				struct deltacloud_instance *instance)
 {
+  char *data = NULL;
+  int ret = -1;
+
   if (!valid_arg(api) || !valid_arg(instance))
     return -1;
 
   /* in deltacloud the destroy action is a DELETE method, so we need
    * to use a different implementation
    */
-  return delete_url(instance->href, api->user, api->password);
+  data = delete_url(instance->href, api->user, api->password);
+  if (data == NULL)
+    /* delete_url sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(data);
+  return ret;
 }
 
 void deltacloud_free(struct deltacloud_api *api)

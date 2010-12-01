@@ -220,17 +220,20 @@ char *do_get_post_url(const char *url, const char *user, const char *password,
   return chunk.data;
 }
 
-int delete_url(const char *url, const char *user, const char *password)
+char *delete_url(const char *url, const char *user, const char *password)
 {
   CURL *curl;
   CURLcode res;
   struct curl_slist *reqlist = NULL;
-  int ret = -1;
+  struct memory chunk;
+
+  chunk.data = NULL;
+  chunk.size = 0;
 
   curl = curl_easy_init();
   if (curl == NULL) {
     set_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to initialize curl library");
-    return -1;
+    return NULL;
   }
 
   reqlist = curl_slist_append(reqlist, "Accept: application/xml");
@@ -264,18 +267,30 @@ int delete_url(const char *url, const char *user, const char *password)
     goto cleanup;
   }
 
-  res = curl_easy_perform(curl);
+  res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, memory_callback);
   if (res != CURLE_OK) {
-    set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to perform transfer",
+    set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to set data callback",
 		   res);
     goto cleanup;
   }
 
-  ret = 0;
+  res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+  if (res != CURLE_OK) {
+    set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to set data pointer",
+		   res);
+    goto cleanup;
+  }
+
+  res = curl_easy_perform(curl);
+  if (res != CURLE_OK) {
+    set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to perform transfer",
+		   res);
+    SAFE_FREE(chunk.data);
+  }
 
  cleanup:
   curl_slist_free_all(reqlist);
   curl_easy_cleanup(curl);
 
-  return ret;
+  return chunk.data;
 }
