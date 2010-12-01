@@ -76,6 +76,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       const char *name, const char *realm_id,
 			       const char *hardware_profile,
 			       const char *keyname,
+			       const char *user_data,
 			       struct deltacloud_instance *inst);
 int deltacloud_instance_stop(struct deltacloud_api *api,
 			     struct deltacloud_instance *instance);

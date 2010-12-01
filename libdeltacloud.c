@@ -1781,6 +1781,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       const char *name, const char *realm_id,
 			       const char *hardware_profile,
 			       const char *keyname,
+			       const char *user_data,
 			       struct deltacloud_instance *inst)
 {
   struct deltacloud_link *thislink;
@@ -1793,6 +1794,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   char *saferealm = NULL;
   char *safehwp = NULL;
   char *safekeyname = NULL;
+  char *safeuser_data = NULL;
 
   if (api == NULL) {
     invalid_argument_error("API cannot be NULL");
@@ -1815,8 +1817,8 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
     return -1;
   }
 
-  /* since image_id, name, realm_id, and hardware_profile come from the
-   * user, we must not trust them and URL escape them before use
+  /* since image_id, name, realm_id, keyname, hardware_profile, and user_data
+   * come from the user, we must not trust them and URL escape them before use
    */
 
   fprintf(paramfp, "image_id=%s", image_id);
@@ -1852,6 +1854,14 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
     }
     fprintf(paramfp, "&hwp_id=%s", safehwp);
   }
+  if (user_data != NULL) {
+    safeuser_data = curl_escape(user_data, 0);
+    if (safeuser_data == NULL) {
+      oom_error();
+      goto cleanup;
+    }
+    fprintf(paramfp, "&user_data=%s", safeuser_data);
+  }
   fclose(paramfp);
   paramfp = NULL;
 
@@ -1880,6 +1890,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   curl_free(safename);
   curl_free(saferealm);
   curl_free(safehwp);
+  curl_free(safeuser_data);
   SAFE_FREE(data);
 
   return ret;
