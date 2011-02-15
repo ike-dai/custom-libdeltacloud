@@ -1777,9 +1777,29 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
   return ret;
 }
 
+static int add_param(const char *name, const char *value, FILE *fp)
+{
+  char *safevalue;
+
+  if (value != NULL) {
+    safevalue = curl_escape(value, 0);
+    if (safevalue == NULL) {
+      oom_error();
+      return -1;
+    }
+    fprintf(fp, "&%s=%s", name, safevalue);
+    SAFE_FREE(safevalue);
+  }
+
+  return 0;
+}
+
 int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       const char *name, const char *realm_id,
 			       const char *hardware_profile,
+			       const char *hwp_memory,
+			       const char *hwp_cpu,
+			       const char *hwp_storage,
 			       const char *keyname,
 			       const char *user_data,
 			       struct deltacloud_instance *inst)
@@ -1790,11 +1810,6 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   int ret = -1;
   char *data = NULL;
   char *params = NULL;
-  char *safename = NULL;
-  char *saferealm = NULL;
-  char *safehwp = NULL;
-  char *safekeyname = NULL;
-  char *safeuser_data = NULL;
 
   if (api == NULL) {
     invalid_argument_error("API cannot be NULL");
@@ -1822,46 +1837,17 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
    */
 
   fprintf(paramfp, "image_id=%s", image_id);
-  if (name != NULL) {
-    safename = curl_escape(name, 0);
-    if (safename == NULL) {
-      oom_error();
-      goto cleanup;
-    }
-    fprintf(paramfp, "&name=%s", safename);
-  }
-  if (realm_id != NULL) {
-    saferealm = curl_escape(realm_id, 0);
-    if (saferealm == NULL) {
-      oom_error();
-      goto cleanup;
-    }
-    fprintf(paramfp, "&realm_id=%s", saferealm);
-  }
-  if (keyname != NULL) {
-    safekeyname = curl_escape(keyname, 0);
-    if (safekeyname == NULL) {
-      oom_error();
-      goto cleanup;
-    }
-    fprintf(paramfp, "&keyname=%s", safekeyname);
-  }
-  if (hardware_profile != NULL) {
-    safehwp = curl_escape(hardware_profile, 0);
-    if (safehwp == NULL) {
-      oom_error();
-      goto cleanup;
-    }
-    fprintf(paramfp, "&hwp_id=%s", safehwp);
-  }
-  if (user_data != NULL) {
-    safeuser_data = curl_escape(user_data, 0);
-    if (safeuser_data == NULL) {
-      oom_error();
-      goto cleanup;
-    }
-    fprintf(paramfp, "&user_data=%s", safeuser_data);
-  }
+
+  if (add_param("name", name, paramfp) < 0 ||
+      add_param("realm_id", realm_id, paramfp) < 0 ||
+      add_param("keyname", keyname, paramfp) < 0 ||
+      add_param("hwp_id", hardware_profile, paramfp) < 0 ||
+      add_param("hwp_memory", hwp_memory, paramfp) < 0 ||
+      add_param("hwp_cpu", hwp_cpu, paramfp) < 0 ||
+      add_param("hwp_storage", hwp_storage, paramfp) < 0 ||
+      add_param("user_data", user_data, paramfp) < 0)
+    goto cleanup;
+
   fclose(paramfp);
   paramfp = NULL;
 
@@ -1887,10 +1873,6 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   if (paramfp != NULL)
     fclose(paramfp);
   SAFE_FREE(params);
-  curl_free(safename);
-  curl_free(saferealm);
-  curl_free(safehwp);
-  curl_free(safeuser_data);
   SAFE_FREE(data);
 
   return ret;
@@ -1976,7 +1958,7 @@ int deltacloud_instance_destroy(struct deltacloud_api *api,
     goto cleanup;
 
   if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
+    set_xml_error(data, DELTACLOUD_DELETE_URL_ERROR);
     goto cleanup;
   }
 

@@ -108,3 +108,30 @@ LIBDELTACLOUD_4.0.0 {
 	deltacloud_get_last_error_string;
 	deltacloud_free;
 };
+LIBDELTACLOUD_5.0.0 {
+    global:
+	deltacloud_initialize;
+	deltacloud_get_instances;
+	deltacloud_get_instance_by_id;
+	deltacloud_get_instance_by_name;
+	deltacloud_get_realms;
+	deltacloud_get_realm_by_id;
+	deltacloud_get_hardware_profiles;
+	deltacloud_get_images;
+	deltacloud_get_image_by_id;
+	deltacloud_get_instance_states;
+	deltacloud_get_instance_state_by_name;
+	deltacloud_get_storage_volumes;
+	deltacloud_get_storage_volume_by_id;
+	deltacloud_get_storage_snapshots;
+	deltacloud_get_storage_snapshot_by_id;
+	deltacloud_get_hardware_profiles;
+	deltacloud_create_instance;
+	deltacloud_instance_stop;
+	deltacloud_instance_reboot;
+	deltacloud_instance_start;
+	deltacloud_instance_destroy;
+	deltacloud_get_last_error;
+	deltacloud_get_last_error_string;
+	deltacloud_free;
+};

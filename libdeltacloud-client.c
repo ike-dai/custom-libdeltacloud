@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
 
   fprintf(stderr, "--------------CREATE INSTANCE---------------\n");
   rc = deltacloud_create_instance(&api, "img3", NULL, NULL, NULL, NULL, NULL,
-				  &newinstance);
+				  NULL, NULL, NULL, &newinstance);
   if (rc < 0) {
     fprintf(stderr, "Failed to create_instance: %s\n",
 	    deltacloud_get_last_error_string());
