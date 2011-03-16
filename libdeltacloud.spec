@@ -5,11 +5,10 @@ Release: 1%{?dist}
 License: LGPLv2+
 Group: System Environment/Libraries
 URL: http://people.redhat.com/clalance/libdeltacloud
-Source0: http://people.redhat.com/clalance/libdeltacloud/%{name}-%{version}.tar.gz
+Source0: http://people.redhat.com/clalance/libdeltacloud/%{version}/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: libcurl-devel
 BuildRequires: libxml2-devel
-Obsoletes: libdcloudapi
 
 %description
 Libdeltacloud is a library for accessing deltacloud via a
@@ -73,16 +72,21 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0644,root,root) %{_includedir}/libdeltacloud/instance_state.h
 %attr(0644,root,root) %{_includedir}/libdeltacloud/storage_volume.h
 %attr(0644,root,root) %{_includedir}/libdeltacloud/storage_snapshot.h
-%attr(0755,root,root) %{_includedir}/libdeltacloud/hardware_profile.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/hardware_profile.h
 %attr(0755,root,root) %{_libdir}/libdeltacloud.so
 %{_libdir}/pkgconfig/libdeltacloud.pc
 
 %changelog
-* Thu Jul 08 2010 Chris Lalancette <clalance@redhat.com> 0.3-1
+* Wed Mar 16 2011 Chris Lalancette <clalance@redhat.com> - 0.7-1
+- Update to latest upstream (0.7)
+
+* Thu Jul 08 2010 Chris Lalancette <clalance@redhat.com> - 0.3-1
 - Bump version for API breakage (replace - with _, move id to parent XML)
 - Rename the library from dcloudapi to libdeltacloud
-* Fri Apr 23 2010 Chris Lalancette <clalance@redhat.com> 0.2-1
+
+* Fri Apr 23 2010 Chris Lalancette <clalance@redhat.com> - 0.2-1
 - Bump version for new API (removed flavors, added hardware profiles)
-* Mon Mar 08 2010 Chris Lalancette <clalance@redhat.com> 0.1-1
+
+* Mon Mar 08 2010 Chris Lalancette <clalance@redhat.com> - 0.1-1
 - Initial build.
 
