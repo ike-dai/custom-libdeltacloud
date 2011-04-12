@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Red Hat, Inc.
+ * Copyright (C) 2010,2011 Red Hat, Inc.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -119,23 +119,23 @@ static int set_user_password(CURL *curl, const char *user, const char *password)
   return 0;
 }
 
-char *do_get_post_url(const char *url, const char *user, const char *password,
-		      int post, char *data, int datalen)
+int do_get_post_url(const char *url, const char *user, const char *password,
+		    int post, char *data, int datalen, char **returndata)
 {
   CURL *curl;
   CURLcode res;
   struct curl_slist *reqlist = NULL;
   struct memory chunk;
+  int ret = -1;
+
+  memset(&chunk, 0, sizeof(struct memory));
 
   curl = curl_easy_init();
   if (curl == NULL) {
     set_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
 	      "Failed to initialize curl library");
-    return NULL;
+    return ret;
   }
-
-  chunk.data = NULL;
-  chunk.size = 0;
 
   reqlist = curl_slist_append(reqlist, "Accept: application/xml");
   if (reqlist == NULL) {
@@ -210,14 +210,19 @@ char *do_get_post_url(const char *url, const char *user, const char *password,
   if (res != CURLE_OK) {
     set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
 		   "Failed to perform transfer", res);
-    SAFE_FREE(chunk.data);
+    goto cleanup;
   }
 
+  ret = 0;
+  if (chunk.data != NULL && returndata != NULL)
+    *returndata = strdup(chunk.data);
+
  cleanup:
+  SAFE_FREE(chunk.data);
   curl_slist_free_all(reqlist);
   curl_easy_cleanup(curl);
 
-  return chunk.data;
+  return ret;
 }
 
 char *delete_url(const char *url, const char *user, const char *password)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Red Hat, Inc.
+ * Copyright (C) 2010,2011 Red Hat, Inc.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,11 +25,11 @@
 extern "C" {
 #endif
 
-char *do_get_post_url(const char *url, const char *user, const char *password,
-		      int post, char *data, int datalen);
+int do_get_post_url(const char *url, const char *user, const char *password,
+		    int post, char *data, int datalen, char **returndata);
 
-#define get_url(url, user, password) do_get_post_url(url, user, password, 0, NULL, 0)
-#define post_url(url, user, password, data, datalen) do_get_post_url(url, user, password, 1, data, datalen)
+#define get_url(url, user, password, returndata) do_get_post_url(url, user, password, 0, NULL, 0, returndata)
+#define post_url(url, user, password, data, datalen, returndata) do_get_post_url(url, user, password, 1, data, datalen, returndata)
 
 char *delete_url(const char *url, const char *user, const char *password);
 
