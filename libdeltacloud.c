@@ -1832,8 +1832,8 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
     return -1;
   }
 
-  /* since image_id, name, realm_id, keyname, hardware_profile, and user_data
-   * come from the user, we must not trust them and URL escape them before use
+  /* since the parameters come from the user, we must not trust them and
+   * URL escape them before use
    */
 
   fprintf(paramfp, "image_id=%s", image_id);
