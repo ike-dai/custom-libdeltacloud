@@ -1810,6 +1810,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   int ret = -1;
   char *data = NULL;
   char *params = NULL;
+  char *safeimage = NULL;
 
   if (api == NULL) {
     invalid_argument_error("API cannot be NULL");
@@ -1836,7 +1837,13 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
    * URL escape them before use
    */
 
-  fprintf(paramfp, "image_id=%s", image_id);
+  safeimage = curl_escape(image_id, 0);
+  if (safeimage == NULL) {
+      oom_error();
+      goto cleanup;
+  }
+  fprintf(paramfp, "image_id=%s", safeimage);
+  SAFE_FREE(safeimage);
 
   if (add_param("name", name, paramfp) < 0 ||
       add_param("realm_id", realm_id, paramfp) < 0 ||
