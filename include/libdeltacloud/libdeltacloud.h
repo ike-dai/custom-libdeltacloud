@@ -85,8 +85,7 @@ void deltacloud_free_parameter_value(struct deltacloud_create_parameter *param);
 void deltacloud_free_parameter(struct deltacloud_create_parameter *param);
 int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       struct deltacloud_create_parameter *params,
-			       int params_length,
-			       struct deltacloud_instance *inst);
+			       int params_length, char **instance_id);
 int deltacloud_instance_stop(struct deltacloud_api *api,
 			     struct deltacloud_instance *instance);
 int deltacloud_instance_reboot(struct deltacloud_api *api,

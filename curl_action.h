@@ -26,10 +26,11 @@ extern "C" {
 #endif
 
 int do_get_post_url(const char *url, const char *user, const char *password,
-		    int post, char *data, char **returndata);
+		    int post, char *data, char **returndata,
+		    char **returnheader);
 
-#define get_url(url, user, password, returndata) do_get_post_url(url, user, password, 0, NULL, returndata)
-#define post_url(url, user, password, data, returndata) do_get_post_url(url, user, password, 1, data, returndata)
+#define get_url(url, user, password, returndata) do_get_post_url(url, user, password, 0, NULL, returndata, NULL)
+#define post_url(url, user, password, data, returndata, returnheader) do_get_post_url(url, user, password, 1, data, returndata, returnheader)
 
 char *delete_url(const char *url, const char *user, const char *password);
 

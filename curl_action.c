@@ -120,16 +120,19 @@ static int set_user_password(CURL *curl, const char *user, const char *password)
 }
 
 int do_get_post_url(const char *url, const char *user, const char *password,
-		    int post, char *data, char **returndata)
+		    int post, char *data, char **returndata,
+		    char **returnheader)
 {
   CURL *curl;
   CURLcode res;
   struct curl_slist *reqlist = NULL;
   struct memory chunk;
+  struct memory header_chunk;
   int ret = -1;
   size_t datalen;
 
   memset(&chunk, 0, sizeof(struct memory));
+  memset(&header_chunk, 0, sizeof(struct memory));
 
   curl = curl_easy_init();
   if (curl == NULL) {
@@ -177,6 +180,20 @@ int do_get_post_url(const char *url, const char *user, const char *password,
     goto cleanup;
   }
 
+  res = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, memory_callback);
+  if (res != CURLE_OK) {
+    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
+		   "Failed to set header callback", res);
+    goto cleanup;
+  }
+
+  res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void *)&header_chunk);
+  if (res != CURLE_OK) {
+    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
+		   "Failed to set header pointer", res);
+    goto cleanup;
+  }
+
   if (post) {
     /* in this case, we want to do a POST; note, however, that it is possible
      * for us to do a POST with no data
@@ -221,8 +238,12 @@ int do_get_post_url(const char *url, const char *user, const char *password,
   if (chunk.data != NULL && returndata != NULL)
     *returndata = strdup(chunk.data);
 
+  if (header_chunk.data != NULL && returnheader != NULL)
+    *returnheader = strdup(header_chunk.data);
+
  cleanup:
   SAFE_FREE(chunk.data);
+  SAFE_FREE(header_chunk.data);
   curl_slist_free_all(reqlist);
   curl_easy_cleanup(curl);
 

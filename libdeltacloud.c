@@ -1982,10 +1982,44 @@ void deltacloud_free_parameter(struct deltacloud_create_parameter *param)
   SAFE_FREE(param);
 }
 
+/* this is a function to parse the headers that are returned from a create
+ * instance call.  Note that this function *will* change the passed-in
+ * headers string
+ */
+static char *parse_create_headers(char *headers)
+{
+  char *header;
+  char *instid = NULL;
+  char *tmp;
+
+  header = strsep(&headers, "\n");
+  while (header != NULL) {
+    if (strncasecmp(header, "Location:", 9) == 0) {
+      tmp = strrchr(header, '/');
+      if (tmp == NULL) {
+	set_error(DELTACLOUD_NAME_NOT_FOUND_ERROR,
+		  "Could not parse instance name after instance creation");
+	return NULL;
+      }
+      tmp++;
+      tmp[strlen(tmp) - 1] = '\0';
+      instid = strdup(tmp);
+
+      break;
+    }
+    header = strsep(&headers, "\n");
+  }
+
+  if (instid == NULL)
+    set_error(DELTACLOUD_NAME_NOT_FOUND_ERROR,
+	      "Could not find instance name after instance creation");
+
+  return instid;
+}
+
 int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       struct deltacloud_create_parameter *params,
-			       int params_length,
-			       struct deltacloud_instance *inst)
+			       int params_length, char **instance_id)
 {
   struct deltacloud_link *thislink;
   size_t param_string_length;
@@ -1995,6 +2029,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   char *param_string = NULL;
   int i;
   char *safevalue = NULL;
+  char *headers = NULL;
 
   if (!valid_arg(api) || !valid_arg(image_id))
     return -1;
@@ -2039,7 +2074,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   paramfp = NULL;
 
   if (post_url(thislink->href, api->user, api->password, param_string,
-	       &data) != 0)
+	       &data, &headers) != 0)
     /* post_url sets its own errors, so don't overwrite it here */
     goto cleanup;
 
@@ -2048,9 +2083,16 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
     goto cleanup;
   }
 
-  if (inst != NULL) {
-    memset(inst, 0, sizeof(struct deltacloud_instance));
-    if (parse_one_instance(data, inst) < 0)
+  if (headers == NULL) {
+    set_error(DELTACLOUD_POST_URL_ERROR,
+	      "No headers returned from create call");
+    goto cleanup;
+  }
+
+  if (instance_id != NULL) {
+    *instance_id = parse_create_headers(headers);
+    if (*instance_id == NULL)
+      /* parse_create_headers already set the error */
       goto cleanup;
   }
 
@@ -2061,6 +2103,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
     fclose(paramfp);
   SAFE_FREE(param_string);
   SAFE_FREE(data);
+  SAFE_FREE(headers);
 
   return ret;
 }
@@ -2086,7 +2129,7 @@ static int instance_action(struct deltacloud_api *api,
     return -1;
   }
 
-  if (post_url(act->href, api->user, api->password, NULL, &data) != 0)
+  if (post_url(act->href, api->user, api->password, NULL, &data, NULL) != 0)
     /* post_url sets its own errors, so don't overwrite it here */
     return -1;
 

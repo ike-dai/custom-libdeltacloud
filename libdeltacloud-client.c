@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
   struct deltacloud_instance instance;
   struct deltacloud_storage_volume storage_volume;
   struct deltacloud_storage_snapshot storage_snapshot;
-  struct deltacloud_instance newinstance;
+  char *instid;
   struct deltacloud_create_parameter stackparams[2];
   struct deltacloud_create_parameter *heapparams[2];
   int ret = 3;
@@ -214,32 +214,43 @@ int main(int argc, char *argv[])
 
   fprintf(stderr, "--------------CREATE INSTANCE---------------\n");
   deltacloud_prepare_parameter(&stackparams[0], "name", "foo");
-  if (deltacloud_create_instance(&api, "img3", stackparams, 1,
-				 &newinstance) < 0) {
+  if (deltacloud_create_instance(&api, "img3", stackparams, 1, &instid) < 0) {
     deltacloud_free_parameter_value(&stackparams[0]);
     fprintf(stderr, "Failed to create_instance: %s\n",
 	    deltacloud_get_last_error_string());
     goto cleanup;
   }
   deltacloud_free_parameter_value(&stackparams[0]);
-  deltacloud_print_instance(&newinstance, NULL);
-  if (deltacloud_instance_stop(&api, &newinstance) < 0)
+
+  fprintf(stderr, "Successfully created instance with ID %s\n", instid);
+
+  if (deltacloud_get_instance_by_id(&api, instid, &instance) < 0) {
+    free(instid);
+    fprintf(stderr, "Failed to get instance by id: %s\n",
+	    deltacloud_get_last_error_string());
+    goto cleanup;
+  }
+
+  free(instid);
+
+  deltacloud_print_instance(&instance, NULL);
+  if (deltacloud_instance_stop(&api, &instance) < 0)
     fprintf(stderr, "Failed to stop instance: %s\n",
 	    deltacloud_get_last_error_string());
-  deltacloud_print_instance(&newinstance, NULL);
-  if (deltacloud_instance_start(&api, &newinstance) < 0)
+  deltacloud_print_instance(&instance, NULL);
+  if (deltacloud_instance_start(&api, &instance) < 0)
     fprintf(stderr, "Failed to start instance: %s\n",
 	    deltacloud_get_last_error_string());
-  deltacloud_print_instance(&newinstance, NULL);
-  if (deltacloud_instance_reboot(&api, &newinstance) < 0)
+  deltacloud_print_instance(&instance, NULL);
+  if (deltacloud_instance_reboot(&api, &instance) < 0)
     fprintf(stderr, "Failed to reboot instance: %s\n",
 	    deltacloud_get_last_error_string());
-  deltacloud_print_instance(&newinstance, NULL);
-  if (deltacloud_instance_destroy(&api, &newinstance) < 0)
+  deltacloud_print_instance(&instance, NULL);
+  if (deltacloud_instance_destroy(&api, &instance) < 0)
     fprintf(stderr, "Failed to destroy instance: %s\n",
 	    deltacloud_get_last_error_string());
-  deltacloud_print_instance(&newinstance, NULL);
-  deltacloud_free_instance(&newinstance);
+  deltacloud_print_instance(&instance, NULL);
+  deltacloud_free_instance(&instance);
 
   ret = 0;
 
