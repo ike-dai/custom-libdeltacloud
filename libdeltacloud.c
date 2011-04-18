@@ -1812,14 +1812,8 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   char *params = NULL;
   char *safeimage = NULL;
 
-  if (api == NULL) {
-    invalid_argument_error("API cannot be NULL");
+  if (!valid_arg(api) || !valid_arg(image_id))
     return -1;
-  }
-  if (image_id == NULL) {
-    invalid_argument_error("Image ID cannot be NULL");
-    return -1;
-  }
 
   thislink = find_by_rel_in_link_list(&api->links, "instances");
   if (thislink == NULL) {
