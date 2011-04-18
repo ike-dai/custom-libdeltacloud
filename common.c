@@ -55,7 +55,7 @@ void dcloudprintf(const char *fmt, ...)
 {
   va_list va_args;
 
-  if (getenv("DCLOUDAPI_DEBUG")) {
+  if (getenv("LIBDELTACLOUD_DEBUG")) {
     va_start(va_args, fmt);
     vfprintf(stderr, fmt, va_args);
     va_end(va_args);
