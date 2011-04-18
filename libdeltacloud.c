@@ -1797,40 +1797,70 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
   return ret;
 }
 
-static int add_param(const char *name, const char *value, FILE *fp)
+int deltacloud_prepare_parameter(struct deltacloud_create_parameter *param,
+				 const char *name, const char *value)
 {
-  char *safevalue;
+  param->name = strdup(name);
+  if (param->name == NULL) {
+    oom_error();
+    return -1;
+  }
 
-  if (value != NULL) {
-    safevalue = curl_escape(value, 0);
-    if (safevalue == NULL) {
-      oom_error();
-      return -1;
-    }
-    fprintf(fp, "&%s=%s", name, safevalue);
-    SAFE_FREE(safevalue);
+  param->value = strdup(value);
+  if (param->value == NULL) {
+    SAFE_FREE(param->name);
+    oom_error();
+    return -1;
   }
 
   return 0;
 }
 
+struct deltacloud_create_parameter *deltacloud_allocate_parameter(const char *name,
+								  const char *value)
+{
+  struct deltacloud_create_parameter *ret;
+
+  ret = malloc(sizeof(struct deltacloud_create_parameter));
+  if (ret == NULL) {
+    oom_error();
+    return NULL;
+  }
+
+  if (deltacloud_prepare_parameter(ret, name, value) < 0) {
+    /* deltacloud_prepare_parameter set the error already */
+    SAFE_FREE(ret);
+    return NULL;
+  }
+
+  return ret;
+}
+
+void deltacloud_free_parameter_value(struct deltacloud_create_parameter *param)
+{
+  SAFE_FREE(param->name);
+  SAFE_FREE(param->value);
+}
+
+void deltacloud_free_parameter(struct deltacloud_create_parameter *param)
+{
+  deltacloud_free_parameter_value(param);
+  SAFE_FREE(param);
+}
+
 int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
-			       const char *name, const char *realm_id,
-			       const char *hardware_profile,
-			       const char *hwp_memory,
-			       const char *hwp_cpu,
-			       const char *hwp_storage,
-			       const char *keyname,
-			       const char *user_data,
+			       struct deltacloud_create_parameter *params,
+			       int params_length,
 			       struct deltacloud_instance *inst)
 {
   struct deltacloud_link *thislink;
-  size_t param_size;
+  size_t param_string_length;
   FILE *paramfp;
   int ret = -1;
   char *data = NULL;
-  char *params = NULL;
-  char *safeimage = NULL;
+  char *param_string = NULL;
+  int i;
+  char *safevalue = NULL;
 
   if (!valid_arg(api) || !valid_arg(image_id))
     return -1;
@@ -1841,7 +1871,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
     return -1;
   }
 
-  paramfp = open_memstream(&params, &param_size);
+  paramfp = open_memstream(&param_string, &param_string_length);
   if (paramfp == NULL) {
     oom_error();
     return -1;
@@ -1851,28 +1881,31 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
    * URL escape them before use
    */
 
-  safeimage = curl_escape(image_id, 0);
-  if (safeimage == NULL) {
+  safevalue = curl_escape(image_id, 0);
+  if (safevalue == NULL) {
       oom_error();
       goto cleanup;
   }
-  fprintf(paramfp, "image_id=%s", safeimage);
-  SAFE_FREE(safeimage);
+  fprintf(paramfp, "image_id=%s", safevalue);
+  SAFE_FREE(safevalue);
 
-  if (add_param("name", name, paramfp) < 0 ||
-      add_param("realm_id", realm_id, paramfp) < 0 ||
-      add_param("keyname", keyname, paramfp) < 0 ||
-      add_param("hwp_id", hardware_profile, paramfp) < 0 ||
-      add_param("hwp_memory", hwp_memory, paramfp) < 0 ||
-      add_param("hwp_cpu", hwp_cpu, paramfp) < 0 ||
-      add_param("hwp_storage", hwp_storage, paramfp) < 0 ||
-      add_param("user_data", user_data, paramfp) < 0)
-    goto cleanup;
+  for (i = 0; i < params_length; i++) {
+    if (params[i].value != NULL) {
+      safevalue = curl_escape(params[i].value, 0);
+      if (safevalue == NULL) {
+	oom_error();
+	goto cleanup;
+      }
+      fprintf(paramfp, "&%s=%s", params[i].name, safevalue);
+      SAFE_FREE(safevalue);
+    }
+  }
 
   fclose(paramfp);
   paramfp = NULL;
 
-  data = post_url(thislink->href, api->user, api->password, params, param_size);
+  data = post_url(thislink->href, api->user, api->password, param_string,
+		  param_string_length);
   if (data == NULL)
     /* post_url sets its own errors, so don't overwrite it here */
     goto cleanup;
@@ -1893,7 +1926,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
  cleanup:
   if (paramfp != NULL)
     fclose(paramfp);
-  SAFE_FREE(params);
+  SAFE_FREE(param_string);
   SAFE_FREE(data);
 
   return ret;

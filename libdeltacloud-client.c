@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Red Hat, Inc.
+ * Copyright (C) 2010,2011 Red Hat, Inc.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,6 +42,8 @@ int main(int argc, char *argv[])
   struct deltacloud_storage_volume storage_volume;
   struct deltacloud_storage_snapshot storage_snapshot;
   struct deltacloud_instance newinstance;
+  struct deltacloud_create_parameter stackparams[2];
+  struct deltacloud_create_parameter *heapparams[2];
   int ret = 3;
   int rc;
 
@@ -193,14 +195,47 @@ int main(int argc, char *argv[])
   deltacloud_print_storage_snapshot(&storage_snapshot, NULL);
   deltacloud_free_storage_snapshot(&storage_snapshot);
 
-  fprintf(stderr, "--------------CREATE INSTANCE---------------\n");
-  rc = deltacloud_create_instance(&api, "img3", NULL, NULL, NULL, NULL, NULL,
-				  NULL, NULL, NULL, &newinstance);
+  fprintf(stderr, "--------------CREATE INSTANCE PARAMS--------\n");
+  rc = deltacloud_prepare_parameter(&stackparams[0], "name", "foo");
   if (rc < 0) {
+    fprintf(stderr, "Failed to prepare stack parameter 0: %s\n",
+	    deltacloud_get_last_error_string());
+    goto cleanup;
+  }
+  rc = deltacloud_prepare_parameter(&stackparams[1], "keyname", "chris");
+  if (rc < 0) {
+    fprintf(stderr, "Failed to prepare stack parameter 1: %s\n",
+	    deltacloud_get_last_error_string());
+    goto cleanup;
+  }
+  deltacloud_free_parameter_value(&stackparams[0]);
+  deltacloud_free_parameter_value(&stackparams[1]);
+
+  heapparams[0] = deltacloud_allocate_parameter("name", "foo");
+  if (heapparams[0] == NULL) {
+    fprintf(stderr, "Failed to prepare heap parameter 0: %s\n",
+	    deltacloud_get_last_error_string());
+    goto cleanup;
+  }
+  heapparams[1] = deltacloud_allocate_parameter("keyname", "chris");
+  if (heapparams[1] == NULL) {
+    fprintf(stderr, "Failed to prepare heap parameter 1: %s\n",
+	    deltacloud_get_last_error_string());
+    goto cleanup;
+  }
+  deltacloud_free_parameter(heapparams[0]);
+  deltacloud_free_parameter(heapparams[1]);
+
+  fprintf(stderr, "--------------CREATE INSTANCE---------------\n");
+  deltacloud_prepare_parameter(&stackparams[0], "name", "foo");
+  rc = deltacloud_create_instance(&api, "img3", stackparams, 1, &newinstance);
+  if (rc < 0) {
+    deltacloud_free_parameter_value(&stackparams[0]);
     fprintf(stderr, "Failed to create_instance: %s\n",
 	    deltacloud_get_last_error_string());
     goto cleanup;
   }
+  deltacloud_free_parameter_value(&stackparams[0]);
   deltacloud_print_instance(&newinstance, NULL);
   rc = deltacloud_instance_stop(&api, &newinstance);
   if (rc < 0)

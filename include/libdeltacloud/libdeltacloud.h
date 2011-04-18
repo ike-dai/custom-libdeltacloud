@@ -27,6 +27,11 @@ struct deltacloud_error {
   char *details;
 };
 
+struct deltacloud_create_parameter {
+  char *name;
+  char *value;
+};
+
 int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 			  char *password);
 
@@ -72,14 +77,15 @@ int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
 					  const char *id,
 					  struct deltacloud_hardware_profile *profile);
 
+int deltacloud_prepare_parameter(struct deltacloud_create_parameter *param,
+				 const char *name, const char *value);
+struct deltacloud_create_parameter *deltacloud_allocate_parameter(const char *name,
+								  const char *value);
+void deltacloud_free_parameter_value(struct deltacloud_create_parameter *param);
+void deltacloud_free_parameter(struct deltacloud_create_parameter *param);
 int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
-			       const char *name, const char *realm_id,
-			       const char *hardware_profile,
-			       const char *hwp_memory,
-			       const char *hwp_cpu,
-			       const char *hwp_storage,
-			       const char *keyname,
-			       const char *user_data,
+			       struct deltacloud_create_parameter *params,
+			       int params_length,
 			       struct deltacloud_instance *inst);
 int deltacloud_instance_stop(struct deltacloud_api *api,
 			     struct deltacloud_instance *instance);
