@@ -120,13 +120,14 @@ static int set_user_password(CURL *curl, const char *user, const char *password)
 }
 
 int do_get_post_url(const char *url, const char *user, const char *password,
-		    int post, char *data, int datalen, char **returndata)
+		    int post, char *data, char **returndata)
 {
   CURL *curl;
   CURLcode res;
   struct curl_slist *reqlist = NULL;
   struct memory chunk;
   int ret = -1;
+  size_t datalen;
 
   memset(&chunk, 0, sizeof(struct memory));
 
@@ -190,6 +191,9 @@ int do_get_post_url(const char *url, const char *user, const char *password,
     /* it is imperative to set POSTFIELDSIZE so that 0-size POST transfers
      * will work
      */
+    datalen = 0;
+    if (data != NULL)
+      datalen = strlen(data);
     res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, datalen);
     if (res != CURLE_OK) {
       set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,

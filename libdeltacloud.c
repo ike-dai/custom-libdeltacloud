@@ -2039,7 +2039,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   paramfp = NULL;
 
   if (post_url(thislink->href, api->user, api->password, param_string,
-	       param_string_length, &data) != 0)
+	       &data) != 0)
     /* post_url sets its own errors, so don't overwrite it here */
     goto cleanup;
 
@@ -2086,7 +2086,7 @@ static int instance_action(struct deltacloud_api *api,
     return -1;
   }
 
-  if (post_url(act->href, api->user, api->password, NULL, 0, &data) != 0)
+  if (post_url(act->href, api->user, api->password, NULL, &data) != 0)
     /* post_url sets its own errors, so don't overwrite it here */
     return -1;
 
