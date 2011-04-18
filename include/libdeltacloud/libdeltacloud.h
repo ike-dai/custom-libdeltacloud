@@ -1,5 +1,5 @@
-#ifndef DCLOUD_API_H
-#define DCLOUD_API_H
+#ifndef LIBDELTACLOUD_API_H
+#define LIBDELTACLOUD_API_H
 
 #include "link.h"
 #include "instance.h"
