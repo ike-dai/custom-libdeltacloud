@@ -54,31 +54,17 @@ int add_to_address_list(struct deltacloud_address **addresses,
   return -1;
 }
 
+static int copy_address(struct deltacloud_address **dst,
+			struct deltacloud_address *curr)
+{
+  return add_to_address_list(dst, curr->address);
+}
+
 static int copy_address_list(struct deltacloud_address **dst,
 			     struct deltacloud_address **src)
 {
-  struct deltacloud_address *curr;
-
-  /* with a NULL src, we just return success.  A NULL dst is an error */
-  if (src == NULL)
-    return 0;
-  if (dst == NULL)
-    return -1;
-
-  *dst = NULL;
-
-  curr = *src;
-  while (curr != NULL) {
-    if (add_to_address_list(dst, curr->address) < 0)
-      goto error;
-    curr = curr->next;
-  }
-
-  return 0;
-
- error:
-  free_address_list(dst);
-  return -1;
+  copy_list(dst, src, struct deltacloud_address, copy_address,
+	    free_address_list);
 }
 
 static void print_address(struct deltacloud_address *address, FILE *stream)
@@ -151,31 +137,16 @@ struct deltacloud_action *find_by_rel_in_action_list(struct deltacloud_action **
   return NULL;
 }
 
+static int copy_action(struct deltacloud_action **dst,
+		       struct deltacloud_action *curr)
+{
+  return add_to_action_list(dst, curr->rel, curr->href);
+}
+
 static int copy_action_list(struct deltacloud_action **dst,
 			    struct deltacloud_action **src)
 {
-  struct deltacloud_action *curr;
-
-  /* with a NULL src, we just return success.  A NULL dst is an error */
-  if (src == NULL)
-    return 0;
-  if (dst == NULL)
-    return -1;
-
-  *dst = NULL;
-
-  curr = *src;
-  while (curr != NULL) {
-    if (add_to_action_list(dst, curr->rel, curr->href) < 0)
-      goto error;
-    curr = curr->next;
-  }
-
-  return 0;
-
- error:
-  free_action_list(dst);
-  return -1;
+  copy_list(dst, src, struct deltacloud_action, copy_action, free_action_list);
 }
 
 static void print_action(struct deltacloud_action *action, FILE *stream)

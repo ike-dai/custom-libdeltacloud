@@ -76,31 +76,17 @@ static void print_range_list(struct deltacloud_property_range **ranges,
   print_list(ranges, struct deltacloud_property_range, print_range, stream);
 }
 
+static int copy_range(struct deltacloud_property_range **dst,
+		      struct deltacloud_property_range *curr)
+{
+  return add_to_range_list(dst, curr->first, curr->last);
+}
+
 static int copy_range_list(struct deltacloud_property_range **dst,
 			   struct deltacloud_property_range **src)
 {
-  struct deltacloud_property_range *curr;
-
-  /* with a NULL src, we just return success.  A NULL dst is an error */
-  if (src == NULL)
-    return 0;
-  if (dst == NULL)
-    return -1;
-
-  *dst = NULL;
-
-  curr = *src;
-  while (curr != NULL) {
-    if (add_to_range_list(dst, curr->first, curr->last) < 0)
-      goto error;
-    curr = curr->next;
-  }
-
-  return 0;
-
- error:
-  free_range_list(dst);
-  return -1;
+  copy_list(dst, src, struct deltacloud_property_range, copy_range,
+	    free_range_list);
 }
 
 void free_range_list(struct deltacloud_property_range **ranges)
@@ -156,31 +142,17 @@ static void print_enum_list(struct deltacloud_property_enum **enums,
   print_list(enums, struct deltacloud_property_enum, print_enum, stream);
 }
 
+static int copy_enum(struct deltacloud_property_enum **dst,
+		     struct deltacloud_property_enum *curr)
+{
+  return add_to_enum_list(dst, curr->value);
+}
+
 static int copy_enum_list(struct deltacloud_property_enum **dst,
 			  struct deltacloud_property_enum **src)
 {
-  struct deltacloud_property_enum *curr;
-
-  /* with a NULL src, we just return success.  A NULL dst is an error */
-  if (src == NULL)
-    return 0;
-  if (dst == NULL)
-    return -1;
-
-  *dst = NULL;
-
-  curr = *src;
-  while (curr != NULL) {
-    if (add_to_enum_list(dst, curr->value) < 0)
-      goto error;
-    curr = curr->next;
-  }
-
-  return 0;
-
- error:
-  free_enum_list(dst);
-  return -1;
+  copy_list(dst, src, struct deltacloud_property_enum, copy_enum,
+	    free_enum_list);
 }
 
 void free_enum_list(struct deltacloud_property_enum **enums)
@@ -249,32 +221,18 @@ static void print_param_list(struct deltacloud_property_param **params,
   print_list(params, struct deltacloud_property_param, print_param, stream);
 }
 
+static int copy_param(struct deltacloud_property_param **dst,
+		      struct deltacloud_property_param *curr)
+{
+  return add_to_param_list(dst, curr->href, curr->method, curr->name,
+			   curr->operation);
+}
+
 static int copy_param_list(struct deltacloud_property_param **dst,
 			   struct deltacloud_property_param **src)
 {
-  struct deltacloud_property_param *curr;
-
-  /* with a NULL src, we just return success.  A NULL dst is an error */
-  if (src == NULL)
-    return 0;
-  if (dst == NULL)
-    return -1;
-
-  *dst = NULL;
-
-  curr = *src;
-  while (curr != NULL) {
-    if (add_to_param_list(dst, curr->href, curr->method, curr->name,
-			  curr->operation) < 0)
-      goto error;
-    curr = curr->next;
-  }
-
-  return 0;
-
- error:
-  free_param_list(dst);
-  return -1;
+  copy_list(dst, src, struct deltacloud_property_param, copy_param,
+	    free_param_list);
 }
 
 void free_param_list(struct deltacloud_property_param **params)
@@ -362,33 +320,19 @@ static void print_property_list(struct deltacloud_property **props,
   print_list(props, struct deltacloud_property, print_property, stream);
 }
 
+static int copy_property(struct deltacloud_property **dst,
+			 struct deltacloud_property *curr)
+{
+  return add_to_property_list(dst, curr->kind, curr->name, curr->unit,
+			      curr->value, curr->params, curr->enums,
+			      curr->ranges);
+}
+
 static int copy_property_list(struct deltacloud_property **dst,
 			      struct deltacloud_property **src)
 {
-  struct deltacloud_property *curr;
-
-  /* with a NULL src, we just return success.  A NULL dst is an error */
-  if (src == NULL)
-    return 0;
-  if (dst == NULL)
-    return -1;
-
-  *dst = NULL;
-
-  curr = *src;
-  while (curr != NULL) {
-    if (add_to_property_list(dst, curr->kind, curr->name, curr->unit,
-			     curr->value, curr->params, curr->enums,
-			     curr->ranges) < 0)
-      goto error;
-    curr = curr->next;
-  }
-
-  return 0;
-
- error:
-  free_property_list(dst);
-  return -1;
+  copy_list(dst, src, struct deltacloud_property, copy_property,
+	    free_property_list);
 }
 
 int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,

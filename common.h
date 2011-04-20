@@ -82,6 +82,26 @@ void set_error(int errnum, const char *details);
     *list = NULL;				\
   } while(0)
 
+
+#define copy_list(dst, src, type, copy, free) do {	\
+    type *curr;						\
+    if (src == NULL)					\
+      return 0;						\
+    if (dst == NULL)					\
+      return -1;					\
+    *dst = NULL;					\
+    curr = *src;					\
+    while (curr != NULL) {				\
+      if (copy(dst, curr) < 0)				\
+	goto error;					\
+      curr = curr->next;				\
+    }							\
+    return 0;						\
+  error:						\
+    free(dst);						\
+    return -1;						\
+  } while(0)
+
 #ifdef __cplusplus
 }
 #endif

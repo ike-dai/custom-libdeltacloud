@@ -57,31 +57,15 @@ int add_to_transition_list(struct transition **transitions, const char *action,
   return -1;
 }
 
+static int copy_transition(struct transition **dst, struct transition *curr)
+{
+  return add_to_transition_list(dst, curr->action, curr->to);
+}
+
 static int copy_transition_list(struct transition **dst,
 				struct transition **src)
 {
-  struct transition *curr;
-
-  /* with a NULL src, we just return success.  A NULL dst is an error */
-  if (src == NULL)
-    return 0;
-  if (dst == NULL)
-    return -1;
-
-  *dst = NULL;
-
-  curr = *src;
-  while (curr != NULL) {
-    if (add_to_transition_list(dst, curr->action, curr->to) < 0)
-      goto error;
-    curr = curr->next;
-  }
-
-  return 0;
-
- error:
-  free_transition_list(dst);
-  return -1;
+  copy_list(dst, src, struct transition, copy_transition, free_transition_list);
 }
 
 static void print_transition(struct transition *transition, FILE *stream)
