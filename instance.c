@@ -91,7 +91,8 @@ static int copy_address_list(struct deltacloud_address **dst,
   return -1;
 }
 
-void print_address_list(struct deltacloud_address **addresses, FILE *stream)
+static void print_address_list(struct deltacloud_address **addresses,
+			       FILE *stream)
 {
   struct deltacloud_address *curr;
 

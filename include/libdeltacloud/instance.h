@@ -59,7 +59,6 @@ struct deltacloud_instance {
 
 int add_to_address_list(struct deltacloud_address **addreses,
 			const char *address);
-void print_address_list(struct deltacloud_address **addresses, FILE *stream);
 void free_address_list(struct deltacloud_address **addresses);
 
 int add_to_action_list(struct deltacloud_action **actions, const char *rel,
