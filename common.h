@@ -134,6 +134,14 @@ void *malloc_sometimes_fail(size_t size);
 #define realloc realloc_sometimes_fail
 void *realloc_sometimes_fail(void *ptr, size_t size);
 
+/* some versions of gcc #define strdup to an internal function.  However,
+ * we can work around this by undefining it ourselves, and getting a possibly
+ * slower version.  Since this is for memory-leak debugging purposes, that
+ * suits our use-case fine
+ */
+#ifdef strdup
+#undef strdup
+#endif
 #define strdup strdup_sometimes_fail
 char *strdup_sometimes_fail(const char *s);
 
@@ -144,6 +152,20 @@ CURL *curl_easy_init_sometimes_fail(void);
 #define curl_slist_append curl_slist_append_sometimes_fail
 struct curl_slist *curl_slist_append_sometimes_fail(struct curl_slist *list,
 						    const char *string);
+
+/* It would be nice to redefine curl_easy_setopt() to sometimes fail as well.
+ * Unfortunately it has a prototype of:
+ *
+ * CURL_EXTERN CURLcode curl_easy_setopt(CURL *curl, CURLoption option, ...);
+ *
+ * Because of the ellipses, and because of the lack of a va* variant, we can't
+ * pass the variable argument list through.  Another attempt I made was to
+ * define curl_easy_setopt_sometimes_fail(CURL *curl, CURLoption option, void *ptr),
+ * but this failed because of casting between void * and the real type.  Yet
+ * another attempt was made by making the whole thing a macro (so we could
+ * indeed pass the variable arguments through), but that failed because you
+ * cannot return a value from a macro.
+ */
 
 #define curl_easy_perform curl_easy_perform_sometimes_fail
 CURLcode curl_easy_perform_sometimes_fail(CURL *handle);

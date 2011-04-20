@@ -234,7 +234,7 @@ CURLcode curl_easy_perform_sometimes_fail(CURL *handle)
   if (rand() % FAILRATE)
     return curl_easy_perform(handle);
   else
-    return -1;
+    return CURLE_OUT_OF_MEMORY;
 }
 
 #undef strdup
