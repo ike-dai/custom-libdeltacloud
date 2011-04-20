@@ -65,6 +65,7 @@ struct deltacloud_property {
 struct deltacloud_hardware_profile {
   char *href;
   char *id;
+  char *name;
 
   struct deltacloud_property *properties;
 
@@ -94,6 +95,7 @@ void free_property_list(struct deltacloud_property **props);
 void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profile);
 int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
 				 const char *id, const char *href,
+				 const char *name,
 				 struct deltacloud_property *props);
 int copy_hardware_profile(struct deltacloud_hardware_profile *dst,
 			  struct deltacloud_hardware_profile *src);

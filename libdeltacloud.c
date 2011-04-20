@@ -1096,7 +1096,7 @@ static int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 {
   struct deltacloud_hardware_profile **profiles = (struct deltacloud_hardware_profile **)data;
   struct deltacloud_property *props = NULL;
-  char *href = NULL, *id = NULL;
+  char *href = NULL, *id = NULL, *name = NULL;
   xmlNodePtr oldnode;
   int ret = -1;
   int listret;
@@ -1123,11 +1123,14 @@ static int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	goto cleanup;
       }
 
+      name = getXPathString("string(./name)", ctxt);
+
       props = parse_hardware_profile_properties(cur);
 
-      listret = add_to_hardware_profile_list(profiles, id, href, props);
+      listret = add_to_hardware_profile_list(profiles, id, href, name, props);
       SAFE_FREE(id);
       SAFE_FREE(href);
+      SAFE_FREE(name);
       free_property_list(&props);
       if (listret < 0) {
 	oom_error();

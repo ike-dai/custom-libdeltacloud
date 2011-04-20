@@ -337,6 +337,7 @@ static int copy_property_list(struct deltacloud_property **dst,
 
 int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
 				 const char *id, const char *href,
+				 const char *name,
 				 struct deltacloud_property *props)
 {
   struct deltacloud_hardware_profile *oneprofile;
@@ -350,6 +351,8 @@ int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
   if (strdup_or_null(&oneprofile->id, id) < 0)
     goto error;
   if (strdup_or_null(&oneprofile->href, href) < 0)
+    goto error;
+  if (strdup_or_null(&oneprofile->name, name) < 0)
     goto error;
   if (copy_property_list(&oneprofile->properties, &props) < 0)
     goto error;
@@ -419,6 +422,7 @@ void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profil
 
   SAFE_FREE(profile->id);
   SAFE_FREE(profile->href);
+  SAFE_FREE(profile->name);
   free_property_list(&profile->properties);
 }
 
