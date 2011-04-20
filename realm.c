@@ -129,18 +129,5 @@ void deltacloud_free_realm(struct deltacloud_realm *realm)
 
 void deltacloud_free_realm_list(struct deltacloud_realm **realms)
 {
-  struct deltacloud_realm *curr, *next;
-
-  if (realms == NULL)
-    return;
-
-  curr = *realms;
-  while (curr != NULL) {
-    next = curr->next;
-    deltacloud_free_realm(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *realms = NULL;
+  free_list(realms, struct deltacloud_realm, deltacloud_free_realm);
 }

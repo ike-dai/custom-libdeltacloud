@@ -53,6 +53,20 @@ void set_error(int errnum, const char *details);
     }						\
   } while(0)
 
+#define free_list(list, type, cb) do {		\
+    type *curr, *next;				\
+    if (list == NULL)				\
+      return;					\
+    curr = *list;				\
+    while (curr != NULL) {			\
+      next = curr->next;			\
+      cb(curr);					\
+      SAFE_FREE(curr);				\
+      curr = next;				\
+    }						\
+    *list = NULL;				\
+  } while(0)
+
 #ifdef __cplusplus
 }
 #endif

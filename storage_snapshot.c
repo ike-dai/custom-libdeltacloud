@@ -136,18 +136,6 @@ void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storag
 
 void deltacloud_free_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots)
 {
-  struct deltacloud_storage_snapshot *curr, *next;
-
-  if (storage_snapshots == NULL)
-    return;
-
-  curr = *storage_snapshots;
-  while (curr != NULL) {
-    next = curr->next;
-    deltacloud_free_storage_snapshot(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *storage_snapshots = NULL;
+  free_list(storage_snapshots, struct deltacloud_storage_snapshot,
+	    deltacloud_free_storage_snapshot);
 }

@@ -113,17 +113,7 @@ static void print_transition_list(struct transition **transitions, FILE *stream)
 
 void free_transition_list(struct transition **transitions)
 {
-  struct transition *curr, *next;
-
-  curr = *transitions;
-  while (curr != NULL) {
-    next = curr->next;
-    free_transition(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *transitions = NULL;
+  free_list(transitions, struct transition, free_transition);
 }
 
 int add_to_instance_state_list(struct deltacloud_instance_state **instance_states,
@@ -233,18 +223,6 @@ void deltacloud_free_instance_state(struct deltacloud_instance_state *instance_s
 
 void deltacloud_free_instance_state_list(struct deltacloud_instance_state **instance_states)
 {
-  struct deltacloud_instance_state *curr, *next;
-
-  if (instance_states == NULL)
-    return;
-
-  curr = *instance_states;
-  while (curr != NULL) {
-    next = curr->next;
-    deltacloud_free_instance_state(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *instance_states = NULL;
+  free_list(instance_states, struct deltacloud_instance_state,
+	    deltacloud_free_instance_state);
 }

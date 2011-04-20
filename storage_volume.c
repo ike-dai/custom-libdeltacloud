@@ -148,18 +148,6 @@ void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_vo
 
 void deltacloud_free_storage_volume_list(struct deltacloud_storage_volume **storage_volumes)
 {
-  struct deltacloud_storage_volume *curr, *next;
-
-  if (storage_volumes == NULL)
-    return;
-
-  curr = *storage_volumes;
-  while (curr != NULL) {
-    next = curr->next;
-    deltacloud_free_storage_volume(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *storage_volumes = NULL;
+  free_list(storage_volumes, struct deltacloud_storage_volume,
+	    deltacloud_free_storage_volume);
 }

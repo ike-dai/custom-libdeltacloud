@@ -110,17 +110,7 @@ static void print_address_list(struct deltacloud_address **addresses,
 
 void free_address_list(struct deltacloud_address **addresses)
 {
-  struct deltacloud_address *curr, *next;
-
-  curr = *addresses;
-  while (curr != NULL) {
-    next = curr->next;
-    free_address(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *addresses = NULL;
+  free_list(addresses, struct deltacloud_address, free_address);
 }
 
 static void free_action(struct deltacloud_action *action)
@@ -226,17 +216,7 @@ static void print_action_list(struct deltacloud_action **actions, FILE *stream)
 
 void free_action_list(struct deltacloud_action **actions)
 {
-  struct deltacloud_action *curr, *next;
-
-  curr = *actions;
-  while (curr != NULL) {
-    next = curr->next;
-    free_action(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *actions = NULL;
+  free_list(actions, struct deltacloud_action, free_action);
 }
 
 int add_to_instance_list(struct deltacloud_instance **instances,
@@ -406,18 +386,5 @@ void deltacloud_free_instance(struct deltacloud_instance *instance)
 
 void deltacloud_free_instance_list(struct deltacloud_instance **instances)
 {
-  struct deltacloud_instance *curr, *next;
-
-  if (instances == NULL)
-    return;
-
-  curr = *instances;
-  while (curr != NULL) {
-    next = curr->next;
-    deltacloud_free_instance(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *instances = NULL;
+  free_list(instances, struct deltacloud_instance, deltacloud_free_instance);
 }

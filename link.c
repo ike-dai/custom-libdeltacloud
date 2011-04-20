@@ -100,15 +100,5 @@ struct deltacloud_link *find_by_rel_in_link_list(struct deltacloud_link **links,
 
 void free_link_list(struct deltacloud_link **links)
 {
-  struct deltacloud_link *curr, *next;
-
-  curr = *links;
-  while (curr != NULL) {
-    next = curr->next;
-    free_link(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *links = NULL;
+  free_list(links, struct deltacloud_link, free_link);
 }

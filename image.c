@@ -137,18 +137,5 @@ void deltacloud_free_image(struct deltacloud_image *image)
 
 void deltacloud_free_image_list(struct deltacloud_image **images)
 {
-  struct deltacloud_image *curr, *next;
-
-  if (images == NULL)
-    return;
-
-  curr = *images;
-  while (curr != NULL) {
-    next = curr->next;
-    deltacloud_free_image(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *images = NULL;
+  free_list(images, struct deltacloud_image, deltacloud_free_image);
 }

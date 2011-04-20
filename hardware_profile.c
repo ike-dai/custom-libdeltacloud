@@ -115,17 +115,7 @@ static int copy_range_list(struct deltacloud_property_range **dst,
 
 void free_range_list(struct deltacloud_property_range **ranges)
 {
-  struct deltacloud_property_range *curr, *next;
-
-  curr = *ranges;
-  while (curr != NULL) {
-    next = curr->next;
-    free_range(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *ranges = NULL;
+  free_list(ranges, struct deltacloud_property_range, free_range);
 }
 
 static void free_enum(struct deltacloud_property_enum *oneenum)
@@ -215,17 +205,7 @@ static int copy_enum_list(struct deltacloud_property_enum **dst,
 
 void free_enum_list(struct deltacloud_property_enum **enums)
 {
-  struct deltacloud_property_enum *curr, *next;
-
-  curr = *enums;
-  while (curr != NULL) {
-    next = curr->next;
-    free_enum(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *enums = NULL;
+  free_list(enums, struct deltacloud_property_enum, free_enum);
 }
 
 static void free_param(struct deltacloud_property_param *param)
@@ -329,17 +309,7 @@ static int copy_param_list(struct deltacloud_property_param **dst,
 
 void free_param_list(struct deltacloud_property_param **params)
 {
-  struct deltacloud_property_param *curr, *next;
-
-  curr = *params;
-  while (curr != NULL) {
-    next = curr->next;
-    free_param(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *params = NULL;
+  free_list(params, struct deltacloud_property_param, free_param);
 }
 
 static void free_prop(struct deltacloud_property *prop)
@@ -355,17 +325,7 @@ static void free_prop(struct deltacloud_property *prop)
 
 void free_property_list(struct deltacloud_property **props)
 {
-  struct deltacloud_property *curr, *next;
-
-  curr = *props;
-  while (curr != NULL) {
-    next = curr->next;
-    free_prop(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *props = NULL;
+  free_list(props, struct deltacloud_property, free_prop);
 }
 
 int add_to_property_list(struct deltacloud_property **props, const char *kind,
@@ -570,18 +530,6 @@ void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profil
 
 void deltacloud_free_hardware_profile_list(struct deltacloud_hardware_profile **profiles)
 {
-  struct deltacloud_hardware_profile *curr, *next;
-
-  if (profiles == NULL)
-    return;
-
-  curr = *profiles;
-  while (curr != NULL) {
-    next = curr->next;
-    deltacloud_free_hardware_profile(curr);
-    SAFE_FREE(curr);
-    curr = next;
-  }
-
-  *profiles = NULL;
+  free_list(profiles, struct deltacloud_hardware_profile,
+	    deltacloud_free_hardware_profile);
 }
