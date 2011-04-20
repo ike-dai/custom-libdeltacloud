@@ -94,7 +94,7 @@ static int copy_transition_list(struct transition **dst,
   return -1;
 }
 
-void print_transition_list(struct transition **transitions, FILE *stream)
+static void print_transition_list(struct transition **transitions, FILE *stream)
 {
   struct transition *curr;
 

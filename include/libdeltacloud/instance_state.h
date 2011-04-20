@@ -41,7 +41,6 @@ struct deltacloud_instance_state {
 
 int add_to_transition_list(struct transition **transitions, const char *action,
 			   const char *to);
-void print_transition_list(struct transition **transitions, FILE *stream);
 void free_transition_list(struct transition **transitions);
 
 int add_to_instance_state_list(struct deltacloud_instance_state **instance_states,
