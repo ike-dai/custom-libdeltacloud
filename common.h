@@ -40,6 +40,19 @@ extern pthread_key_t deltacloud_last_error;
 void deltacloud_error_free_data(void *data);
 void set_error(int errnum, const char *details);
 
+#define print_list(list, type, cb, stream) do {	\
+    type *curr;					\
+    if (stream == NULL)				\
+      stream = stderr;				\
+    if (list == NULL)				\
+      return;					\
+    curr = *list;				\
+    while (curr != NULL) {			\
+      cb(curr, stream);				\
+      curr = curr->next;			\
+    }						\
+  } while(0)
+
 #ifdef __cplusplus
 }
 #endif

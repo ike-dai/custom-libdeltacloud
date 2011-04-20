@@ -118,18 +118,8 @@ void deltacloud_print_storage_snapshot(struct deltacloud_storage_snapshot *stora
 void deltacloud_print_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots,
 					    FILE *stream)
 {
-  struct deltacloud_storage_snapshot *curr;
-
-  if (stream == NULL)
-    stream = stderr;
-  if (storage_snapshots == NULL)
-    return;
-
-  curr = *storage_snapshots;
-  while (curr != NULL) {
-    deltacloud_print_storage_snapshot(curr, stream);
-    curr = curr->next;
-  }
+  print_list(storage_snapshots, struct deltacloud_storage_snapshot,
+	     deltacloud_print_storage_snapshot, stream);
 }
 
 void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot)

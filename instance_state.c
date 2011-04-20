@@ -94,19 +94,21 @@ static int copy_transition_list(struct transition **dst,
   return -1;
 }
 
-static void print_transition_list(struct transition **transitions, FILE *stream)
+static void print_transition(struct transition *transition, FILE *stream)
 {
-  struct transition *curr;
-
   if (stream == NULL)
     stream = stderr;
 
-  curr = *transitions;
-  while (curr != NULL) {
-    fprintf(stream, "Action: %s\n", curr->action);
-    fprintf(stream, "To: %s\n", curr->to);
-    curr = curr->next;
-  }
+  if (transition == NULL)
+    return;
+
+  fprintf(stream, "Action: %s\n", transition->action);
+  fprintf(stream, "To: %s\n", transition->to);
+}
+
+static void print_transition_list(struct transition **transitions, FILE *stream)
+{
+  print_list(transitions, struct transition, print_transition, stream);
 }
 
 void free_transition_list(struct transition **transitions)
@@ -216,18 +218,8 @@ void deltacloud_print_instance_state(struct deltacloud_instance_state *instance_
 void deltacloud_print_instance_state_list(struct deltacloud_instance_state **instance_states,
 					  FILE *stream)
 {
-  struct deltacloud_instance_state *curr;
-
-  if (stream == NULL)
-    stream = stderr;
-  if (instance_states == NULL)
-    return;
-
-  curr = *instance_states;
-  while (curr != NULL) {
-    deltacloud_print_instance_state(curr, stream);
-    curr = curr->next;
-  }
+  print_list(instance_states, struct deltacloud_instance_state,
+	     deltacloud_print_instance_state, stream);
 }
 
 void deltacloud_free_instance_state(struct deltacloud_instance_state *instance_state)

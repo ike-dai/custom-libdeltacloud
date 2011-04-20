@@ -119,19 +119,7 @@ void deltacloud_print_image(struct deltacloud_image *image, FILE *stream)
 
 void deltacloud_print_image_list(struct deltacloud_image **images, FILE *stream)
 {
-  struct deltacloud_image *curr;
-
-  if (stream == NULL)
-    stream = stderr;
-
-  if (images == NULL)
-    return;
-
-  curr = *images;
-  while (curr != NULL) {
-    deltacloud_print_image(curr, stream);
-    curr = curr->next;
-  }
+  print_list(images, struct deltacloud_image, deltacloud_print_image, stream);
 }
 
 void deltacloud_free_image(struct deltacloud_image *image)

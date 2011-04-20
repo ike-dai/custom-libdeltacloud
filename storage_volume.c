@@ -128,18 +128,8 @@ void deltacloud_print_storage_volume(struct deltacloud_storage_volume *storage_v
 void deltacloud_print_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
 					  FILE *stream)
 {
-  struct deltacloud_storage_volume *curr;
-
-  if (stream == NULL)
-    stream = stderr;
-  if (storage_volumes == NULL)
-    return;
-
-  curr = *storage_volumes;
-  while (curr != NULL) {
-    deltacloud_print_storage_volume(curr, stream);
-    curr = curr->next;
-  }
+  print_list(storage_volumes, struct deltacloud_storage_volume,
+	     deltacloud_print_storage_volume, stream);
 }
 
 void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_volume)

@@ -112,18 +112,7 @@ void deltacloud_print_realm(struct deltacloud_realm *realm, FILE *stream)
 
 void deltacloud_print_realm_list(struct deltacloud_realm **realms, FILE *stream)
 {
-  struct deltacloud_realm *curr;
-
-  if (stream == NULL)
-    stream = stderr;
-  if (realms == NULL)
-    return;
-
-  curr = *realms;
-  while (curr != NULL) {
-    deltacloud_print_realm(curr, stream);
-    curr = curr->next;
-  }
+  print_list(realms, struct deltacloud_realm, deltacloud_print_realm, stream);
 }
 
 void deltacloud_free_realm(struct deltacloud_realm *realm)

@@ -68,20 +68,22 @@ int add_to_range_list(struct deltacloud_property_range **ranges,
   return -1;
 }
 
-static void print_range_list(struct deltacloud_property_range **ranges,
-			     FILE *stream)
+static void print_range(struct deltacloud_property_range *range, FILE *stream)
 {
-  struct deltacloud_property_range *curr;
-
   if (stream == NULL)
     stream = stderr;
 
-  curr = *ranges;
-  while (curr != NULL) {
-    fprintf(stream, "  range first: %s\n", curr->first);
-    fprintf(stream, "  range last: %s\n", curr->last);
-    curr = curr->next;
-  }
+  if (range == NULL)
+    return;
+
+  fprintf(stream, " range first: %s\n", range->first);
+  fprintf(stream, " range last: %s\n", range->last);
+}
+
+static void print_range_list(struct deltacloud_property_range **ranges,
+			     FILE *stream)
+{
+  print_list(ranges, struct deltacloud_property_range, print_range, stream);
 }
 
 static int copy_range_list(struct deltacloud_property_range **dst,
@@ -167,19 +169,21 @@ int add_to_enum_list(struct deltacloud_property_enum **enums,
   return -1;
 }
 
-static void print_enum_list(struct deltacloud_property_enum **enums,
-			    FILE *stream)
+static void print_enum(struct deltacloud_property_enum *theenum, FILE *stream)
 {
-  struct deltacloud_property_enum *curr;
-
   if (stream == NULL)
     stream = stderr;
 
-  curr = *enums;
-  while (curr != NULL) {
-    fprintf(stream, "  enum value: %s\n", curr->value);
-    curr = curr->next;
-  }
+  if (theenum == NULL)
+    return;
+
+  fprintf(stream, "  enum value: %s\n", theenum->value);
+}
+
+static void print_enum_list(struct deltacloud_property_enum **enums,
+			    FILE *stream)
+{
+  print_list(enums, struct deltacloud_property_enum, print_enum, stream);
 }
 
 static int copy_enum_list(struct deltacloud_property_enum **dst,
@@ -275,22 +279,24 @@ int add_to_param_list(struct deltacloud_property_param **params,
   return -1;
 }
 
-static void print_param_list(struct deltacloud_property_param **params,
-			     FILE *stream)
+static void print_param(struct deltacloud_property_param *param, FILE *stream)
 {
-  struct deltacloud_property_param *curr;
-
   if (stream == NULL)
     stream = stderr;
 
-  curr = *params;
-  while (curr != NULL) {
-    fprintf(stream, "  param href: %s\n", curr->href);
-    fprintf(stream, "  param method: %s\n", curr->method);
-    fprintf(stream, "  param name: %s\n", curr->name);
-    fprintf(stream, "  param operation: %s\n", curr->operation);
-    curr = curr->next;
-  }
+  if (param == NULL)
+    return;
+
+  fprintf(stream, "  param href: %s\n", param->href);
+  fprintf(stream, "  param method: %s\n", param->method);
+  fprintf(stream, "  param name: %s\n", param->name);
+  fprintf(stream, "  param operation: %s\n", param->operation);
+}
+
+static void print_param_list(struct deltacloud_property_param **params,
+			     FILE *stream)
+{
+  print_list(params, struct deltacloud_property_param, print_param, stream);
 }
 
 static int copy_param_list(struct deltacloud_property_param **dst,
@@ -413,25 +419,27 @@ int add_to_property_list(struct deltacloud_property **props, const char *kind,
   return -1;
 }
 
-static void print_property_list(struct deltacloud_property **props,
-				FILE *stream)
+static void print_property(struct deltacloud_property *prop, FILE *stream)
 {
-  struct deltacloud_property *curr;
-
   if (stream == NULL)
     stream = stderr;
 
-  curr = *props;
-  while (curr != NULL) {
-    fprintf(stream, " kind: %s\n", curr->kind);
-    fprintf(stream, " name: %s\n", curr->name);
-    fprintf(stream, " unit: %s\n", curr->unit);
-    fprintf(stream, " value: %s\n", curr->value);
-    print_param_list(&curr->params, stream);
-    print_enum_list(&curr->enums, stream);
-    print_range_list(&curr->ranges, stream);
-    curr = curr->next;
-  }
+  if (prop == NULL)
+    return;
+
+  fprintf(stream, " kind: %s\n", prop->kind);
+  fprintf(stream, " name: %s\n", prop->name);
+  fprintf(stream, " unit: %s\n", prop->unit);
+  fprintf(stream, " value: %s\n", prop->value);
+  print_param_list(&prop->params, stream);
+  print_enum_list(&prop->enums, stream);
+  print_range_list(&prop->ranges, stream);
+}
+
+static void print_property_list(struct deltacloud_property **props,
+				FILE *stream)
+{
+  print_list(props, struct deltacloud_property, print_property, stream);
 }
 
 static int copy_property_list(struct deltacloud_property **dst,
@@ -546,19 +554,8 @@ void deltacloud_print_hardware_profile(struct deltacloud_hardware_profile *profi
 void deltacloud_print_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
 					    FILE *stream)
 {
-  struct deltacloud_hardware_profile *curr;
-
-  if (stream == NULL)
-    stream = stderr;
-
-  if (profiles == NULL)
-    return;
-
-  curr = *profiles;
-  while (curr != NULL) {
-    deltacloud_print_hardware_profile(curr, stream);
-    curr = curr->next;
-  }
+  print_list(profiles, struct deltacloud_hardware_profile,
+	     deltacloud_print_hardware_profile, stream);
 }
 
 void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profile)

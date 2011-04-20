@@ -91,19 +91,21 @@ static int copy_address_list(struct deltacloud_address **dst,
   return -1;
 }
 
-static void print_address_list(struct deltacloud_address **addresses,
-			       FILE *stream)
+static void print_address(struct deltacloud_address *address, FILE *stream)
 {
-  struct deltacloud_address *curr;
-
   if (stream == NULL)
     stream = stderr;
 
-  curr = *addresses;
-  while (curr != NULL) {
-    fprintf(stream, "Address: %s\n", curr->address);
-    curr = curr->next;
-  }
+  if (address == NULL)
+    return;
+
+  fprintf(stream, "Address: %s\n", address->address);
+}
+
+static void print_address_list(struct deltacloud_address **addresses,
+			       FILE *stream)
+{
+  print_list(addresses, struct deltacloud_address, print_address, stream);
 }
 
 void free_address_list(struct deltacloud_address **addresses)
@@ -206,19 +208,20 @@ static int copy_action_list(struct deltacloud_action **dst,
   return -1;
 }
 
-static void print_action_list(struct deltacloud_action **actions, FILE *stream)
+static void print_action(struct deltacloud_action *action, FILE *stream)
 {
-  struct deltacloud_action *curr;
-
   if (stream == NULL)
     stream = stderr;
+  if (action == NULL)
+    return;
 
-  curr = *actions;
-  while (curr != NULL) {
-    fprintf(stream, "Rel: %s\n", curr->rel);
-    fprintf(stream, "Href: %s\n", curr->href);
-    curr = curr->next;
-  }
+  fprintf(stream, "Rel: %s\n", action->rel);
+  fprintf(stream, "Href: %s\n", action->href);
+}
+
+static void print_action_list(struct deltacloud_action **actions, FILE *stream)
+{
+  print_list(actions, struct deltacloud_action, print_action, stream);
 }
 
 void free_action_list(struct deltacloud_action **actions)
@@ -379,19 +382,8 @@ void deltacloud_print_instance(struct deltacloud_instance *instance,
 void deltacloud_print_instance_list(struct deltacloud_instance **instances,
 				    FILE *stream)
 {
-  struct deltacloud_instance *curr;
-
-  if (stream == NULL)
-    stream = stderr;
-
-  if (instances == NULL)
-    return;
-
-  curr = *instances;
-  while (curr != NULL) {
-    deltacloud_print_instance(curr, stream);
-    curr = curr->next;
-  }
+  print_list(instances, struct deltacloud_instance, deltacloud_print_instance,
+	     stream);
 }
 
 void deltacloud_free_instance(struct deltacloud_instance *instance)

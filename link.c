@@ -66,21 +66,21 @@ int add_to_link_list(struct deltacloud_link **links, char *href, char *rel)
   return -1;
 }
 
-void deltacloud_print_link_list(struct deltacloud_link **links, FILE *stream)
+void deltacloud_print_link(struct deltacloud_link *link, FILE *stream)
 {
-  struct deltacloud_link *curr;
-
   if (stream == NULL)
     stream = stderr;
 
-  if (links == NULL)
+  if (link == NULL)
     return;
 
-  curr = *links;
-  while (curr != NULL) {
-    fprintf(stream, "HREF %s, REL %s\n", curr->href, curr->rel);
-    curr = curr->next;
-  }
+  fprintf(stream, "Href: %s\n", link->href);
+  fprintf(stream, "ID: %s\n", link->rel);
+}
+
+void deltacloud_print_link_list(struct deltacloud_link **links, FILE *stream)
+{
+  print_list(links, struct deltacloud_link, deltacloud_print_link, stream);
 }
 
 struct deltacloud_link *find_by_rel_in_link_list(struct deltacloud_link **links,
