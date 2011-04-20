@@ -206,7 +206,7 @@ static int copy_action_list(struct deltacloud_action **dst,
   return -1;
 }
 
-void print_action_list(struct deltacloud_action **actions, FILE *stream)
+static void print_action_list(struct deltacloud_action **actions, FILE *stream)
 {
   struct deltacloud_action *curr;
 

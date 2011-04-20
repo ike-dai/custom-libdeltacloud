@@ -65,7 +65,6 @@ int add_to_action_list(struct deltacloud_action **actions, const char *rel,
 		       const char *href);
 struct deltacloud_action *find_by_rel_in_action_list(struct deltacloud_action **actions,
 						     const char *rel);
-void print_action_list(struct deltacloud_action **actions, FILE *stream);
 void free_action_list(struct deltacloud_action **actions);
 
 int add_to_instance_list(struct deltacloud_instance **instances,
