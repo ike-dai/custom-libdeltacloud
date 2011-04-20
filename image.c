@@ -28,7 +28,7 @@ int add_to_image_list(struct deltacloud_image **images, const char *href, const 
 		      const char *description, const char *architecture,
 		      const char *owner_id, const char *name)
 {
-  struct deltacloud_image *oneimage, *curr, *last;
+  struct deltacloud_image *oneimage;
 
   oneimage = malloc(sizeof(struct deltacloud_image));
   if (oneimage == NULL)
@@ -50,17 +50,7 @@ int add_to_image_list(struct deltacloud_image **images, const char *href, const 
     goto error;
   oneimage->next = NULL;
 
-  if (*images == NULL)
-    /* First element in the list */
-    *images = oneimage;
-  else {
-    curr = *images;
-    while (curr != NULL) {
-      last = curr;
-      curr = curr->next;
-    }
-    last->next = oneimage;
-  }
+  add_to_list(images, struct deltacloud_image, oneimage);
 
   return 0;
 

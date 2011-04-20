@@ -32,7 +32,7 @@ static void free_link(struct deltacloud_link *link)
 
 int add_to_link_list(struct deltacloud_link **links, char *href, char *rel)
 {
-  struct deltacloud_link *onelink, *curr, *last;
+  struct deltacloud_link *onelink;
 
   onelink = malloc(sizeof(struct deltacloud_link));
   if (onelink == NULL)
@@ -46,17 +46,7 @@ int add_to_link_list(struct deltacloud_link **links, char *href, char *rel)
     goto error;
   onelink->next = NULL;
 
-  if (*links == NULL)
-    /* First element in the list */
-    *links = onelink;
-  else {
-    curr = *links;
-    while (curr != NULL) {
-      last = curr;
-      curr = curr->next;
-    }
-    last->next = onelink;
-  }
+  add_to_list(links, struct deltacloud_link, onelink);
 
   return 0;
 

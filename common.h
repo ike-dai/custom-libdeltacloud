@@ -40,6 +40,21 @@ extern pthread_key_t deltacloud_last_error;
 void deltacloud_error_free_data(void *data);
 void set_error(int errnum, const char *details);
 
+#define add_to_list(list, type, element) do { \
+    type *curr, *last;			      \
+    if (*list == NULL)			      \
+      /* First element in the list */	      \
+      *list = element;			      \
+    else {				      \
+      curr = *list;			      \
+      while (curr != NULL) {		      \
+	last = curr;			      \
+	curr = curr->next;		      \
+      }					      \
+      last->next = element;		      \
+    }					      \
+  } while(0)
+
 #define print_list(list, type, cb, stream) do {	\
     type *curr;					\
     if (stream == NULL)				\

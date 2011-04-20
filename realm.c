@@ -27,7 +27,7 @@
 int add_to_realm_list(struct deltacloud_realm **realms, char *href, char *id,
 		      char *name, char *state, char *limit)
 {
-  struct deltacloud_realm *onerealm, *now, *last;
+  struct deltacloud_realm *onerealm;
 
   onerealm = malloc(sizeof(struct deltacloud_realm));
   if (onerealm == NULL)
@@ -47,17 +47,7 @@ int add_to_realm_list(struct deltacloud_realm **realms, char *href, char *id,
     goto error;
   onerealm->next = NULL;
 
-  if (*realms == NULL)
-    /* First element in the list */
-    *realms = onerealm;
-  else {
-    now = *realms;
-    while (now != NULL) {
-      last = now;
-      now = now->next;
-    }
-    last->next = onerealm;
-  }
+  add_to_list(realms, struct deltacloud_realm, onerealm);
 
   return 0;
 

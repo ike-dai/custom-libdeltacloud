@@ -33,7 +33,7 @@ static void free_transition(struct transition *transition)
 int add_to_transition_list(struct transition **transitions, const char *action,
 			   const char *to)
 {
-  struct transition *onetransition, *curr, *last;
+  struct transition *onetransition;
 
   onetransition = malloc(sizeof(struct transition));
   if (onetransition == NULL)
@@ -47,17 +47,7 @@ int add_to_transition_list(struct transition **transitions, const char *action,
     goto error;
   onetransition->next = NULL;
 
-  if (*transitions == NULL)
-    /* First element in the list */
-    *transitions = onetransition;
-  else {
-    curr = *transitions;
-    while (curr != NULL) {
-      last = curr;
-      curr = curr->next;
-    }
-    last->next = onetransition;
-  }
+  add_to_list(transitions, struct transition, onetransition);
 
   return 0;
 
@@ -120,7 +110,7 @@ int add_to_instance_state_list(struct deltacloud_instance_state **instance_state
 			       const char *name,
 			       struct transition *transitions)
 {
-  struct deltacloud_instance_state *oneinstance_state, *curr, *last;
+  struct deltacloud_instance_state *oneinstance_state;
 
   oneinstance_state = malloc(sizeof(struct deltacloud_instance_state));
   if (oneinstance_state == NULL)
@@ -134,17 +124,8 @@ int add_to_instance_state_list(struct deltacloud_instance_state **instance_state
     goto error;
   oneinstance_state->next = NULL;
 
-  if (*instance_states == NULL)
-    /* First element in the list */
-    *instance_states = oneinstance_state;
-  else {
-    curr = *instance_states;
-    while (curr != NULL) {
-      last = curr;
-      curr = curr->next;
-    }
-    last->next = oneinstance_state;
-  }
+  add_to_list(instance_states, struct deltacloud_instance_state,
+	      oneinstance_state);
 
   return 0;
 

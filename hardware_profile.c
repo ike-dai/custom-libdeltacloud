@@ -33,7 +33,7 @@ static void free_range(struct deltacloud_property_range *onerange)
 int add_to_range_list(struct deltacloud_property_range **ranges,
 		      const char *first, const char *last_val)
 {
-  struct deltacloud_property_range *onerange, *curr, *last;
+  struct deltacloud_property_range *onerange;
 
   onerange = malloc(sizeof(struct deltacloud_property_range));
   if (onerange == NULL)
@@ -48,17 +48,7 @@ int add_to_range_list(struct deltacloud_property_range **ranges,
 
   onerange->next = NULL;
 
-  if (*ranges == NULL)
-    /* First element in the list */
-    *ranges = onerange;
-  else {
-    curr = *ranges;
-    while (curr != NULL) {
-      last = curr;
-      curr = curr->next;
-    }
-    last->next = onerange;
-  }
+  add_to_list(ranges, struct deltacloud_property_range, onerange);
 
   return 0;
 
@@ -126,7 +116,7 @@ static void free_enum(struct deltacloud_property_enum *oneenum)
 int add_to_enum_list(struct deltacloud_property_enum **enums,
 		     const char *value)
 {
-  struct deltacloud_property_enum *oneenum, *curr, *last;
+  struct deltacloud_property_enum *oneenum;
 
   oneenum = malloc(sizeof(struct deltacloud_property_enum));
   if (oneenum == NULL)
@@ -139,17 +129,7 @@ int add_to_enum_list(struct deltacloud_property_enum **enums,
 
   oneenum->next = NULL;
 
-  if (*enums == NULL)
-    /* First element in the list */
-    *enums = oneenum;
-  else {
-    curr = *enums;
-    while (curr != NULL) {
-      last = curr;
-      curr = curr->next;
-    }
-    last->next = oneenum;
-  }
+  add_to_list(enums, struct deltacloud_property_enum, oneenum);
 
   return 0;
 
@@ -220,7 +200,7 @@ int add_to_param_list(struct deltacloud_property_param **params,
 		      const char *href, const char *method, const char *name,
 		      const char *operation)
 {
-  struct deltacloud_property_param *oneparam, *curr, *last;
+  struct deltacloud_property_param *oneparam;
 
   oneparam = malloc(sizeof(struct deltacloud_property_param));
   if (oneparam == NULL)
@@ -239,17 +219,7 @@ int add_to_param_list(struct deltacloud_property_param **params,
 
   oneparam->next = NULL;
 
-  if (*params == NULL)
-    /* First element in the list */
-    *params = oneparam;
-  else {
-    curr = *params;
-    while (curr != NULL) {
-      last = curr;
-      curr = curr->next;
-    }
-    last->next = oneparam;
-  }
+  add_to_list(params, struct deltacloud_property_param, oneparam);
 
   return 0;
 
@@ -334,7 +304,7 @@ int add_to_property_list(struct deltacloud_property **props, const char *kind,
 			 struct deltacloud_property_enum *enums,
 			 struct deltacloud_property_range *ranges)
 {
-  struct deltacloud_property *oneprop, *curr, *last;
+  struct deltacloud_property *oneprop;
 
   oneprop = malloc(sizeof(struct deltacloud_property));
   if (oneprop == NULL)
@@ -359,17 +329,7 @@ int add_to_property_list(struct deltacloud_property **props, const char *kind,
 
   oneprop->next = NULL;
 
-  if (*props == NULL)
-    /* First element in the list */
-    *props = oneprop;
-  else {
-    curr = *props;
-    while (curr != NULL) {
-      last = curr;
-      curr = curr->next;
-    }
-    last->next = oneprop;
-  }
+  add_to_list(props, struct deltacloud_property, oneprop);
 
   return 0;
 
@@ -435,7 +395,7 @@ int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
 				 const char *id, const char *href,
 				 struct deltacloud_property *props)
 {
-  struct deltacloud_hardware_profile *oneprofile, *curr, *last;
+  struct deltacloud_hardware_profile *oneprofile;
 
   oneprofile = malloc(sizeof(struct deltacloud_hardware_profile));
   if (oneprofile == NULL)
@@ -452,17 +412,7 @@ int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
 
   oneprofile->next = NULL;
 
-  if (*profiles == NULL)
-    /* First element in the list */
-    *profiles = oneprofile;
-  else {
-    curr = *profiles;
-    while (curr != NULL) {
-      last = curr;
-      curr = curr->next;
-    }
-    last->next = oneprofile;
-  }
+  add_to_list(profiles, struct deltacloud_hardware_profile, oneprofile);
 
   return 0;
 

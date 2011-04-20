@@ -30,7 +30,7 @@ int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volume
 			       const char *capacity, const char *device,
 			       const char *instance_href)
 {
-  struct deltacloud_storage_volume *onestorage_volume, *curr, *last;
+  struct deltacloud_storage_volume *onestorage_volume;
 
   onestorage_volume = malloc(sizeof(struct deltacloud_storage_volume));
   if (onestorage_volume == NULL)
@@ -54,17 +54,8 @@ int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volume
     goto error;
   onestorage_volume->next = NULL;
 
-  if (*storage_volumes == NULL)
-    /* First element in the list */
-    *storage_volumes = onestorage_volume;
-  else {
-    curr = *storage_volumes;
-    while (curr != NULL) {
-      last = curr;
-      curr = curr->next;
-    }
-    last->next = onestorage_volume;
-  }
+  add_to_list(storage_volumes, struct deltacloud_storage_volume,
+	      onestorage_volume);
 
   return 0;
 

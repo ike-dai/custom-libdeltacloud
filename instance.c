@@ -32,7 +32,7 @@ static void free_address(struct deltacloud_address *addr)
 int add_to_address_list(struct deltacloud_address **addresses,
 			const char *address)
 {
-  struct deltacloud_address *oneaddress, *curr, *last;
+  struct deltacloud_address *oneaddress;
 
   oneaddress = malloc(sizeof(struct deltacloud_address));
   if (oneaddress == NULL)
@@ -44,17 +44,7 @@ int add_to_address_list(struct deltacloud_address **addresses,
     goto error;
   oneaddress->next = NULL;
 
-  if (*addresses == NULL)
-    /* First element in the list */
-    *addresses = oneaddress;
-  else {
-    curr = *addresses;
-    while (curr != NULL) {
-      last = curr;
-      curr = curr->next;
-    }
-    last->next = oneaddress;
-  }
+  add_to_list(addresses, struct deltacloud_address, oneaddress);
 
   return 0;
 
@@ -122,7 +112,7 @@ static void free_action(struct deltacloud_action *action)
 int add_to_action_list(struct deltacloud_action **actions, const char *rel,
 		       const char *href)
 {
-  struct deltacloud_action *oneaction, *curr, *last;
+  struct deltacloud_action *oneaction;
 
   oneaction = malloc(sizeof(struct deltacloud_action));
   if (oneaction == NULL)
@@ -136,17 +126,7 @@ int add_to_action_list(struct deltacloud_action **actions, const char *rel,
     goto error;
   oneaction->next = NULL;
 
-  if (*actions == NULL)
-    /* First element in the list */
-    *actions = oneaction;
-  else {
-    curr = *actions;
-    while (curr != NULL) {
-      last = curr;
-      curr = curr->next;
-    }
-    last->next = oneaction;
-  }
+  add_to_list(actions, struct deltacloud_action, oneaction);
 
   return 0;
 
@@ -228,7 +208,7 @@ int add_to_instance_list(struct deltacloud_instance **instances,
 			 struct deltacloud_address *public_addresses,
 			 struct deltacloud_address *private_addresses)
 {
-  struct deltacloud_instance *oneinstance, *curr, *last;
+  struct deltacloud_instance *oneinstance;
 
   oneinstance = malloc(sizeof(struct deltacloud_instance));
   if (oneinstance == NULL)
@@ -260,17 +240,7 @@ int add_to_instance_list(struct deltacloud_instance **instances,
     goto error;
   oneinstance->next = NULL;
 
-  if (*instances == NULL)
-    /* First element in the list */
-    *instances = oneinstance;
-  else {
-    curr = *instances;
-    while (curr != NULL) {
-      last = curr;
-      curr = curr->next;
-    }
-    last->next = oneinstance;
-  }
+  add_to_list(instances, struct deltacloud_instance, oneinstance);
 
   return 0;
 
