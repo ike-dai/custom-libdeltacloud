@@ -277,21 +277,6 @@ int copy_instance(struct deltacloud_instance *dst,
   return -1;
 }
 
-struct deltacloud_instance *find_by_name_in_instance_list(struct deltacloud_instance **instances,
-							  const char *name)
-{
-  struct deltacloud_instance *curr;
-
-  curr = *instances;
-  while (curr != NULL) {
-    if (STREQ(curr->name, name))
-      return curr;
-    curr = curr->next;
-  }
-
-  return NULL;
-}
-
 void deltacloud_print_instance(struct deltacloud_instance *instance,
 			       FILE *stream)
 {

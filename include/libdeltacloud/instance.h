@@ -81,8 +81,6 @@ int add_to_instance_list(struct deltacloud_instance **instances,
 			 struct deltacloud_address *private_addresses);
 int copy_instance(struct deltacloud_instance *dst,
 		  struct deltacloud_instance *src);
-struct deltacloud_instance *find_by_name_in_instance_list(struct deltacloud_instance **instances,
-							  const char *name);
 void deltacloud_print_instance(struct deltacloud_instance *instance,
 			       FILE *stream);
 void deltacloud_print_instance_list(struct deltacloud_instance **instances,

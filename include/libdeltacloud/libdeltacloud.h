@@ -61,9 +61,6 @@ int deltacloud_get_instances(struct deltacloud_api *api,
 			     struct deltacloud_instance **instances);
 int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
 				  struct deltacloud_instance *instance);
-int deltacloud_get_instance_by_name(struct deltacloud_api *api,
-				    const char *name,
-				    struct deltacloud_instance *instance);
 
 int deltacloud_get_realms(struct deltacloud_api *api,
 			  struct deltacloud_realm **realms);
