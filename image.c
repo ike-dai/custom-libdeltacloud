@@ -27,7 +27,7 @@
 int add_to_image_list(struct deltacloud_image **images, const char *href,
 		      const char *id, const char *description,
 		      const char *architecture, const char *owner_id,
-		      const char *name)
+		      const char *name, const char *state)
 {
   struct deltacloud_image *oneimage;
 
@@ -48,6 +48,8 @@ int add_to_image_list(struct deltacloud_image **images, const char *href,
   if (strdup_or_null(&oneimage->owner_id, owner_id) < 0)
     goto error;
   if (strdup_or_null(&oneimage->name, name) < 0)
+    goto error;
+  if (strdup_or_null(&oneimage->state, state) < 0)
     goto error;
   oneimage->next = NULL;
 
@@ -83,6 +85,8 @@ int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src)
     goto error;
   if (strdup_or_null(&dst->name, src->name) < 0)
     goto error;
+  if (strdup_or_null(&dst->state, src->state) < 0)
+    goto error;
   dst->next = NULL;
 
   return 0;
@@ -106,6 +110,7 @@ void deltacloud_print_image(struct deltacloud_image *image, FILE *stream)
   fprintf(stream, "Architecture: %s\n", image->architecture);
   fprintf(stream, "Owner ID: %s\n", image->owner_id);
   fprintf(stream, "Name: %s\n", image->name);
+  fprintf(stream, "State: %s\n", image->state);
 }
 
 void deltacloud_print_image_list(struct deltacloud_image **images, FILE *stream)
@@ -124,6 +129,7 @@ void deltacloud_free_image(struct deltacloud_image *image)
   SAFE_FREE(image->architecture);
   SAFE_FREE(image->owner_id);
   SAFE_FREE(image->name);
+  SAFE_FREE(image->state);
 }
 
 void deltacloud_free_image_list(struct deltacloud_image **images)

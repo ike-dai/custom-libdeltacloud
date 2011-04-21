@@ -1318,7 +1318,7 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   struct deltacloud_image **images = (struct deltacloud_image **)data;
   xmlNodePtr oldnode, image_cur;
   char *href = NULL, *id = NULL, *description = NULL, *architecture = NULL;
-  char *owner_id = NULL, *name = NULL;
+  char *owner_id = NULL, *name = NULL, *state = NULL;
   int listret;
   int ret = -1;
 
@@ -1352,17 +1352,20 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	    owner_id = getXPathString("string(./owner_id)", ctxt);
 	  else if (STREQ((const char *)image_cur->name, "name"))
 	    name = getXPathString("string(./name)", ctxt);
+	  else if (STREQ((const char *)image_cur->name, "state"))
+	    state = getXPathString("string(./state)", ctxt);
 	}
 	image_cur = image_cur->next;
       }
       listret = add_to_image_list(images, href, id, description, architecture,
-				  owner_id, name);
+				  owner_id, name, state);
       SAFE_FREE(href);
       SAFE_FREE(id);
       SAFE_FREE(description);
       SAFE_FREE(architecture);
       SAFE_FREE(owner_id);
       SAFE_FREE(name);
+      SAFE_FREE(state);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;
