@@ -1497,7 +1497,7 @@ static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 {
   struct deltacloud_instance_state **instance_states = (struct deltacloud_instance_state **)data;
   xmlNodePtr state_cur;
-  char *name = NULL, *action = NULL, *to = NULL;
+  char *name = NULL, *action = NULL, *to = NULL, *auto_bool = NULL;
   struct transition *transitions = NULL;
   int ret = -1;
   int listret;
@@ -1513,9 +1513,11 @@ static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	    STREQ((const char *)state_cur->name, "transition")) {
 	  action = (char *)xmlGetProp(state_cur, BAD_CAST "action");
 	  to = (char *)xmlGetProp(state_cur, BAD_CAST "to");
-	  add_to_transition_list(&transitions, action, to);
+	  auto_bool = (char *)xmlGetProp(state_cur, BAD_CAST "auto");
+	  add_to_transition_list(&transitions, action, to, auto_bool);
 	  SAFE_FREE(action);
 	  SAFE_FREE(to);
+	  SAFE_FREE(auto_bool);
 	}
 	state_cur = state_cur->next;
       }

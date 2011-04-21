@@ -28,10 +28,11 @@ static void free_transition(struct transition *transition)
 {
   SAFE_FREE(transition->action);
   SAFE_FREE(transition->to);
+  SAFE_FREE(transition->auto_bool);
 }
 
 int add_to_transition_list(struct transition **transitions, const char *action,
-			   const char *to)
+			   const char *to, const char *auto_bool)
 {
   struct transition *onetransition;
 
@@ -44,6 +45,8 @@ int add_to_transition_list(struct transition **transitions, const char *action,
   if (strdup_or_null(&onetransition->action, action) < 0)
     goto error;
   if (strdup_or_null(&onetransition->to, to) < 0)
+    goto error;
+  if (strdup_or_null(&onetransition->auto_bool, auto_bool) < 0)
     goto error;
   onetransition->next = NULL;
 
@@ -59,7 +62,7 @@ int add_to_transition_list(struct transition **transitions, const char *action,
 
 static int copy_transition(struct transition **dst, struct transition *curr)
 {
-  return add_to_transition_list(dst, curr->action, curr->to);
+  return add_to_transition_list(dst, curr->action, curr->to, curr->auto_bool);
 }
 
 static int copy_transition_list(struct transition **dst,
@@ -78,6 +81,7 @@ static void print_transition(struct transition *transition, FILE *stream)
 
   fprintf(stream, "Action: %s\n", transition->action);
   fprintf(stream, "To: %s\n", transition->to);
+  fprintf(stream, "Auto: %s\n", transition->auto_bool);
 }
 
 static void print_transition_list(struct transition **transitions, FILE *stream)

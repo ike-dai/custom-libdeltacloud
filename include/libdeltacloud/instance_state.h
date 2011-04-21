@@ -28,6 +28,7 @@ extern "C" {
 struct transition {
   char *action;
   char *to;
+  char *auto_bool;
 
   struct transition *next;
 };
@@ -40,7 +41,7 @@ struct deltacloud_instance_state {
 };
 
 int add_to_transition_list(struct transition **transitions, const char *action,
-			   const char *to);
+			   const char *to, const char *auto_bool);
 void free_transition_list(struct transition **transitions);
 
 int add_to_instance_state_list(struct deltacloud_instance_state **instance_states,
