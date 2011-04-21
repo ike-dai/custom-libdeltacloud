@@ -6,8 +6,22 @@
 # currently defined to the newest version.
 
 LIBDELTACLOUD_4.0.0 {
+};
+LIBDELTACLOUD_5.0.0 {
+} LIBDELTACLOUD_4.0.0;
+LIBDELTACLOUD_6.0.0 {
     global:
+	deltacloud_create_parameter;
+	deltacloud_free_parameter_value;
+	deltacloud_free_parameter;
+	deltacloud_prepare_parameter;
+} LIBDELTACLOUD_5.0.0;
+LIBDELTACLOUD_7.0.0 {
+    global:
+	deltacloud_create_instance;
 	deltacloud_free;
+	deltacloud_get_hardware_profiles;
+	deltacloud_get_hardware_profile_by_id;
 	deltacloud_get_images;
 	deltacloud_get_image_by_id;
 	deltacloud_get_instances;
@@ -28,19 +42,4 @@ LIBDELTACLOUD_4.0.0 {
 	deltacloud_instance_reboot;
 	deltacloud_instance_start;
 	deltacloud_instance_destroy;
-};
-LIBDELTACLOUD_5.0.0 {
-} LIBDELTACLOUD_4.0.0;
-LIBDELTACLOUD_6.0.0 {
-    global:
-	deltacloud_create_instance;
-	deltacloud_create_parameter;
-	deltacloud_free_parameter_value;
-	deltacloud_free_parameter;
-	deltacloud_prepare_parameter;
-} LIBDELTACLOUD_5.0.0;
-LIBDELTACLOUD_7.0.0 {
-    global:
-	deltacloud_get_hardware_profiles;
-	deltacloud_get_hardware_profile_by_id;
 } LIBDELTACLOUD_6.0.0;

@@ -25,14 +25,25 @@
 extern "C" {
 #endif
 
+struct deltacloud_feature {
+  char *name;
+
+  struct deltacloud_feature *next;
+};
+
 struct deltacloud_link {
   char *href;
   char *rel;
+  struct deltacloud_feature *features;
 
   struct deltacloud_link *next;
 };
 
-int add_to_link_list(struct deltacloud_link **links, char *href, char *rel);
+int add_to_feature_list(struct deltacloud_feature **features, char *name);
+void free_feature_list(struct deltacloud_feature **features);
+
+int add_to_link_list(struct deltacloud_link **links, char *href, char *rel,
+		     struct deltacloud_feature *features);
 void deltacloud_print_link_list(struct deltacloud_link **links, FILE *stream);
 struct deltacloud_link *find_by_rel_in_link_list(struct deltacloud_link **links,
 						 char *rel);

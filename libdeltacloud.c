@@ -252,45 +252,95 @@ static void set_xml_error(const char *xml, int type)
   SAFE_FREE(errmsg);
 }
 
+static int parse_feature_xml(xmlNodePtr featurenode,
+			     struct deltacloud_feature **features)
+{
+  char *name;
+  int listret;
+
+  while (featurenode != NULL) {
+    if (featurenode->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)featurenode->name, "feature")) {
+      name = (char *)xmlGetProp(featurenode, BAD_CAST "name");
+      listret = add_to_feature_list(features, name);
+      SAFE_FREE(name);
+      if (listret < 0) {
+	free_feature_list(features);
+	oom_error();
+	return -1;
+      }
+    }
+    featurenode = featurenode->next;
+  }
+
+  return 0;
+}
+
 static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 {
-  struct deltacloud_link **links = (struct deltacloud_link **)data;
+  struct deltacloud_api **api = (struct deltacloud_api **)data;
+  xmlNodePtr linknode;
   char *href = NULL, *rel = NULL;
-  int listret;
   int ret = -1;
+  int listret;
+  struct deltacloud_feature *features = NULL;
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
-	STREQ((const char *)cur->name, "link")) {
-      href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      if (href == NULL) {
-	xml_error("api", "Failed to parse XML", "did not see href property");
-	goto cleanup;
-      }
+	STREQ((const char *)cur->name, "api")) {
+      (*api)->driver = (char *)xmlGetProp(cur, BAD_CAST "driver");
+      (*api)->version = (char *)xmlGetProp(cur, BAD_CAST "version");
 
-      rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
-      if (rel == NULL) {
-	xml_error("api", "Failed to parse XML", "did not see rel property");
-	SAFE_FREE(href);
-	goto cleanup;
-      }
+      linknode = cur->children;
+      while (linknode != NULL) {
+	if (linknode->type == XML_ELEMENT_NODE &&
+	    STREQ((const char *)linknode->name, "link")) {
+	  href = (char *)xmlGetProp(linknode, BAD_CAST "href");
+	  if (href == NULL) {
+	    xml_error("api", "Failed to parse XML",
+		      "did not see href property");
+	    goto cleanup;
+	  }
 
-      listret = add_to_link_list(links, href, rel);
-      SAFE_FREE(href);
-      SAFE_FREE(rel);
-      if (listret < 0) {
-	oom_error();
-	goto cleanup;
+	  rel = (char *)xmlGetProp(linknode, BAD_CAST "rel");
+	  if (rel == NULL) {
+	    xml_error("api", "Failed to parse XML", "did not see rel property");
+	    goto cleanup;
+	  }
+
+	  if (parse_feature_xml(linknode->children, &features) < 0)
+	    /* parse_feature_xml already set the error */
+	    goto cleanup;
+
+	  listret = add_to_link_list(&((*api)->links), href, rel, features);
+	  SAFE_FREE(href);
+	  SAFE_FREE(rel);
+	  free_feature_list(&features);
+	  if (listret < 0) {
+	    oom_error();
+	    goto cleanup;
+	  }
+	}
+	linknode = linknode->next;
       }
     }
+
     cur = cur->next;
   }
 
   ret = 0;
 
  cleanup:
-  if (ret < 0)
-    free_link_list(links);
+  /* in the normal case, these aren't necessary, but they will be for the
+   * error case
+   */
+  SAFE_FREE(href);
+  SAFE_FREE(rel);
+  /* if we hit some kind of failure here, in theory we would want to clean
+   * up the api structure.  However, deltacloud_initialize() also does some
+   * allocation of memory, so it does a deltacloud_free() on error, so we leave
+   * it up to deltacloud_initialize() to cleanup.
+   */
 
   return ret;
 }
@@ -353,7 +403,7 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
     goto cleanup;
   }
 
-  if (parse_xml(data, "api", (void **)&api->links, parse_api_xml, 1) < 0)
+  if (parse_xml(data, "api", (void **)&api, parse_api_xml, 0) < 0)
     goto cleanup;
 
   ret = 0;
@@ -2209,5 +2259,7 @@ void deltacloud_free(struct deltacloud_api *api)
   SAFE_FREE(api->user);
   SAFE_FREE(api->password);
   SAFE_FREE(api->url);
+  SAFE_FREE(api->driver);
+  SAFE_FREE(api->version);
   memset(api, 0, sizeof(struct deltacloud_api));
 }

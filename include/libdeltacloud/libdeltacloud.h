@@ -38,6 +38,8 @@ struct deltacloud_api {
   char *url;
   char *user;
   char *password;
+  char *driver;
+  char *version;
 
   struct deltacloud_link *links;
 };
