@@ -64,24 +64,6 @@ static int copy_feature_list(struct deltacloud_feature **dst,
            free_feature_list);
 }
 
-void deltacloud_print_feature(struct deltacloud_feature *feature, FILE *stream)
-{
-  if (stream == NULL)
-    stream = stderr;
-
-  if (feature == NULL)
-    return;
-
-  fprintf(stream, "Name: %s\n", feature->name);
-}
-
-void deltacloud_print_feature_list(struct deltacloud_feature **features,
-                                  FILE *stream)
-{
-  print_list(features, struct deltacloud_feature, deltacloud_print_feature,
-	     stream);
-}
-
 void free_feature_list(struct deltacloud_feature **features)
 {
   free_list(features, struct deltacloud_feature, free_feature);
@@ -121,24 +103,6 @@ int add_to_link_list(struct deltacloud_link **links, char *href, char *rel,
   free_link(onelink);
   SAFE_FREE(onelink);
   return -1;
-}
-
-void deltacloud_print_link(struct deltacloud_link *link, FILE *stream)
-{
-  if (stream == NULL)
-    stream = stderr;
-
-  if (link == NULL)
-    return;
-
-  fprintf(stream, "Href: %s\n", link->href);
-  fprintf(stream, "ID: %s\n", link->rel);
-  deltacloud_print_feature_list(&link->features, stream);
-}
-
-void deltacloud_print_link_list(struct deltacloud_link **links, FILE *stream)
-{
-  print_list(links, struct deltacloud_link, deltacloud_print_link, stream);
 }
 
 struct deltacloud_link *find_by_rel_in_link_list(struct deltacloud_link **links,

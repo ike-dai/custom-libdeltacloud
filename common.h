@@ -55,19 +55,6 @@ void set_error(int errnum, const char *details);
     }					      \
   } while(0)
 
-#define print_list(list, type, cb, stream) do {	\
-    type *curr;					\
-    if (stream == NULL)				\
-      stream = stderr;				\
-    if (list == NULL)				\
-      return;					\
-    curr = *list;				\
-    while (curr != NULL) {			\
-      cb(curr, stream);				\
-      curr = curr->next;			\
-    }						\
-  } while(0)
-
 #define free_list(list, type, cb) do {		\
     type *curr, *next;				\
     if (list == NULL)				\

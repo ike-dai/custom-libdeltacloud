@@ -18,11 +18,202 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "libdeltacloud.h"
+
+static void print_instance_state(struct deltacloud_instance_state *state)
+{
+  struct deltacloud_instance_state_transition *transition;
+
+  fprintf(stderr, "Instance State: %s\n", state->name);
+  deltacloud_for_each(transition, state->transitions)
+    fprintf(stderr, "\tTransition Action: %s, To: %s, Bool: %s\n",
+	    transition->action, transition->to, transition->auto_bool);
+}
+
+static void print_instance_state_list(struct deltacloud_instance_state *states)
+{
+  struct deltacloud_instance_state *state;
+
+  deltacloud_for_each(state, states)
+    print_instance_state(state);
+}
+
+static void print_realm(struct deltacloud_realm *realm)
+{
+  fprintf(stderr, "Realm: %s\n", realm->name);
+  fprintf(stderr, "\tHref: %s\n", realm->href);
+  fprintf(stderr, "\tID: %s\n", realm->id);
+  fprintf(stderr, "\tLimit: %s\n", realm->limit);
+  fprintf(stderr, "\tState: %s\n", realm->state);
+}
+
+static void print_realm_list(struct deltacloud_realm *realms)
+{
+  struct deltacloud_realm *realm;
+
+  deltacloud_for_each(realm, realms)
+    print_realm(realm);
+}
+
+static void print_image(struct deltacloud_image *image)
+{
+  fprintf(stderr, "Image: %s\n", image->name);
+  fprintf(stderr, "\tID: %s\n", image->id);
+  fprintf(stderr, "\tHref: %s\n", image->href);
+  fprintf(stderr, "\tDescription: %s\n", image->description);
+  fprintf(stderr, "\tOwner ID: %s\n", image->owner_id);
+  fprintf(stderr, "\tState: %s\n", image->state);
+}
+
+static void print_image_list(struct deltacloud_image *images)
+{
+  struct deltacloud_image *image;
+
+  deltacloud_for_each(image, images)
+    print_image(image);
+}
+
+static void print_link_list(struct deltacloud_link *links)
+{
+  struct deltacloud_link *link;
+  struct deltacloud_feature *feature;
+
+  deltacloud_for_each(link, links) {
+    fprintf(stderr, "Link:\n");
+    fprintf(stderr, "\tRel: %s\n", link->rel);
+    fprintf(stderr, "\tHref: %s\n", link->href);
+    fprintf(stderr, "\tFeatures: ");
+    deltacloud_for_each(feature, link->features)
+      fprintf(stderr, "%s, ", feature->name);
+    fprintf(stderr, "\n");
+  }
+}
+
+static void print_api(struct deltacloud_api *api)
+{
+  fprintf(stderr, "API %s:\n", api->url);
+  fprintf(stderr, "\tUser: %s, Driver: %s, Version: %s\n", api->user,
+	  api->driver, api->version);
+  print_link_list(api->links);
+}
+
+static void print_hwp(struct deltacloud_hardware_profile *hwp)
+{
+  struct deltacloud_property *prop;
+  struct deltacloud_property_param *param;
+  struct deltacloud_property_range *range;
+  struct deltacloud_property_enum *enump;
+
+  fprintf(stderr, "HWP: %s\n", hwp->name);
+  fprintf(stderr, "\tID: %s\n", hwp->id);
+  fprintf(stderr, "\tHref: %s\n", hwp->href);
+  fprintf(stderr, "\tProperties:\n");
+  deltacloud_for_each(prop, hwp->properties) {
+    fprintf(stderr, "\t\tName: %s, Kind: %s, Unit: %s, Value: %s\n",
+	    prop->name, prop->kind, prop->unit, prop->value);
+    deltacloud_for_each(param, prop->params) {
+      fprintf(stderr, "\t\t\tParam name: %s\n", param->name);
+      fprintf(stderr, "\t\t\t\thref: %s\n", param->href);
+      fprintf(stderr, "\t\t\t\tmethod: %s\n", param->method);
+      fprintf(stderr, "\t\t\t\toperation: %s\n", param->operation);
+    }
+    deltacloud_for_each(range, prop->ranges)
+      fprintf(stderr, "\t\t\tRange first: %s, last: %s\n", range->first,
+	      range->last);
+    deltacloud_for_each(enump, prop->enums)
+      fprintf(stderr, "\t\t\tEnum value: %s\n", enump->value);
+  }
+}
+
+static void print_hwp_list(struct deltacloud_hardware_profile *profiles)
+{
+  struct deltacloud_hardware_profile *hwp;
+
+  deltacloud_for_each(hwp, profiles)
+    print_hwp(hwp);
+}
+
+static void print_instance(struct deltacloud_instance *instance)
+{
+  struct deltacloud_action *action;
+  struct deltacloud_address *addr;
+
+  fprintf(stderr, "Instance: %s\n", instance->name);
+  fprintf(stderr, "\tHref: %s, ID: %s\n", instance->href, instance->id);
+  fprintf(stderr, "\tOwner ID: %s\n", instance->owner_id);
+  fprintf(stderr, "\tImage ID: %s, Image Href: %s\n", instance->image_id,
+	  instance->image_href);
+  fprintf(stderr, "\tRealm ID: %s, Realm Href: %s\n", instance->realm_id,
+	  instance->realm_href);
+  fprintf(stderr, "\tKey Name: %s, State: %s\n", instance->key_name,
+	  instance->state);
+  fprintf(stderr, "\t");
+  print_hwp(&instance->hwp);
+  fprintf(stderr, "\tActions:\n");
+  deltacloud_for_each(action, instance->actions) {
+    fprintf(stderr, "\t\tAction rel: %s, method: %s\n", action->rel,
+	    action->method);
+    fprintf(stderr, "\t\t\tHref: %s\n", action->href);
+  }
+  fprintf(stderr, "\tPublic Addresses:\n");
+  deltacloud_for_each(addr, instance->public_addresses)
+    fprintf(stderr, "\t\tAddress: %s\n", addr->address);
+  fprintf(stderr, "\tPrivate Addresses:\n");
+  deltacloud_for_each(addr, instance->private_addresses)
+    fprintf(stderr, "\t\tAddress: %s\n", addr->address);
+}
+
+static void print_instance_list(struct deltacloud_instance *instances)
+{
+  struct deltacloud_instance *instance;
+
+  deltacloud_for_each(instance, instances)
+    print_instance(instance);
+}
+
+static void print_storage_volume(struct deltacloud_storage_volume *volume)
+{
+  fprintf(stderr, "Storage Volume: %s\n", volume->id);
+  fprintf(stderr, "\tHref: %s\n", volume->href);
+  fprintf(stderr, "\tCreated: %s, State: %s\n", volume->created, volume->state);
+  fprintf(stderr, "\tCapacity: Unit: %s, Size: %s\n", volume->capacity.unit,
+	  volume->capacity.size);
+  fprintf(stderr, "\tDevice: %s\n", volume->device);
+  fprintf(stderr, "\tInstance Href: %s\n", volume->instance_href);
+  fprintf(stderr, "\tRealm ID: %s\n", volume->realm_id);
+  fprintf(stderr, "\tMount: %s\n", volume->mount.instance_id);
+  fprintf(stderr, "\t\tInstance Href: %s\n", volume->mount.instance_href);
+  fprintf(stderr, "\t\tDevice Name: %s\n", volume->mount.device_name);
+}
+
+static void print_storage_volume_list(struct deltacloud_storage_volume *volumes)
+{
+  struct deltacloud_storage_volume *volume;
+
+  deltacloud_for_each(volume, volumes)
+    print_storage_volume(volume);
+}
+
+static void print_storage_snapshot(struct deltacloud_storage_snapshot *snapshot)
+{
+  fprintf(stderr, "Snapshot: %s\n", snapshot->id);
+  fprintf(stderr, "\tHref: %s\n", snapshot->href);
+  fprintf(stderr, "\tCreated: %s, State: %s\n", snapshot->created,
+	  snapshot->state);
+  fprintf(stderr, "\tStorage Volume Href: %s\n", snapshot->storage_volume_href);
+  fprintf(stderr, "\tStorage Volume ID: %s\n", snapshot->storage_volume_id);
+}
+
+static void print_storage_snapshot_list(struct deltacloud_storage_snapshot *snapshots)
+{
+  struct deltacloud_storage_snapshot *snapshot;
+
+  deltacloud_for_each(snapshot, snapshots)
+    print_storage_snapshot(snapshot);
+}
 
 int main(int argc, char *argv[])
 {
@@ -57,7 +248,7 @@ int main(int argc, char *argv[])
 	    deltacloud_get_last_error_string());
     return 2;
   }
-  deltacloud_print_link_list(&api.links, NULL);
+  print_api(&api);
 
   fprintf(stderr, "--------------HARDWARE PROFILES--------------\n");
   if (deltacloud_get_hardware_profiles(&api, &profiles) < 0) {
@@ -65,17 +256,21 @@ int main(int argc, char *argv[])
 	    deltacloud_get_last_error_string());
     goto cleanup;
   }
+  print_hwp_list(profiles);
 
-  deltacloud_print_hardware_profile_list(&profiles, NULL);
-  deltacloud_free_hardware_profile_list(&profiles);
-
-  if (deltacloud_get_hardware_profile_by_id(&api, "m1-small", &hwp) < 0) {
-    fprintf(stderr, "Failed to get hardware profile by id: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
+  if (profiles != NULL) {
+    /* here we use the first hardware profile from the list above */
+    if (deltacloud_get_hardware_profile_by_id(&api, profiles->id, &hwp) < 0) {
+      fprintf(stderr, "Failed to get hardware profile by id: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_free_hardware_profile_list(&profiles);
+      goto cleanup;
+    }
+    print_hwp(&hwp);
+    deltacloud_free_hardware_profile(&hwp);
   }
-  deltacloud_print_hardware_profile(&hwp, NULL);
-  deltacloud_free_hardware_profile(&hwp);
+
+  deltacloud_free_hardware_profile_list(&profiles);
 
   fprintf(stderr, "--------------IMAGES-------------------------\n");
   if (deltacloud_get_images(&api, &images) < 0) {
@@ -83,16 +278,21 @@ int main(int argc, char *argv[])
 	    deltacloud_get_last_error_string());
     goto cleanup;
   }
-  deltacloud_print_image_list(&images, NULL);
-  deltacloud_free_image_list(&images);
+  print_image_list(images);
 
-  if (deltacloud_get_image_by_id(&api, "img1", &image) < 0) {
-    fprintf(stderr, "Failed to get image by id: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
+  if (images != NULL) {
+    /* here we use the first image from the list above */
+    if (deltacloud_get_image_by_id(&api, images->id, &image) < 0) {
+      fprintf(stderr, "Failed to get image by id: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_free_image_list(&images);
+      goto cleanup;
+    }
+    print_image(&image);
+    deltacloud_free_image(&image);
   }
-  deltacloud_print_image(&image, NULL);
-  deltacloud_free_image(&image);
+
+  deltacloud_free_image_list(&images);
 
   fprintf(stderr, "--------------REALMS-------------------------\n");
   if (deltacloud_get_realms(&api, &realms) < 0) {
@@ -100,16 +300,21 @@ int main(int argc, char *argv[])
 	    deltacloud_get_last_error_string());
     goto cleanup;
   }
-  deltacloud_print_realm_list(&realms, NULL);
-  deltacloud_free_realm_list(&realms);
+  print_realm_list(realms);
 
-  if (deltacloud_get_realm_by_id(&api, "us", &realm) < 0) {
-    fprintf(stderr, "Failed to get realm by id: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
+  if (realms != NULL) {
+    /* here we use the first realm from the list above */
+    if (deltacloud_get_realm_by_id(&api, realms->id, &realm) < 0) {
+      fprintf(stderr, "Failed to get realm by id: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_free_realm_list(&realms);
+      goto cleanup;
+    }
+    print_realm(&realm);
+    deltacloud_free_realm(&realm);
   }
-  deltacloud_print_realm(&realm, NULL);
-  deltacloud_free_realm(&realm);
+
+  deltacloud_free_realm_list(&realms);
 
   fprintf(stderr, "--------------INSTANCE STATES----------------\n");
   if (deltacloud_get_instance_states(&api, &instance_states) < 0) {
@@ -117,17 +322,22 @@ int main(int argc, char *argv[])
 	    deltacloud_get_last_error_string());
     goto cleanup;
   }
-  deltacloud_print_instance_state_list(&instance_states, NULL);
-  deltacloud_free_instance_state_list(&instance_states);
+  print_instance_state_list(instance_states);
 
-  if (deltacloud_get_instance_state_by_name(&api, "start",
-					    &instance_state) < 0) {
-    fprintf(stderr, "Failed to get instance_state: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
+  if (instance_states != NULL) {
+    /* here we use the first instance_state from the list above */
+    if (deltacloud_get_instance_state_by_name(&api, instance_states->name,
+					      &instance_state) < 0) {
+      fprintf(stderr, "Failed to get instance_state: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_free_instance_state_list(&instance_states);
+      goto cleanup;
+    }
+    print_instance_state(&instance_state);
+    deltacloud_free_instance_state(&instance_state);
   }
-  deltacloud_print_instance_state(&instance_state, NULL);
-  deltacloud_free_instance_state(&instance_state);
+
+  deltacloud_free_instance_state_list(&instance_states);
 
   fprintf(stderr, "--------------INSTANCES---------------------\n");
   if (deltacloud_get_instances(&api, &instances) < 0) {
@@ -135,16 +345,21 @@ int main(int argc, char *argv[])
 	    deltacloud_get_last_error_string());
     goto cleanup;
   }
-  deltacloud_print_instance_list(&instances, NULL);
-  deltacloud_free_instance_list(&instances);
+  print_instance_list(instances);
 
-  if (deltacloud_get_instance_by_id(&api, "inst1", &instance) < 0) {
-    fprintf(stderr, "Failed to get instance by id: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
+  if (instances != NULL) {
+    /* here we use the first instance from the list above */
+    if (deltacloud_get_instance_by_id(&api, instances->id, &instance) < 0) {
+      fprintf(stderr, "Failed to get instance by id: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_free_instance_list(&instances);
+      goto cleanup;
+    }
+    print_instance(&instance);
+    deltacloud_free_instance(&instance);
   }
-  deltacloud_print_instance(&instance, NULL);
-  deltacloud_free_instance(&instance);
+
+  deltacloud_free_instance_list(&instances);
 
   fprintf(stderr, "--------------STORAGE VOLUMES---------------\n");
   if (deltacloud_get_storage_volumes(&api, &storage_volumes) < 0) {
@@ -152,16 +367,22 @@ int main(int argc, char *argv[])
 	    deltacloud_get_last_error_string());
     goto cleanup;
   }
-  deltacloud_print_storage_volume_list(&storage_volumes, NULL);
-  deltacloud_free_storage_volume_list(&storage_volumes);
+  print_storage_volume_list(storage_volumes);
 
-  if (deltacloud_get_storage_volume_by_id(&api, "vol3", &storage_volume) < 0) {
-    fprintf(stderr, "Failed to get storage volume by ID: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
+  if (storage_volumes != NULL) {
+    /* here we use the first storage volume from the list above */
+    if (deltacloud_get_storage_volume_by_id(&api, storage_volumes->id,
+					    &storage_volume) < 0) {
+      fprintf(stderr, "Failed to get storage volume by ID: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_free_storage_volume_list(&storage_volumes);
+      goto cleanup;
+    }
+    print_storage_volume(&storage_volume);
+    deltacloud_free_storage_volume(&storage_volume);
   }
-  deltacloud_print_storage_volume(&storage_volume, NULL);
-  deltacloud_free_storage_volume(&storage_volume);
+
+  deltacloud_free_storage_volume_list(&storage_volumes);
 
   fprintf(stderr, "--------------STORAGE SNAPSHOTS-------------\n");
   if (deltacloud_get_storage_snapshots(&api, &storage_snapshots) < 0) {
@@ -169,17 +390,22 @@ int main(int argc, char *argv[])
 	    deltacloud_get_last_error_string());
     goto cleanup;
   }
-  deltacloud_print_storage_snapshot_list(&storage_snapshots, NULL);
-  deltacloud_free_storage_snapshot_list(&storage_snapshots);
+  print_storage_snapshot_list(storage_snapshots);
 
-  if (deltacloud_get_storage_snapshot_by_id(&api, "snap2",
-					    &storage_snapshot) < 0) {
-    fprintf(stderr, "Failed to get storage_snapshot by ID: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
+  if (storage_snapshots != NULL) {
+    /* here we use the first storage snapshot from the list above */
+    if (deltacloud_get_storage_snapshot_by_id(&api, storage_snapshots->id,
+					      &storage_snapshot) < 0) {
+      fprintf(stderr, "Failed to get storage_snapshot by ID: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_free_storage_snapshot_list(&storage_snapshots);
+      goto cleanup;
+    }
+    print_storage_snapshot(&storage_snapshot);
+    deltacloud_free_storage_snapshot(&storage_snapshot);
   }
-  deltacloud_print_storage_snapshot(&storage_snapshot, NULL);
-  deltacloud_free_storage_snapshot(&storage_snapshot);
+
+  deltacloud_free_storage_snapshot_list(&storage_snapshots);
 
   fprintf(stderr, "--------------CREATE INSTANCE PARAMS--------\n");
   if (deltacloud_prepare_parameter(&stackparams[0], "name", "foo") < 0) {
@@ -233,23 +459,20 @@ int main(int argc, char *argv[])
 
   free(instid);
 
-  deltacloud_print_instance(&instance, NULL);
+  print_instance(&instance);
+
   if (deltacloud_instance_stop(&api, &instance) < 0)
     fprintf(stderr, "Failed to stop instance: %s\n",
 	    deltacloud_get_last_error_string());
-  deltacloud_print_instance(&instance, NULL);
   if (deltacloud_instance_start(&api, &instance) < 0)
     fprintf(stderr, "Failed to start instance: %s\n",
 	    deltacloud_get_last_error_string());
-  deltacloud_print_instance(&instance, NULL);
   if (deltacloud_instance_reboot(&api, &instance) < 0)
     fprintf(stderr, "Failed to reboot instance: %s\n",
 	    deltacloud_get_last_error_string());
-  deltacloud_print_instance(&instance, NULL);
   if (deltacloud_instance_destroy(&api, &instance) < 0)
     fprintf(stderr, "Failed to destroy instance: %s\n",
 	    deltacloud_get_last_error_string());
-  deltacloud_print_instance(&instance, NULL);
   deltacloud_free_instance(&instance);
 
   ret = 0;

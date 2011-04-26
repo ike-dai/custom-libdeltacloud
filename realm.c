@@ -86,25 +86,6 @@ int copy_realm(struct deltacloud_realm *dst, struct deltacloud_realm *src)
   return -1;
 }
 
-void deltacloud_print_realm(struct deltacloud_realm *realm, FILE *stream)
-{
-  if (stream == NULL)
-    stream = stderr;
-  if (realm == NULL)
-    return;
-
-  fprintf(stream, "Href: %s\n", realm->href);
-  fprintf(stream, "ID: %s\n", realm->id);
-  fprintf(stream, "Name: %s\n", realm->name);
-  fprintf(stream, "Limit: %s\n", realm->limit);
-  fprintf(stream, "State: %s\n", realm->state);
-}
-
-void deltacloud_print_realm_list(struct deltacloud_realm **realms, FILE *stream)
-{
-  print_list(realms, struct deltacloud_realm, deltacloud_print_realm, stream);
-}
-
 void deltacloud_free_realm(struct deltacloud_realm *realm)
 {
   if (realm == NULL)

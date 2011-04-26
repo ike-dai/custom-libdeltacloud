@@ -96,31 +96,6 @@ int copy_storage_snapshot(struct deltacloud_storage_snapshot *dst,
   return -1;
 }
 
-void deltacloud_print_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot,
-				       FILE *stream)
-{
-  if (stream == NULL)
-    stream = stderr;
-  if (storage_snapshot == NULL)
-    return;
-
-  fprintf(stream, "Href: %s\n", storage_snapshot->href);
-  fprintf(stream, "ID: %s\n", storage_snapshot->id);
-  fprintf(stream, "Created: %s\n", storage_snapshot->created);
-  fprintf(stream, "State: %s\n", storage_snapshot->state);
-  fprintf(stream, "Storage Volume Href: %s\n",
-	  storage_snapshot->storage_volume_href);
-  fprintf(stderr, "Storage Volume ID: %s\n",
-	  storage_snapshot->storage_volume_id);
-}
-
-void deltacloud_print_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots,
-					    FILE *stream)
-{
-  print_list(storage_snapshots, struct deltacloud_storage_snapshot,
-	     deltacloud_print_storage_snapshot, stream);
-}
-
 void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot)
 {
   if (storage_snapshot == NULL)

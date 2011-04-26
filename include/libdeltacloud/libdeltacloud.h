@@ -119,6 +119,8 @@ const char *deltacloud_get_last_error_string(void);
 
 void deltacloud_free(struct deltacloud_api *api);
 
+#define deltacloud_for_each(curr, list) for (curr = list; curr != NULL; curr = curr->next)
+
 /* Error codes */
 #define DELTACLOUD_UNKNOWN_ERROR -1
 /* ERROR codes -2, -3, and -4 are reserved for future use */

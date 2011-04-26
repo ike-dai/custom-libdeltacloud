@@ -67,23 +67,6 @@ static int copy_address_list(struct deltacloud_address **dst,
 	    free_address_list);
 }
 
-static void print_address(struct deltacloud_address *address, FILE *stream)
-{
-  if (stream == NULL)
-    stream = stderr;
-
-  if (address == NULL)
-    return;
-
-  fprintf(stream, "Address: %s\n", address->address);
-}
-
-static void print_address_list(struct deltacloud_address **addresses,
-			       FILE *stream)
-{
-  print_list(addresses, struct deltacloud_address, print_address, stream);
-}
-
 void free_address_list(struct deltacloud_address **addresses)
 {
   free_list(addresses, struct deltacloud_address, free_address);
@@ -150,23 +133,6 @@ static int copy_action_list(struct deltacloud_action **dst,
 			    struct deltacloud_action **src)
 {
   copy_list(dst, src, struct deltacloud_action, copy_action, free_action_list);
-}
-
-static void print_action(struct deltacloud_action *action, FILE *stream)
-{
-  if (stream == NULL)
-    stream = stderr;
-  if (action == NULL)
-    return;
-
-  fprintf(stream, "Rel: %s\n", action->rel);
-  fprintf(stream, "Href: %s\n", action->href);
-  fprintf(stream, "Method: %s\n", action->method);
-}
-
-static void print_action_list(struct deltacloud_action **actions, FILE *stream)
-{
-  print_list(actions, struct deltacloud_action, print_action, stream);
 }
 
 void free_action_list(struct deltacloud_action **actions)
@@ -275,37 +241,6 @@ int copy_instance(struct deltacloud_instance *dst,
  error:
   deltacloud_free_instance(dst);
   return -1;
-}
-
-void deltacloud_print_instance(struct deltacloud_instance *instance,
-			       FILE *stream)
-{
-  if (stream == NULL)
-    stream = stderr;
-
-  if (instance == NULL)
-    return;
-
-  fprintf(stream, "HREF: %s\n", instance->href);
-  fprintf(stream, "ID: %s\n", instance->id);
-  fprintf(stream, "Name: %s\n", instance->name);
-  fprintf(stream, "Owner ID: %s\n", instance->owner_id);
-  fprintf(stream, "Image ID: %s\n", instance->image_id);
-  fprintf(stream, "Image HREF: %s\n", instance->image_href);
-  fprintf(stream, "Realm ID: %s\n", instance->realm_id);
-  fprintf(stream, "Realm HREF: %s\n", instance->realm_href);
-  fprintf(stream, "State: %s\n", instance->state);
-  deltacloud_print_hardware_profile(&instance->hwp, NULL);
-  print_action_list(&instance->actions, stream);
-  print_address_list(&instance->public_addresses, stream);
-  print_address_list(&instance->private_addresses, stream);
-}
-
-void deltacloud_print_instance_list(struct deltacloud_instance **instances,
-				    FILE *stream)
-{
-  print_list(instances, struct deltacloud_instance, deltacloud_print_instance,
-	     stream);
 }
 
 void deltacloud_free_instance(struct deltacloud_instance *instance)

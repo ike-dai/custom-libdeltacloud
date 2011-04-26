@@ -71,24 +71,6 @@ static int copy_transition_list(struct transition **dst,
   copy_list(dst, src, struct transition, copy_transition, free_transition_list);
 }
 
-static void print_transition(struct transition *transition, FILE *stream)
-{
-  if (stream == NULL)
-    stream = stderr;
-
-  if (transition == NULL)
-    return;
-
-  fprintf(stream, "Action: %s\n", transition->action);
-  fprintf(stream, "To: %s\n", transition->to);
-  fprintf(stream, "Auto: %s\n", transition->auto_bool);
-}
-
-static void print_transition_list(struct transition **transitions, FILE *stream)
-{
-  print_list(transitions, struct transition, print_transition, stream);
-}
-
 void free_transition_list(struct transition **transitions)
 {
   free_list(transitions, struct transition, free_transition);
@@ -160,25 +142,6 @@ int copy_instance_state(struct deltacloud_instance_state *dst,
  error:
   deltacloud_free_instance_state(dst);
   return -1;
-}
-
-void deltacloud_print_instance_state(struct deltacloud_instance_state *instance_state,
-				     FILE *stream)
-{
-  if (stream == NULL)
-    stream = stderr;
-  if (instance_state == NULL)
-    return;
-
-  fprintf(stream, "Name: %s\n", instance_state->name);
-  print_transition_list(&instance_state->transitions, stream);
-}
-
-void deltacloud_print_instance_state_list(struct deltacloud_instance_state **instance_states,
-					  FILE *stream)
-{
-  print_list(instance_states, struct deltacloud_instance_state,
-	     deltacloud_print_instance_state, stream);
 }
 
 void deltacloud_free_instance_state(struct deltacloud_instance_state *instance_state)

@@ -37,8 +37,6 @@ struct deltacloud_realm {
 
 int add_to_realm_list(struct deltacloud_realm **realms, char *href, char *id,
 		      char *name, char *state, char *limit);
-void deltacloud_print_realm(struct deltacloud_realm *realm, FILE *stream);
-void deltacloud_print_realm_list(struct deltacloud_realm **realms, FILE *stream);
 int copy_realm(struct deltacloud_realm *dst, struct deltacloud_realm *src);
 void deltacloud_free_realm(struct deltacloud_realm *realm);
 void deltacloud_free_realm_list(struct deltacloud_realm **realms);

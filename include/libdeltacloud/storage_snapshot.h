@@ -43,10 +43,6 @@ int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_sn
 				 const char *storage_volume_id);
 int copy_storage_snapshot(struct deltacloud_storage_snapshot *dst,
 			  struct deltacloud_storage_snapshot *src);
-void deltacloud_print_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot,
-				       FILE *stream);
-void deltacloud_print_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots,
-					    FILE *stream);
 void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot);
 void deltacloud_free_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots);
 

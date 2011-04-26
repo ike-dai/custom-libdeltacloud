@@ -99,10 +99,6 @@ int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
 				 struct deltacloud_property *props);
 int copy_hardware_profile(struct deltacloud_hardware_profile *dst,
 			  struct deltacloud_hardware_profile *src);
-void deltacloud_print_hardware_profile(struct deltacloud_hardware_profile *profile,
-				       FILE *stream);
-void deltacloud_print_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
-					    FILE *stream);
 void deltacloud_free_hardware_profile_list(struct deltacloud_hardware_profile **profiles);
 
 #ifdef __cplusplus

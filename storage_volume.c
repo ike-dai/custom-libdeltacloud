@@ -30,19 +30,6 @@ void free_capacity(struct deltacloud_storage_volume_capacity *curr)
   SAFE_FREE(curr->size);
 }
 
-static void print_capacity(struct deltacloud_storage_volume_capacity *curr,
-			   FILE *stream)
-{
-  if (stream == NULL)
-    stream = stderr;
-
-  if (curr == NULL)
-    return;
-
-  fprintf(stream, "Capacity unit: %s\n", curr->unit);
-  fprintf(stream, "Capacity size: %s\n", curr->size);
-}
-
 static int copy_capacity(struct deltacloud_storage_volume_capacity *dst,
 			 struct deltacloud_storage_volume_capacity *src)
 {
@@ -65,20 +52,6 @@ void free_mount(struct deltacloud_storage_volume_mount *curr)
   SAFE_FREE(curr->instance_href);
   SAFE_FREE(curr->instance_id);
   SAFE_FREE(curr->device_name);
-}
-
-static void print_mount(struct deltacloud_storage_volume_mount *curr,
-			FILE *stream)
-{
-  if (stream == NULL)
-    stream = stderr;
-
-  if (curr == NULL)
-    return;
-
-  fprintf(stream, "Mount instance HREF: %s\n", curr->instance_href);
-  fprintf(stream, "Mount instance ID: %s\n", curr->instance_id);
-  fprintf(stream, "Mount device name: %s\n", curr->device_name);
 }
 
 static int copy_mount(struct deltacloud_storage_volume_mount *dst,
@@ -183,32 +156,6 @@ int copy_storage_volume(struct deltacloud_storage_volume *dst,
  error:
   deltacloud_free_storage_volume(dst);
   return -1;
-}
-
-void deltacloud_print_storage_volume(struct deltacloud_storage_volume *storage_volume,
-				     FILE *stream)
-{
-  if (stream == NULL)
-    stream = stderr;
-  if (storage_volume == NULL)
-    return;
-
-  fprintf(stream, "Href: %s\n", storage_volume->href);
-  fprintf(stream, "ID: %s\n", storage_volume->id);
-  fprintf(stream, "Created: %s\n", storage_volume->created);
-  fprintf(stream, "State: %s\n", storage_volume->state);
-  print_capacity(&storage_volume->capacity, stream);
-  fprintf(stream, "Device: %s\n", storage_volume->device);
-  fprintf(stream, "Instance Href: %s\n", storage_volume->instance_href);
-  fprintf(stream, "Realm ID: %s\n", storage_volume->realm_id);
-  print_mount(&storage_volume->mount, stream);
-}
-
-void deltacloud_print_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
-					  FILE *stream)
-{
-  print_list(storage_volumes, struct deltacloud_storage_volume,
-	     deltacloud_print_storage_volume, stream);
 }
 
 void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_volume)

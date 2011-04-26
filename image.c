@@ -96,28 +96,6 @@ int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src)
   return -1;
 }
 
-void deltacloud_print_image(struct deltacloud_image *image, FILE *stream)
-{
-  if (stream == NULL)
-    stream = stderr;
-
-  if (image == NULL)
-    return;
-
-  fprintf(stream, "Href: %s\n", image->href);
-  fprintf(stream, "ID: %s\n", image->id);
-  fprintf(stream, "Description: %s\n", image->description);
-  fprintf(stream, "Architecture: %s\n", image->architecture);
-  fprintf(stream, "Owner ID: %s\n", image->owner_id);
-  fprintf(stream, "Name: %s\n", image->name);
-  fprintf(stream, "State: %s\n", image->state);
-}
-
-void deltacloud_print_image_list(struct deltacloud_image **images, FILE *stream)
-{
-  print_list(images, struct deltacloud_image, deltacloud_print_image, stream);
-}
-
 void deltacloud_free_image(struct deltacloud_image *image)
 {
   if (image == NULL)

@@ -44,7 +44,6 @@ void free_feature_list(struct deltacloud_feature **features);
 
 int add_to_link_list(struct deltacloud_link **links, char *href, char *rel,
 		     struct deltacloud_feature *features);
-void deltacloud_print_link_list(struct deltacloud_link **links, FILE *stream);
 struct deltacloud_link *find_by_rel_in_link_list(struct deltacloud_link **links,
 						 char *rel);
 void free_link_list(struct deltacloud_link **links);
