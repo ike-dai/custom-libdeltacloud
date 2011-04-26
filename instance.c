@@ -171,8 +171,9 @@ void free_action_list(struct deltacloud_action **actions)
 }
 
 int add_to_instance_list(struct deltacloud_instance **instances,
-			 const char *href,const char *id, const char *name,
-			 const char *owner_id, const char *image_href,
+			 const char *href, const char *id, const char *name,
+			 const char *owner_id, const char *image_id,
+			 const char *image_href, const char *realm_id,
 			 const char *realm_href, const char *state,
 			 struct deltacloud_hardware_profile *hwp,
 			 struct deltacloud_action *actions,
@@ -195,7 +196,11 @@ int add_to_instance_list(struct deltacloud_instance **instances,
     goto error;
   if (strdup_or_null(&oneinstance->owner_id, owner_id) < 0)
     goto error;
+  if (strdup_or_null(&oneinstance->image_id, image_id) < 0)
+    goto error;
   if (strdup_or_null(&oneinstance->image_href, image_href) < 0)
+    goto error;
+  if (strdup_or_null(&oneinstance->realm_id, realm_id) < 0)
     goto error;
   if (strdup_or_null(&oneinstance->realm_href, realm_href) < 0)
     goto error;
@@ -241,7 +246,11 @@ int copy_instance(struct deltacloud_instance *dst,
     goto error;
   if (strdup_or_null(&dst->owner_id, src->owner_id) < 0)
     goto error;
+  if (strdup_or_null(&dst->image_id, src->image_id) < 0)
+    goto error;
   if (strdup_or_null(&dst->image_href, src->image_href) < 0)
+    goto error;
+  if (strdup_or_null(&dst->realm_id, src->realm_id) < 0)
     goto error;
   if (strdup_or_null(&dst->realm_href, src->realm_href) < 0)
     goto error;
@@ -292,7 +301,9 @@ void deltacloud_print_instance(struct deltacloud_instance *instance,
   fprintf(stream, "ID: %s\n", instance->id);
   fprintf(stream, "Name: %s\n", instance->name);
   fprintf(stream, "Owner ID: %s\n", instance->owner_id);
+  fprintf(stream, "Image ID: %s\n", instance->image_id);
   fprintf(stream, "Image HREF: %s\n", instance->image_href);
+  fprintf(stream, "Realm ID: %s\n", instance->realm_id);
   fprintf(stream, "Realm HREF: %s\n", instance->realm_href);
   fprintf(stream, "State: %s\n", instance->state);
   deltacloud_print_hardware_profile(&instance->hwp, NULL);
@@ -317,7 +328,9 @@ void deltacloud_free_instance(struct deltacloud_instance *instance)
   SAFE_FREE(instance->id);
   SAFE_FREE(instance->name);
   SAFE_FREE(instance->owner_id);
+  SAFE_FREE(instance->image_id);
   SAFE_FREE(instance->image_href);
+  SAFE_FREE(instance->realm_id);
   SAFE_FREE(instance->realm_href);
   SAFE_FREE(instance->state);
   deltacloud_free_hardware_profile(&instance->hwp);

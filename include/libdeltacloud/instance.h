@@ -45,7 +45,9 @@ struct deltacloud_instance {
   char *id;
   char *name;
   char *owner_id;
+  char *image_id;
   char *image_href;
+  char *realm_id;
   char *realm_href;
   char *key_name;
   char *state;
@@ -69,7 +71,8 @@ void free_action_list(struct deltacloud_action **actions);
 
 int add_to_instance_list(struct deltacloud_instance **instances,
 			 const char *href, const char *id, const char *name,
-			 const char *owner_id, const char *image_href,
+			 const char *owner_id, const char *image_id,
+			 const char *image_href, const char *realm_id,
 			 const char *realm_href, const char *state,
 			 struct deltacloud_hardware_profile *hwp,
 			 struct deltacloud_action *actions,

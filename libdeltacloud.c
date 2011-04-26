@@ -511,7 +511,8 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   xmlNodePtr oldnode;
   xmlXPathObjectPtr hwpset, actionset, pubset, privset;
   char *href = NULL, *id = NULL, *name = NULL, *owner_id = NULL;
-  char *image_href = NULL, *realm_href = NULL, *state = NULL;
+  char *image_id = NULL, *image_href = NULL, *realm_href = NULL;
+  char *realm_id = NULL, *state = NULL;
   struct deltacloud_hardware_profile *hwp = NULL;
   struct deltacloud_action *actions = NULL;
   struct deltacloud_address *public_addresses = NULL;
@@ -543,7 +544,9 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
       name = getXPathString("string(./name[1])", ctxt);
       owner_id = getXPathString("string(./owner_id[1])", ctxt);
+      image_id = getXPathString("string(./image[1]/@id)", ctxt);
       image_href = getXPathString("string(./image[1]/@href)", ctxt);
+      realm_id = getXPathString("string(./realm[1]/@id)", ctxt);
       realm_href = getXPathString("string(./realm[1]/@href)", ctxt);
       state = getXPathString("string(./state[1])", ctxt);
 
@@ -575,13 +578,15 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       xmlXPathFreeObject(privset);
 
       listret = add_to_instance_list(instances, href, id, name, owner_id,
-				     image_href, realm_href, state, hwp,
-				     actions, public_addresses,
+				     image_id, image_href, realm_id, realm_href,
+				     state, hwp, actions, public_addresses,
 				     private_addresses);
       SAFE_FREE(id);
       SAFE_FREE(name);
       SAFE_FREE(owner_id);
+      SAFE_FREE(image_id);
       SAFE_FREE(image_href);
+      SAFE_FREE(realm_id);
       SAFE_FREE(realm_href);
       SAFE_FREE(state);
       SAFE_FREE(href);
