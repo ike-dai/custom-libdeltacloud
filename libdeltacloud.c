@@ -131,7 +131,8 @@ static char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
   return ret;
 }
 
-typedef int (*parse_xml_callback)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data);
+typedef int (*parse_xml_callback)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				  void **data);
 
 static int parse_xml(const char *xml_string, const char *name, void **data,
 		     parse_xml_callback cb, int multiple)
@@ -304,7 +305,8 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 
   if (!tlsinitialized) {
     tlsinitialized = 1;
-    if (pthread_key_create(&deltacloud_last_error, deltacloud_error_free_data) != 0) {
+    if (pthread_key_create(&deltacloud_last_error,
+			   deltacloud_error_free_data) != 0) {
       dcloudprintf("Failed to initialize error handler\n");
       return -1;
     }
@@ -418,7 +420,8 @@ static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
 	STREQ((const char *)cur->name, "link")) {
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
       if (href == NULL) {
-	xml_error("actions", "Failed to parse XML", "did not see href property");
+	xml_error("actions", "Failed to parse XML",
+		  "did not see href property");
 	goto cleanup;
       }
 
@@ -474,7 +477,8 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
       href = (char *)xmlGetProp(cur, BAD_CAST "href");
       if (href == NULL) {
-	xml_error("instance", "Failed to parse XML", "did not see rel property");
+	xml_error("instance", "Failed to parse XML",
+		  "did not see rel property");
 	goto cleanup;
       }
 

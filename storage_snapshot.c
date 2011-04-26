@@ -45,7 +45,8 @@ int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_sn
     goto error;
   if (strdup_or_null(&onestorage_snapshot->state, state) < 0)
     goto error;
-  if (strdup_or_null(&onestorage_snapshot->storage_volume_href, storage_volume_href) < 0)
+  if (strdup_or_null(&onestorage_snapshot->storage_volume_href,
+		     storage_volume_href) < 0)
     goto error;
   onestorage_snapshot->next = NULL;
 

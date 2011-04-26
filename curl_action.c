@@ -292,8 +292,8 @@ char *delete_url(const char *url, const char *user, const char *password)
 
   res = curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
   if (res != CURLE_OK) {
-    set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to set custom request to DELETE",
-		   res);
+    set_curl_error(DELTACLOUD_DELETE_URL_ERROR,
+		   "Failed to set custom request to DELETE", res);
     goto cleanup;
   }
 

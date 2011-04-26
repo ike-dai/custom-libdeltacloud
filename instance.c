@@ -207,7 +207,8 @@ int add_to_instance_list(struct deltacloud_instance **instances,
     goto error;
   if (copy_address_list(&oneinstance->public_addresses, &public_addresses) < 0)
     goto error;
-  if (copy_address_list(&oneinstance->private_addresses, &private_addresses) < 0)
+  if (copy_address_list(&oneinstance->private_addresses,
+			&private_addresses) < 0)
     goto error;
   oneinstance->next = NULL;
 
