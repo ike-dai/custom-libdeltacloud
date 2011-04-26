@@ -460,7 +460,7 @@ static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
 {
   xmlNodePtr cur;
   struct deltacloud_action *actions = NULL;
-  char *rel = NULL, *href = NULL;
+  char *rel = NULL, *href = NULL, *method = NULL;
   int failed = 1;
   int listret;
 
@@ -482,9 +482,12 @@ static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
 	goto cleanup;
       }
 
-      listret = add_to_action_list(&actions, rel, href);
+      method = (char *)xmlGetProp(cur, BAD_CAST "method");
+
+      listret = add_to_action_list(&actions, rel, href, method);
       SAFE_FREE(href);
       SAFE_FREE(rel);
+      SAFE_FREE(method);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;

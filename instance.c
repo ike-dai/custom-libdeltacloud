@@ -93,10 +93,11 @@ static void free_action(struct deltacloud_action *action)
 {
   SAFE_FREE(action->rel);
   SAFE_FREE(action->href);
+  SAFE_FREE(action->method);
 }
 
 int add_to_action_list(struct deltacloud_action **actions, const char *rel,
-		       const char *href)
+		       const char *href, const char *method)
 {
   struct deltacloud_action *oneaction;
 
@@ -109,6 +110,8 @@ int add_to_action_list(struct deltacloud_action **actions, const char *rel,
   if (strdup_or_null(&oneaction->rel, rel) < 0)
     goto error;
   if (strdup_or_null(&oneaction->href, href) < 0)
+    goto error;
+  if (strdup_or_null(&oneaction->method, method) < 0)
     goto error;
   oneaction->next = NULL;
 
@@ -140,7 +143,7 @@ struct deltacloud_action *find_by_rel_in_action_list(struct deltacloud_action **
 static int copy_action(struct deltacloud_action **dst,
 		       struct deltacloud_action *curr)
 {
-  return add_to_action_list(dst, curr->rel, curr->href);
+  return add_to_action_list(dst, curr->rel, curr->href, curr->method);
 }
 
 static int copy_action_list(struct deltacloud_action **dst,
@@ -158,6 +161,7 @@ static void print_action(struct deltacloud_action *action, FILE *stream)
 
   fprintf(stream, "Rel: %s\n", action->rel);
   fprintf(stream, "Href: %s\n", action->href);
+  fprintf(stream, "Method: %s\n", action->method);
 }
 
 static void print_action_list(struct deltacloud_action **actions, FILE *stream)
