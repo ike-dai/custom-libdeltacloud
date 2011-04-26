@@ -1639,15 +1639,16 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				    void **data)
 {
   struct deltacloud_storage_volume **storage_volumes = (struct deltacloud_storage_volume **)data;
-  xmlNodePtr oldnode, storage_cur;
+  xmlNodePtr oldnode, storage_cur, mount_cur;
   int ret = -1;
   char *href = NULL, *id = NULL, *created = NULL, *state = NULL;
   struct deltacloud_storage_volume_capacity capacity;
-  char *device = NULL, *instance_href = NULL;
-  char *realm_id = NULL;
+  char *device = NULL, *instance_href = NULL, *realm_id = NULL;
+  struct deltacloud_storage_volume_mount mount;
   int listret;
 
   memset(&capacity, 0, sizeof(struct deltacloud_storage_volume_capacity));
+  memset(&mount, 0, sizeof(struct deltacloud_storage_volume_mount));
 
   oldnode = ctxt->node;
 
@@ -1687,12 +1688,25 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	    instance_href = (char *)xmlGetProp(storage_cur, BAD_CAST "href");
 	  else if (STREQ((const char *)storage_cur->name, "realm_id"))
 	    realm_id = getXPathString("string(./realm_id)", ctxt);
+	  else if (STREQ((const char *)storage_cur->name, "mount")) {
+	    mount_cur = storage_cur->children;
+	    while (mount_cur != NULL) {
+	      if (STREQ((const char *)mount_cur->name, "instance")) {
+		mount.instance_href = (char *)xmlGetProp(mount_cur, BAD_CAST "href");
+		mount.instance_id = (char *)xmlGetProp(mount_cur, BAD_CAST "id");
+	      }
+	      else if (STREQ((const char *)mount_cur->name, "device"))
+		mount.device_name = (char *)xmlGetProp(mount_cur, BAD_CAST "name");
+
+	      mount_cur = mount_cur->next;
+	    }
+	  }
 	}
 	storage_cur = storage_cur->next;
       }
       listret = add_to_storage_volume_list(storage_volumes, href, id, created,
 					   state, &capacity, device,
-					   instance_href, realm_id);
+					   instance_href, realm_id, &mount);
       SAFE_FREE(id);
       SAFE_FREE(created);
       SAFE_FREE(state);
@@ -1701,6 +1715,7 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       SAFE_FREE(instance_href);
       SAFE_FREE(href);
       SAFE_FREE(realm_id);
+      free_mount(&mount);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;

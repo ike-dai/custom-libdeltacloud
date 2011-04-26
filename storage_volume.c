@@ -39,8 +39,8 @@ static void print_capacity(struct deltacloud_storage_volume_capacity *curr,
   if (curr == NULL)
     return;
 
-  fprintf(stderr, "Capacity unit: %s\n", curr->unit);
-  fprintf(stderr, "Capacity size: %s\n", curr->size);
+  fprintf(stream, "Capacity unit: %s\n", curr->unit);
+  fprintf(stream, "Capacity size: %s\n", curr->size);
 }
 
 static int copy_capacity(struct deltacloud_storage_volume_capacity *dst,
@@ -60,12 +60,53 @@ static int copy_capacity(struct deltacloud_storage_volume_capacity *dst,
   return -1;
 }
 
+void free_mount(struct deltacloud_storage_volume_mount *curr)
+{
+  SAFE_FREE(curr->instance_href);
+  SAFE_FREE(curr->instance_id);
+  SAFE_FREE(curr->device_name);
+}
+
+static void print_mount(struct deltacloud_storage_volume_mount *curr,
+			FILE *stream)
+{
+  if (stream == NULL)
+    stream = stderr;
+
+  if (curr == NULL)
+    return;
+
+  fprintf(stream, "Mount instance HREF: %s\n", curr->instance_href);
+  fprintf(stream, "Mount instance ID: %s\n", curr->instance_id);
+  fprintf(stream, "Mount device name: %s\n", curr->device_name);
+}
+
+static int copy_mount(struct deltacloud_storage_volume_mount *dst,
+		      struct deltacloud_storage_volume_mount *src)
+{
+  memset (dst, 0, sizeof(struct deltacloud_storage_volume_mount));
+
+  if (strdup_or_null(&dst->instance_href, src->instance_href) < 0)
+    goto error;
+  if (strdup_or_null(&dst->instance_id, src->instance_id) < 0)
+    goto error;
+  if (strdup_or_null(&dst->device_name, src->device_name) < 0)
+    goto error;
+
+  return 0;
+
+ error:
+  free_mount(dst);
+  return -1;
+}
+
 int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
 			       const char *href, const char *id,
 			       const char *created, const char *state,
 			       struct deltacloud_storage_volume_capacity *capacity,
 			       const char *device, const char *instance_href,
-			       const char *realm_id)
+			       const char *realm_id,
+			       struct deltacloud_storage_volume_mount *mount)
 {
   struct deltacloud_storage_volume *onestorage_volume;
 
@@ -90,6 +131,8 @@ int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volume
   if (strdup_or_null(&onestorage_volume->instance_href, instance_href) < 0)
     goto error;
   if (strdup_or_null(&onestorage_volume->realm_id, realm_id) < 0)
+    goto error;
+  if (copy_mount(&onestorage_volume->mount, mount) < 0)
     goto error;
   onestorage_volume->next = NULL;
 
@@ -131,6 +174,8 @@ int copy_storage_volume(struct deltacloud_storage_volume *dst,
     goto error;
   if (strdup_or_null(&dst->realm_id, src->realm_id) < 0)
     goto error;
+  if (copy_mount(&dst->mount, &src->mount) < 0)
+    goto error;
   dst->next = NULL;
 
   return 0;
@@ -156,6 +201,7 @@ void deltacloud_print_storage_volume(struct deltacloud_storage_volume *storage_v
   fprintf(stream, "Device: %s\n", storage_volume->device);
   fprintf(stream, "Instance Href: %s\n", storage_volume->instance_href);
   fprintf(stream, "Realm ID: %s\n", storage_volume->realm_id);
+  print_mount(&storage_volume->mount, stream);
 }
 
 void deltacloud_print_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
@@ -178,6 +224,7 @@ void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_vo
   SAFE_FREE(storage_volume->device);
   SAFE_FREE(storage_volume->instance_href);
   SAFE_FREE(storage_volume->realm_id);
+  free_mount(&storage_volume->mount);
 }
 
 void deltacloud_free_storage_volume_list(struct deltacloud_storage_volume **storage_volumes)
