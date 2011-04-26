@@ -33,6 +33,7 @@ struct deltacloud_storage_volume {
   char *capacity;
   char *device;
   char *instance_href;
+  char *realm_id;
 
   struct deltacloud_storage_volume *next;
 };
@@ -41,7 +42,7 @@ int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volume
 			       const char *href, const char *id,
 			       const char *created, const char *state,
 			       const char *capacity, const char *device,
-			       const char *instance_href);
+			       const char *instance_href, const char *realm_id);
 int copy_storage_volume(struct deltacloud_storage_volume *dst,
 			struct deltacloud_storage_volume *src);
 void deltacloud_print_storage_volume(struct deltacloud_storage_volume *storage_volume,

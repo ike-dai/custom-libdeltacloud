@@ -1643,6 +1643,7 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   int ret = -1;
   char *href = NULL, *id = NULL, *created = NULL, *state = NULL;
   char *capacity = NULL, *device = NULL, *instance_href = NULL;
+  char *realm_id = NULL;
   int listret;
 
   oldnode = ctxt->node;
@@ -1679,12 +1680,14 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	    device = getXPathString("string(./device)", ctxt);
 	  else if (STREQ((const char *)storage_cur->name, "instance"))
 	    instance_href = (char *)xmlGetProp(storage_cur, BAD_CAST "href");
+	  else if (STREQ((const char *)storage_cur->name, "realm_id"))
+	    realm_id = getXPathString("string(./realm_id)", ctxt);
 	}
 	storage_cur = storage_cur->next;
       }
       listret = add_to_storage_volume_list(storage_volumes, href, id, created,
 					   state, capacity, device,
-					   instance_href);
+					   instance_href, realm_id);
       SAFE_FREE(id);
       SAFE_FREE(created);
       SAFE_FREE(state);
@@ -1692,6 +1695,7 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       SAFE_FREE(device);
       SAFE_FREE(instance_href);
       SAFE_FREE(href);
+      SAFE_FREE(realm_id);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;
