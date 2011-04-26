@@ -1852,7 +1852,7 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   int ret = -1;
   xmlNodePtr oldnode, snap_cur;
   char *href = NULL, *id = NULL, *created = NULL, *state = NULL;
-  char *storage_volume_href = NULL;
+  char *storage_volume_href = NULL, *storage_volume_id = NULL;
   int listret;
 
   oldnode = ctxt->node;
@@ -1883,18 +1883,22 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	    created = getXPathString("string(./created)", ctxt);
 	  else if (STREQ((const char *)snap_cur->name, "state"))
 	    state = getXPathString("string(./state)", ctxt);
-	  else if (STREQ((const char *)snap_cur->name, "storage_volume"))
+	  else if (STREQ((const char *)snap_cur->name, "storage_volume")) {
 	    storage_volume_href = (char *)xmlGetProp(snap_cur, BAD_CAST "href");
+	    storage_volume_id = (char *)xmlGetProp(snap_cur, BAD_CAST "id");
+	  }
 	}
 	snap_cur = snap_cur->next;
       }
       listret = add_to_storage_snapshot_list(storage_snapshots, href, id,
 					     created, state,
-					     storage_volume_href);
+					     storage_volume_href,
+					     storage_volume_id);
       SAFE_FREE(id);
       SAFE_FREE(created);
       SAFE_FREE(state);
       SAFE_FREE(storage_volume_href);
+      SAFE_FREE(storage_volume_id);
       SAFE_FREE(href);
       if (listret < 0) {
 	oom_error();

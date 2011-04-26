@@ -31,6 +31,7 @@ struct deltacloud_storage_snapshot {
   char *created;
   char *state;
   char *storage_volume_href;
+  char *storage_volume_id;
 
   struct deltacloud_storage_snapshot *next;
 };
@@ -38,7 +39,8 @@ struct deltacloud_storage_snapshot {
 int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots,
 				 const char *href, const char *id,
 				 const char *created, const char *state,
-				 const char *storage_volume_href);
+				 const char *storage_volume_href,
+				 const char *storage_volume_id);
 int copy_storage_snapshot(struct deltacloud_storage_snapshot *dst,
 			  struct deltacloud_storage_snapshot *src);
 void deltacloud_print_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot,

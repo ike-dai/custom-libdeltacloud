@@ -27,7 +27,8 @@
 int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots,
 				 const char *href, const char *id,
 				 const char *created, const char *state,
-				 const char *storage_volume_href)
+				 const char *storage_volume_href,
+				 const char *storage_volume_id)
 {
   struct deltacloud_storage_snapshot *onestorage_snapshot;
 
@@ -47,6 +48,8 @@ int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_sn
     goto error;
   if (strdup_or_null(&onestorage_snapshot->storage_volume_href,
 		     storage_volume_href) < 0)
+    goto error;
+  if (strdup_or_null(&onestorage_snapshot->storage_volume_id, storage_volume_id) < 0)
     goto error;
   onestorage_snapshot->next = NULL;
 
@@ -82,6 +85,8 @@ int copy_storage_snapshot(struct deltacloud_storage_snapshot *dst,
     goto error;
   if (strdup_or_null(&dst->storage_volume_href, src->storage_volume_href) < 0)
     goto error;
+  if (strdup_or_null(&dst->storage_volume_id, src->storage_volume_id) < 0)
+    goto error;
   dst->next = NULL;
 
   return 0;
@@ -105,6 +110,8 @@ void deltacloud_print_storage_snapshot(struct deltacloud_storage_snapshot *stora
   fprintf(stream, "State: %s\n", storage_snapshot->state);
   fprintf(stream, "Storage Volume Href: %s\n",
 	  storage_snapshot->storage_volume_href);
+  fprintf(stderr, "Storage Volume ID: %s\n",
+	  storage_snapshot->storage_volume_id);
 }
 
 void deltacloud_print_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots,
@@ -124,6 +131,7 @@ void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storag
   SAFE_FREE(storage_snapshot->created);
   SAFE_FREE(storage_snapshot->state);
   SAFE_FREE(storage_snapshot->storage_volume_href);
+  SAFE_FREE(storage_snapshot->storage_volume_id);
 }
 
 void deltacloud_free_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots)
