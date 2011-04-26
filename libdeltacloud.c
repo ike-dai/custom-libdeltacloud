@@ -1440,7 +1440,7 @@ static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   struct deltacloud_instance_state **instance_states = (struct deltacloud_instance_state **)data;
   xmlNodePtr state_cur;
   char *name = NULL, *action = NULL, *to = NULL, *auto_bool = NULL;
-  struct transition *transitions = NULL;
+  struct deltacloud_instance_state_transition *transitions = NULL;
   int ret = -1;
   int listret;
 

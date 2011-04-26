@@ -24,23 +24,24 @@
 #include "common.h"
 #include "instance_state.h"
 
-static void free_transition(struct transition *transition)
+static void free_transition(struct deltacloud_instance_state_transition *transition)
 {
   SAFE_FREE(transition->action);
   SAFE_FREE(transition->to);
   SAFE_FREE(transition->auto_bool);
 }
 
-int add_to_transition_list(struct transition **transitions, const char *action,
-			   const char *to, const char *auto_bool)
+int add_to_transition_list(struct deltacloud_instance_state_transition **transitions,
+			   const char *action, const char *to,
+			   const char *auto_bool)
 {
-  struct transition *onetransition;
+  struct deltacloud_instance_state_transition *onetransition;
 
-  onetransition = malloc(sizeof(struct transition));
+  onetransition = malloc(sizeof(struct deltacloud_instance_state_transition));
   if (onetransition == NULL)
     return -1;
 
-  memset(onetransition, 0, sizeof(struct transition));
+  memset(onetransition, 0, sizeof(struct deltacloud_instance_state_transition));
 
   if (strdup_or_null(&onetransition->action, action) < 0)
     goto error;
@@ -50,7 +51,8 @@ int add_to_transition_list(struct transition **transitions, const char *action,
     goto error;
   onetransition->next = NULL;
 
-  add_to_list(transitions, struct transition, onetransition);
+  add_to_list(transitions, struct deltacloud_instance_state_transition,
+	      onetransition);
 
   return 0;
 
@@ -60,25 +62,28 @@ int add_to_transition_list(struct transition **transitions, const char *action,
   return -1;
 }
 
-static int copy_transition(struct transition **dst, struct transition *curr)
+static int copy_transition(struct deltacloud_instance_state_transition **dst,
+			   struct deltacloud_instance_state_transition *curr)
 {
   return add_to_transition_list(dst, curr->action, curr->to, curr->auto_bool);
 }
 
-static int copy_transition_list(struct transition **dst,
-				struct transition **src)
+static int copy_transition_list(struct deltacloud_instance_state_transition **dst,
+				struct deltacloud_instance_state_transition **src)
 {
-  copy_list(dst, src, struct transition, copy_transition, free_transition_list);
+  copy_list(dst, src, struct deltacloud_instance_state_transition,
+	    copy_transition, free_transition_list);
 }
 
-void free_transition_list(struct transition **transitions)
+void free_transition_list(struct deltacloud_instance_state_transition **transitions)
 {
-  free_list(transitions, struct transition, free_transition);
+  free_list(transitions, struct deltacloud_instance_state_transition,
+	    free_transition);
 }
 
 int add_to_instance_state_list(struct deltacloud_instance_state **instance_states,
 			       const char *name,
-			       struct transition *transitions)
+			       struct deltacloud_instance_state_transition *transitions)
 {
   struct deltacloud_instance_state *oneinstance_state;
 

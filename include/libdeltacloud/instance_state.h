@@ -25,28 +25,28 @@
 extern "C" {
 #endif
 
-struct transition {
+struct deltacloud_instance_state_transition {
   char *action;
   char *to;
   char *auto_bool;
 
-  struct transition *next;
+  struct deltacloud_instance_state_transition *next;
 };
 
 struct deltacloud_instance_state {
   char *name;
-  struct transition *transitions;
+  struct deltacloud_instance_state_transition *transitions;
 
   struct deltacloud_instance_state *next;
 };
 
-int add_to_transition_list(struct transition **transitions, const char *action,
+int add_to_transition_list(struct deltacloud_instance_state_transition **transitions, const char *action,
 			   const char *to, const char *auto_bool);
-void free_transition_list(struct transition **transitions);
+void free_transition_list(struct deltacloud_instance_state_transition **transitions);
 
 int add_to_instance_state_list(struct deltacloud_instance_state **instance_states,
 			       const char *name,
-			       struct transition *transitions);
+			       struct deltacloud_instance_state_transition *transitions);
 struct deltacloud_instance_state *find_by_name_in_instance_state_list(struct deltacloud_instance_state **instance_states,
 							   const char *name);
 int copy_instance_state(struct deltacloud_instance_state *dst,
