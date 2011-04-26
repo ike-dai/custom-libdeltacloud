@@ -1642,9 +1642,12 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   xmlNodePtr oldnode, storage_cur;
   int ret = -1;
   char *href = NULL, *id = NULL, *created = NULL, *state = NULL;
-  char *capacity = NULL, *device = NULL, *instance_href = NULL;
+  struct deltacloud_storage_volume_capacity capacity;
+  char *device = NULL, *instance_href = NULL;
   char *realm_id = NULL;
   int listret;
+
+  memset(&capacity, 0, sizeof(struct deltacloud_storage_volume_capacity));
 
   oldnode = ctxt->node;
 
@@ -1674,8 +1677,10 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	    created = getXPathString("string(./created)", ctxt);
 	  else if (STREQ((const char *)storage_cur->name, "state"))
 	    state = getXPathString("string(./state)", ctxt);
-	  else if (STREQ((const char *)storage_cur->name, "capacity"))
-	    capacity = getXPathString("string(./capacity)", ctxt);
+	  else if (STREQ((const char *)storage_cur->name, "capacity")) {
+	    capacity.unit = (char *)xmlGetProp(storage_cur, BAD_CAST "unit");
+	    capacity.size = getXPathString("string(./capacity)", ctxt);
+	  }
 	  else if (STREQ((const char *)storage_cur->name, "device"))
 	    device = getXPathString("string(./device)", ctxt);
 	  else if (STREQ((const char *)storage_cur->name, "instance"))
@@ -1686,12 +1691,12 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	storage_cur = storage_cur->next;
       }
       listret = add_to_storage_volume_list(storage_volumes, href, id, created,
-					   state, capacity, device,
+					   state, &capacity, device,
 					   instance_href, realm_id);
       SAFE_FREE(id);
       SAFE_FREE(created);
       SAFE_FREE(state);
-      SAFE_FREE(capacity);
+      free_capacity(&capacity);
       SAFE_FREE(device);
       SAFE_FREE(instance_href);
       SAFE_FREE(href);
