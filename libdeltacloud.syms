@@ -1,86 +1,10 @@
-LIBDCLOUDAPI_0.0.0 {
-    global:
-	deltacloud_initialize;
-	deltacloud_get_instances;
-	deltacloud_get_instance_by_id;
-	deltacloud_get_instance_by_name;
-	deltacloud_get_realms;
-	deltacloud_get_realm_by_id;
-	deltacloud_get_flavors;
-	deltacloud_get_flavor_by_id;
-	deltacloud_get_flavor_by_uri;
-	deltacloud_get_images;
-	deltacloud_get_image_by_id;
-	deltacloud_get_instance_states;
-	deltacloud_get_instance_state_by_name;
-	deltacloud_get_storage_volumes;
-	deltacloud_get_storage_volume_by_id;
-	deltacloud_get_storage_snapshots;
-	deltacloud_get_storage_snapshot_by_id;
-	deltacloud_create_instance;
-	deltacloud_instance_stop;
-	deltacloud_instance_reboot;
-	deltacloud_instance_start;
-	deltacloud_free;
-	deltacloud_strerror;
-};
-LIBDCLOUDAPI_1.0.0 {
-    global:
-	deltacloud_initialize;
-	deltacloud_get_instances;
-	deltacloud_get_instance_by_id;
-	deltacloud_get_instance_by_name;
-	deltacloud_get_realms;
-	deltacloud_get_realm_by_id;
-	deltacloud_get_hardware_profiles;
-	deltacloud_get_images;
-	deltacloud_get_image_by_id;
-	deltacloud_get_instance_states;
-	deltacloud_get_instance_state_by_name;
-	deltacloud_get_storage_volumes;
-	deltacloud_get_storage_volume_by_id;
-	deltacloud_get_storage_snapshots;
-	deltacloud_get_storage_snapshot_by_id;
-	deltacloud_get_hardware_profiles;
-	deltacloud_create_instance;
-	deltacloud_instance_stop;
-	deltacloud_instance_reboot;
-	deltacloud_instance_start;
-	deltacloud_instance_destroy;
-	deltacloud_free;
-	deltacloud_strerror;
-};
-LIBDCLOUDAPI_2.0.0 {
-    global:
-	deltacloud_initialize;
-	deltacloud_get_instances;
-	deltacloud_get_instance_by_id;
-	deltacloud_get_instance_by_name;
-	deltacloud_get_realms;
-	deltacloud_get_realm_by_id;
-	deltacloud_get_hardware_profiles;
-	deltacloud_get_images;
-	deltacloud_get_image_by_id;
-	deltacloud_get_instance_states;
-	deltacloud_get_instance_state_by_name;
-	deltacloud_get_storage_volumes;
-	deltacloud_get_storage_volume_by_id;
-	deltacloud_get_storage_snapshots;
-	deltacloud_get_storage_snapshot_by_id;
-	deltacloud_get_hardware_profiles;
-	deltacloud_create_instance;
-	deltacloud_instance_stop;
-	deltacloud_instance_reboot;
-	deltacloud_instance_start;
-	deltacloud_instance_destroy;
-	deltacloud_get_last_error;
-	deltacloud_get_last_error_string;
-	deltacloud_free;
-};
-LIBDCLOUDAPI_3.0.0 {
-    global:
-        deltacloud_create_instance;
-};
+# This file defines the versions of the symbols in libdeltacloud.
+# The versioning starts at 4.0.0 (as opposed to the more traditional 0.0.0)
+# because the library was renamed at version 4.0.0.
+# Also note that anytime an API gets broken, or a structure that any API
+# depends on gets broken, those symbols should be moved from where they are
+# currently defined to the newest version.
+
 LIBDELTACLOUD_4.0.0 {
     global:
 	deltacloud_initialize;
@@ -99,7 +23,6 @@ LIBDELTACLOUD_4.0.0 {
 	deltacloud_get_storage_snapshots;
 	deltacloud_get_storage_snapshot_by_id;
 	deltacloud_get_hardware_profiles;
-	deltacloud_create_instance;
 	deltacloud_instance_stop;
 	deltacloud_instance_reboot;
 	deltacloud_instance_start;
@@ -109,56 +32,12 @@ LIBDELTACLOUD_4.0.0 {
 	deltacloud_free;
 };
 LIBDELTACLOUD_5.0.0 {
-    global:
-	deltacloud_initialize;
-	deltacloud_get_instances;
-	deltacloud_get_instance_by_id;
-	deltacloud_get_instance_by_name;
-	deltacloud_get_realms;
-	deltacloud_get_realm_by_id;
-	deltacloud_get_hardware_profiles;
-	deltacloud_get_images;
-	deltacloud_get_image_by_id;
-	deltacloud_get_instance_states;
-	deltacloud_get_instance_state_by_name;
-	deltacloud_get_storage_volumes;
-	deltacloud_get_storage_volume_by_id;
-	deltacloud_get_storage_snapshots;
-	deltacloud_get_storage_snapshot_by_id;
-	deltacloud_get_hardware_profiles;
-	deltacloud_create_instance;
-	deltacloud_instance_stop;
-	deltacloud_instance_reboot;
-	deltacloud_instance_start;
-	deltacloud_instance_destroy;
-	deltacloud_get_last_error;
-	deltacloud_get_last_error_string;
-	deltacloud_free;
-};
+} LIBDELTACLOUD_4.0.0;
 LIBDELTACLOUD_6.0.0 {
     global:
-	deltacloud_initialize;
-	deltacloud_get_instances;
-	deltacloud_get_instance_by_id;
-	deltacloud_get_instance_by_name;
-	deltacloud_get_realms;
-	deltacloud_get_realm_by_id;
-	deltacloud_get_hardware_profiles;
-	deltacloud_get_images;
-	deltacloud_get_image_by_id;
-	deltacloud_get_instance_states;
-	deltacloud_get_instance_state_by_name;
-	deltacloud_get_storage_volumes;
-	deltacloud_get_storage_volume_by_id;
-	deltacloud_get_storage_snapshots;
-	deltacloud_get_storage_snapshot_by_id;
-	deltacloud_get_hardware_profiles;
 	deltacloud_create_instance;
-	deltacloud_instance_stop;
-	deltacloud_instance_reboot;
-	deltacloud_instance_start;
-	deltacloud_instance_destroy;
-	deltacloud_get_last_error;
-	deltacloud_get_last_error_string;
-	deltacloud_free;
-};
+	deltacloud_prepare_parameter;
+	deltacloud_create_parameter;
+	deltacloud_free_parameter_value;
+	deltacloud_free_parameter;
+} LIBDELTACLOUD_5.0.0;
