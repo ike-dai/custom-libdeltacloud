@@ -212,26 +212,11 @@ static int parse_xml(const char *xml_string, const char *name, void **data,
 static int parse_error_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 {
   char **msg = (char **)data;
-  xmlNodePtr oldnode;
 
-  oldnode = ctxt->node;
-
-  *msg = NULL;
-
-  while (cur != NULL) {
-    ctxt->node = cur;
-    if (cur->type == XML_ELEMENT_NODE &&
-	STREQ((const char *)cur->name, "message")) {
-      *msg = getXPathString("string(.)", ctxt);
-      break;
-    }
-    cur = cur->next;
-  }
+  *msg = getXPathString("string(/error/message)", ctxt);
 
   if (*msg == NULL)
     *msg = strdup("Unknown error");
-
-  ctxt->node = oldnode;
 
   return 0;
 }
@@ -771,7 +756,7 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			   void **data)
 {
   struct deltacloud_realm **realms = (struct deltacloud_realm **)data;
-  xmlNodePtr oldnode, realm_cur;
+  xmlNodePtr oldnode;
   int ret = -1;
   char *href = NULL, *id = NULL, *name = NULL, *state = NULL, *limit = NULL;
   int listret;
@@ -795,18 +780,11 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       }
 
       ctxt->node = cur;
-      realm_cur = cur->children;
-      while (realm_cur != NULL) {
-	if (realm_cur->type == XML_ELEMENT_NODE) {
-	  if (STREQ((const char *)realm_cur->name, "name"))
-	    name = getXPathString("string(./name)", ctxt);
-	  else if (STREQ((const char *)realm_cur->name, "state"))
-	    state = getXPathString("string(./state)", ctxt);
-	  else if (STREQ((const char *)realm_cur->name, "limit"))
-	    limit = getXPathString("string(./limit)", ctxt);
-	}
-	realm_cur = realm_cur->next;
-      }
+
+      name = getXPathString("string(./name)", ctxt);
+      state = getXPathString("string(./state)", ctxt);
+      limit = getXPathString("string(./limit)", ctxt);
+
       listret = add_to_realm_list(realms, href, id, name, state, limit);
       SAFE_FREE(href);
       SAFE_FREE(id);
@@ -1284,7 +1262,7 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			   void **data)
 {
   struct deltacloud_image **images = (struct deltacloud_image **)data;
-  xmlNodePtr oldnode, image_cur;
+  xmlNodePtr oldnode;
   char *href = NULL, *id = NULL, *description = NULL, *architecture = NULL;
   char *owner_id = NULL, *name = NULL, *state = NULL;
   int listret;
@@ -1309,22 +1287,12 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       }
 
       ctxt->node = cur;
-      image_cur = cur->children;
-      while (image_cur != NULL) {
-	if (image_cur->type == XML_ELEMENT_NODE) {
-	  if (STREQ((const char *)image_cur->name, "description"))
-	    description = getXPathString("string(./description)", ctxt);
-	  else if (STREQ((const char *)image_cur->name, "architecture"))
-	    architecture = getXPathString("string(./architecture)", ctxt);
-	  else if (STREQ((const char *)image_cur->name, "owner_id"))
-	    owner_id = getXPathString("string(./owner_id)", ctxt);
-	  else if (STREQ((const char *)image_cur->name, "name"))
-	    name = getXPathString("string(./name)", ctxt);
-	  else if (STREQ((const char *)image_cur->name, "state"))
-	    state = getXPathString("string(./state)", ctxt);
-	}
-	image_cur = image_cur->next;
-      }
+      description = getXPathString("string(./description)", ctxt);
+      architecture = getXPathString("string(./architecture)", ctxt);
+      owner_id = getXPathString("string(./owner_id)", ctxt);
+      name = getXPathString("string(./name)", ctxt);
+      state = getXPathString("string(./state)", ctxt);
+
       listret = add_to_image_list(images, href, id, description, architecture,
 				  owner_id, name, state);
       SAFE_FREE(href);
@@ -1599,7 +1567,7 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				    void **data)
 {
   struct deltacloud_storage_volume **storage_volumes = (struct deltacloud_storage_volume **)data;
-  xmlNodePtr oldnode, storage_cur, mount_cur;
+  xmlNodePtr oldnode;
   int ret = -1;
   char *href = NULL, *id = NULL, *created = NULL, *state = NULL;
   struct deltacloud_storage_volume_capacity capacity;
@@ -1631,39 +1599,18 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       }
 
       ctxt->node = cur;
-      storage_cur = cur->children;
-      while (storage_cur != NULL) {
-	if (storage_cur->type == XML_ELEMENT_NODE) {
-	  if (STREQ((const char *)storage_cur->name, "created"))
-	    created = getXPathString("string(./created)", ctxt);
-	  else if (STREQ((const char *)storage_cur->name, "state"))
-	    state = getXPathString("string(./state)", ctxt);
-	  else if (STREQ((const char *)storage_cur->name, "capacity")) {
-	    capacity.unit = (char *)xmlGetProp(storage_cur, BAD_CAST "unit");
-	    capacity.size = getXPathString("string(./capacity)", ctxt);
-	  }
-	  else if (STREQ((const char *)storage_cur->name, "device"))
-	    device = getXPathString("string(./device)", ctxt);
-	  else if (STREQ((const char *)storage_cur->name, "instance"))
-	    instance_href = (char *)xmlGetProp(storage_cur, BAD_CAST "href");
-	  else if (STREQ((const char *)storage_cur->name, "realm_id"))
-	    realm_id = getXPathString("string(./realm_id)", ctxt);
-	  else if (STREQ((const char *)storage_cur->name, "mount")) {
-	    mount_cur = storage_cur->children;
-	    while (mount_cur != NULL) {
-	      if (STREQ((const char *)mount_cur->name, "instance")) {
-		mount.instance_href = (char *)xmlGetProp(mount_cur, BAD_CAST "href");
-		mount.instance_id = (char *)xmlGetProp(mount_cur, BAD_CAST "id");
-	      }
-	      else if (STREQ((const char *)mount_cur->name, "device"))
-		mount.device_name = (char *)xmlGetProp(mount_cur, BAD_CAST "name");
+      created = getXPathString("string(./created)", ctxt);
+      state = getXPathString("string(./state)", ctxt);
+      capacity.unit = getXPathString("string(./capacity/@unit)", ctxt);
+      capacity.size = getXPathString("string(./capacity)", ctxt);
+      device = getXPathString("string(./device)", ctxt);
+      instance_href = getXPathString("string(./instance/@href)", ctxt);
+      realm_id = getXPathString("string(./realm_id)", ctxt);
+      mount.instance_href = getXPathString("string(./mount/instance/@href)",
+					   ctxt);
+      mount.instance_id = getXPathString("string(./mount/instance/@id)", ctxt);
+      mount.device_name = getXPathString("string(./mount/device/@name)", ctxt);
 
-	      mount_cur = mount_cur->next;
-	    }
-	  }
-	}
-	storage_cur = storage_cur->next;
-      }
       listret = add_to_storage_volume_list(storage_volumes, href, id, created,
 					   state, &capacity, device,
 					   instance_href, realm_id, &mount);
@@ -1810,7 +1757,7 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 {
   struct deltacloud_storage_snapshot **storage_snapshots = (struct deltacloud_storage_snapshot **)data;
   int ret = -1;
-  xmlNodePtr oldnode, snap_cur;
+  xmlNodePtr oldnode;
   char *href = NULL, *id = NULL, *created = NULL, *state = NULL;
   char *storage_volume_href = NULL, *storage_volume_id = NULL;
   int listret;
@@ -1836,20 +1783,12 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       }
 
       ctxt->node = cur;
-      snap_cur = cur->children;
-      while (snap_cur != NULL) {
-	if (snap_cur->type == XML_ELEMENT_NODE) {
-	  if (STREQ((const char *)snap_cur->name, "created"))
-	    created = getXPathString("string(./created)", ctxt);
-	  else if (STREQ((const char *)snap_cur->name, "state"))
-	    state = getXPathString("string(./state)", ctxt);
-	  else if (STREQ((const char *)snap_cur->name, "storage_volume")) {
-	    storage_volume_href = (char *)xmlGetProp(snap_cur, BAD_CAST "href");
-	    storage_volume_id = (char *)xmlGetProp(snap_cur, BAD_CAST "id");
-	  }
-	}
-	snap_cur = snap_cur->next;
-      }
+      created = getXPathString("string(./created)", ctxt);
+      state = getXPathString("string(./state)", ctxt);
+      storage_volume_href = getXPathString("string(./storage_volume/@href)",
+					   ctxt);
+      storage_volume_id = getXPathString("string(./storage_volume/@id)", ctxt);
+
       listret = add_to_storage_snapshot_list(storage_snapshots, href, id,
 					     created, state,
 					     storage_volume_href,
