@@ -39,6 +39,8 @@ libdeltacloud_la_SOURCES =			\
   storage_volume.c                      	\
   include/libdeltacloud/key.h			\
   key.c						\
+  include/libdeltacloud/driver.h		\
+  driver.c					\
   libdeltacloud.syms
 
 rpm: clean dist

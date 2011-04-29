@@ -23,6 +23,30 @@
 #include <string.h>
 #include "libdeltacloud.h"
 
+static void print_provider(struct deltacloud_driver_provider *provider)
+{
+  fprintf(stderr, "\tProvider: %s\n", provider->id);
+}
+
+static void print_driver(struct deltacloud_driver *driver)
+{
+  struct deltacloud_driver_provider *provider;
+
+  fprintf(stderr, "Driver %s\n", driver->id);
+  fprintf(stderr, "\tHref: %s\n", driver->href);
+  fprintf(stderr, "\tName: %s\n", driver->name);
+  deltacloud_for_each(provider, driver->providers)
+    print_provider(provider);
+}
+
+static void print_driver_list(struct deltacloud_driver *drivers)
+{
+  struct deltacloud_driver *driver;
+
+  deltacloud_for_each(driver, drivers)
+    print_driver(driver);
+}
+
 static void print_key(struct deltacloud_key *key)
 {
   fprintf(stderr, "Key %s\n", key->id);
@@ -250,6 +274,8 @@ int main(int argc, char *argv[])
   struct deltacloud_storage_snapshot storage_snapshot;
   struct deltacloud_key *keys;
   struct deltacloud_key key;
+  struct deltacloud_driver *drivers;
+  struct deltacloud_driver driver;
   char *instid;
   struct deltacloud_create_parameter stackparams[2];
   struct deltacloud_create_parameter *heapparams[2];
@@ -267,6 +293,28 @@ int main(int argc, char *argv[])
     return 2;
   }
   print_api(&api);
+
+  fprintf(stderr, "---------------DRIVERS-------------------------\n");
+  if (deltacloud_get_drivers(&api, &drivers) < 0) {
+    fprintf(stderr, "Failed to get drivers: %s\n",
+	    deltacloud_get_last_error_string());
+    goto cleanup;
+  }
+  print_driver_list(drivers);
+
+  if (drivers != NULL) {
+    /* here we use the first driver from the list above */
+    if (deltacloud_get_driver_by_id(&api, drivers->id, &driver) < 0) {
+      fprintf(stderr, "Failed to get driver: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_free_driver_list(&drivers);
+      goto cleanup;
+    }
+    print_driver(&driver);
+    deltacloud_free_driver(&driver);
+  }
+
+  deltacloud_free_driver_list(&drivers);
 
   fprintf(stderr, "--------------HARDWARE PROFILES--------------\n");
   if (deltacloud_get_hardware_profiles(&api, &profiles) < 0) {

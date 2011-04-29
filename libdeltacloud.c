@@ -2172,6 +2172,185 @@ int deltacloud_key_destroy(struct deltacloud_api *api,
   return internal_destroy(key->href, api->user, api->password);
 }
 
+static int parse_driver_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			    void **data)
+{
+  struct deltacloud_driver **drivers = (struct deltacloud_driver **)data;
+  int ret = -1;
+  char *href = NULL, *id = NULL, *name = NULL, *provider_id;
+  xmlNodePtr oldnode, providernode;
+  struct deltacloud_driver_provider *providers = NULL;
+  int listret;
+
+  oldnode = ctxt->node;
+
+  while (cur != NULL) {
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "driver")) {
+      href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      if (href == NULL) {
+	xml_error("key", "Failed to parse XML", "did not see href property");
+	goto cleanup;
+      }
+
+      id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      if (id == NULL) {
+	xml_error("key", "Failed to parse XML", "did not see id property");
+	SAFE_FREE(href);
+	goto cleanup;
+      }
+
+      ctxt->node = cur;
+      name = getXPathString("string(./name)", ctxt);
+
+      providernode = cur->children;
+      while (providernode != NULL) {
+	if (providernode->type == XML_ELEMENT_NODE &&
+	    STREQ((const char *)providernode->name, "provider")) {
+	  provider_id = (char *)xmlGetProp(providernode, BAD_CAST "id");
+
+	  listret = add_to_provider_list(&providers, provider_id);
+	  SAFE_FREE(provider_id);
+	  if (listret < 0) {
+	    free_provider_list(&providers);
+	    oom_error();
+	    goto cleanup;
+	  }
+	}
+	providernode = providernode->next;
+      }
+
+      listret = add_to_driver_list(drivers, href, id, name, providers);
+      SAFE_FREE(href);
+      SAFE_FREE(id);
+      SAFE_FREE(name);
+      free_provider_list(&providers);
+      if (listret < 0) {
+	oom_error();
+	goto cleanup;
+      }
+    }
+    cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  ctxt->node = oldnode;
+  if (ret < 0)
+    deltacloud_free_driver_list(drivers);
+
+  return ret;
+}
+
+int deltacloud_get_drivers(struct deltacloud_api *api,
+			   struct deltacloud_driver **drivers)
+{
+  struct deltacloud_link *thislink;
+  char *data = NULL;
+  int ret = -1;
+
+  if (!valid_arg(api) || !valid_arg(drivers))
+    return -1;
+
+  thislink = find_by_rel_in_link_list(&api->links, "drivers");
+  if (thislink == NULL) {
+    link_error("drivers");
+    return -1;
+  }
+
+  if (get_url(thislink->href, api->user, api->password, &data) != 0)
+    /* get_url sets its own errors, so don't overwrite it here */
+    return -1;
+
+  if (data == NULL) {
+    /* if we made it here, it means that the transfer was successful (ret
+     * was 0), but the data that we expected wasn't returned.  This is probably
+     * a deltacloud server bug, so just set an error and bail out
+     */
+    set_error(DELTACLOUD_GET_URL_ERROR,
+	      "Expected driver data, received nothing");
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
+  *drivers = NULL;
+  if (parse_xml(data, "drivers", (void **)drivers, parse_driver_xml, 1) < 0)
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(data);
+
+  return ret;
+}
+
+int deltacloud_get_driver_by_id(struct deltacloud_api *api, const char *id,
+				struct deltacloud_driver *driver)
+{
+  char *url = NULL;
+  char *data = NULL;
+  char *safeid;
+  struct deltacloud_driver *tmpdriver = NULL;
+  int ret = -1;
+
+  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(driver))
+    return -1;
+
+  safeid = curl_escape(id, 0);
+  if (safeid == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  if (asprintf(&url, "%s/drivers/%s", api->url, safeid) < 0) {
+    oom_error();
+    goto cleanup;
+  }
+
+  if (get_url(url, api->user, api->password, &data) != 0)
+    /* get_url sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  if (data == NULL) {
+    /* if we made it here, it means that the transfer was successful (ret
+     * was 0), but the data that we expected wasn't returned.  This is probably
+     * a deltacloud server bug, so just set an error and bail out
+     */
+    set_error(DELTACLOUD_GET_URL_ERROR,
+	      "Expected driver data, received nothing");
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
+  if (parse_xml(data, "driver", (void **)&tmpdriver, parse_driver_xml, 0) < 0)
+    goto cleanup;
+
+  if (copy_driver(driver, tmpdriver) < 0) {
+    oom_error();
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  deltacloud_free_driver_list(&tmpdriver);
+  SAFE_FREE(data);
+  SAFE_FREE(url);
+  curl_free(safeid);
+
+  return ret;
+}
+
 int deltacloud_prepare_parameter(struct deltacloud_create_parameter *param,
 				 const char *name, const char *value)
 {

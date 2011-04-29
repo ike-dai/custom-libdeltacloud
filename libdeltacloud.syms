@@ -21,6 +21,8 @@ LIBDELTACLOUD_7.0.0 {
 	deltacloud_create_instance;
 	deltacloud_create_key;
 	deltacloud_free;
+	deltacloud_get_drivers;
+	deltacloud_get_driver_by_id;
 	deltacloud_get_hardware_profiles;
 	deltacloud_get_hardware_profile_by_id;
 	deltacloud_get_images;
