@@ -571,35 +571,35 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
       ctxt->node = cur;
 
-      name = getXPathString("string(./name[1])", ctxt);
-      owner_id = getXPathString("string(./owner_id[1])", ctxt);
-      image_id = getXPathString("string(./image[1]/@id)", ctxt);
-      image_href = getXPathString("string(./image[1]/@href)", ctxt);
-      realm_id = getXPathString("string(./realm[1]/@id)", ctxt);
-      realm_href = getXPathString("string(./realm[1]/@href)", ctxt);
-      state = getXPathString("string(./state[1])", ctxt);
+      name = getXPathString("string(./name)", ctxt);
+      owner_id = getXPathString("string(./owner_id)", ctxt);
+      image_id = getXPathString("string(./image/@id)", ctxt);
+      image_href = getXPathString("string(./image/@href)", ctxt);
+      realm_id = getXPathString("string(./realm/@id)", ctxt);
+      realm_href = getXPathString("string(./realm/@href)", ctxt);
+      state = getXPathString("string(./state)", ctxt);
 
-      hwpset = xmlXPathEval(BAD_CAST "./hardware_profile[1]", ctxt);
+      hwpset = xmlXPathEval(BAD_CAST "./hardware_profile", ctxt);
       if (hwpset && hwpset->type == XPATH_NODESET && hwpset->nodesetval &&
 	  hwpset->nodesetval->nodeNr == 1)
 	parse_hardware_profile_xml(hwpset->nodesetval->nodeTab[0], ctxt,
 				   (void **)&hwp);
       xmlXPathFreeObject(hwpset);
 
-      actionset = xmlXPathEval(BAD_CAST "./actions[1]", ctxt);
+      actionset = xmlXPathEval(BAD_CAST "./actions", ctxt);
       if (actionset && actionset->type == XPATH_NODESET &&
 	  actionset->nodesetval && actionset->nodesetval->nodeNr == 1)
 	actions = parse_actions_xml(actionset->nodesetval->nodeTab[0]);
       xmlXPathFreeObject(actionset);
 
-      pubset = xmlXPathEval(BAD_CAST "./public_addresses[1]", ctxt);
+      pubset = xmlXPathEval(BAD_CAST "./public_addresses", ctxt);
       if (pubset && pubset->type == XPATH_NODESET && pubset->nodesetval &&
 	  pubset->nodesetval->nodeNr == 1)
 	public_addresses = parse_addresses_xml(pubset->nodesetval->nodeTab[0],
 					       ctxt);
       xmlXPathFreeObject(pubset);
 
-      privset = xmlXPathEval(BAD_CAST "./private_addresses[1]", ctxt);
+      privset = xmlXPathEval(BAD_CAST "./private_addresses", ctxt);
       if (privset && privset->type == XPATH_NODESET && privset->nodesetval &&
 	  privset->nodesetval->nodeNr == 1)
 	private_addresses = parse_addresses_xml(privset->nodesetval->nodeTab[0],
