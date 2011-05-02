@@ -31,7 +31,7 @@
 #include "curl_action.h"
 
 /***************** ERROR HANDLING ROUTINES ***************************/
-/* On fist initialization of the library we setup a per-thread local
+/* On first initialization of the library we setup a per-thread local
  * variable to hold errors.  If one of the API calls subsequently fails,
  * then we set the per-thread variable with details of the failure.
  */
@@ -240,6 +240,7 @@ static int is_error_xml(const char *xml)
 {
   return STRPREFIX(xml, "<error");
 }
+
 static void set_xml_error(const char *xml, int type)
 {
   char *errmsg = NULL;
