@@ -66,8 +66,6 @@ void free_address_list(struct deltacloud_address **addresses);
 
 int add_to_action_list(struct deltacloud_action **actions, const char *rel,
 		       const char *href, const char *method);
-struct deltacloud_action *find_by_rel_in_action_list(struct deltacloud_action **actions,
-						     const char *rel);
 void free_action_list(struct deltacloud_action **actions);
 
 int add_to_instance_list(struct deltacloud_instance **instances,

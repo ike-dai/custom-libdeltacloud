@@ -108,21 +108,6 @@ int add_to_action_list(struct deltacloud_action **actions, const char *rel,
   return -1;
 }
 
-struct deltacloud_action *find_by_rel_in_action_list(struct deltacloud_action **actions,
-						     const char *rel)
-{
-  struct deltacloud_action *curr;
-
-  curr = *actions;
-  while (curr != NULL) {
-    if (STREQ(curr->rel, rel))
-      return curr;
-    curr = curr->next;
-  }
-
-  return NULL;
-}
-
 static int copy_action(struct deltacloud_action **dst,
 		       struct deltacloud_action *curr)
 {

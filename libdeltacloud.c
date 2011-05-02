@@ -2027,7 +2027,7 @@ static int instance_action(struct deltacloud_api *api,
 			   struct deltacloud_instance *instance,
 			   const char *action_name)
 {
-  struct deltacloud_action *act;
+  struct deltacloud_action *act = NULL;
   char *data = NULL;
   int ret = -1;
 
@@ -2038,7 +2038,10 @@ static int instance_action(struct deltacloud_api *api,
    * external API
    */
 
-  act = find_by_rel_in_action_list(&instance->actions, action_name);
+  deltacloud_for_each(act, instance->actions) {
+    if (STREQ(act->rel, action_name))
+      break;
+  }
   if (act == NULL) {
     link_error(action_name);
     return -1;
