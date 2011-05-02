@@ -557,14 +557,15 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
   return ret;
 }
 
-static struct deltacloud_address *parse_addresses_xml(xmlNodePtr instance,
-						      xmlXPathContextPtr ctxt)
+static int parse_addresses_xml(xmlNodePtr instance, xmlXPathContextPtr ctxt,
+			       struct deltacloud_address **addresses)
 {
   xmlNodePtr oldnode, cur;
-  struct deltacloud_address *addresses = NULL;
   char *address = NULL;
-  int failed = 1;
   int listret;
+  int ret = -1;
+
+  *addresses = NULL;
 
   oldnode = ctxt->node;
 
@@ -575,7 +576,7 @@ static struct deltacloud_address *parse_addresses_xml(xmlNodePtr instance,
 	STREQ((const char *)cur->name, "address")) {
       address = getXPathString("string(./address)", ctxt);
       if (address != NULL) {
-	listret = add_to_address_list(&addresses, address);
+	listret = add_to_address_list(addresses, address);
 	SAFE_FREE(address);
 	if (listret < 0) {
 	  oom_error();
@@ -587,23 +588,22 @@ static struct deltacloud_address *parse_addresses_xml(xmlNodePtr instance,
     cur = cur->next;
   }
 
-  failed = 0;
+  ret = 0;
 
  cleanup:
   ctxt->node = oldnode;
+  if (ret < 0)
+    free_address_list(addresses);
 
-  if (failed)
-    free_address_list(&addresses);
-
-  return addresses;
+  return ret;
 }
 
-static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
+static int parse_actions_xml(xmlNodePtr instance,
+			     struct deltacloud_action **actions)
 {
   xmlNodePtr cur;
-  struct deltacloud_action *actions = NULL;
   char *rel = NULL, *href = NULL, *method = NULL;
-  int failed = 1;
+  int ret = -1;
   int listret;
 
   cur = instance->children;
@@ -626,7 +626,7 @@ static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
 
       method = (char *)xmlGetProp(cur, BAD_CAST "method");
 
-      listret = add_to_action_list(&actions, rel, href, method);
+      listret = add_to_action_list(actions, rel, href, method);
       SAFE_FREE(href);
       SAFE_FREE(rel);
       SAFE_FREE(method);
@@ -638,13 +638,13 @@ static struct deltacloud_action *parse_actions_xml(xmlNodePtr instance)
     cur = cur->next;
   }
 
-  failed = 0;
+  ret = 0;
 
  cleanup:
-  if (failed)
-    free_action_list(&actions);
+  if (ret < 0)
+    free_action_list(actions);
 
-  return actions;
+  return ret;
 }
 
 static int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
@@ -705,21 +705,21 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       actionset = xmlXPathEval(BAD_CAST "./actions", ctxt);
       if (actionset && actionset->type == XPATH_NODESET &&
 	  actionset->nodesetval && actionset->nodesetval->nodeNr == 1)
-	actions = parse_actions_xml(actionset->nodesetval->nodeTab[0]);
+	parse_actions_xml(actionset->nodesetval->nodeTab[0], &actions);
       xmlXPathFreeObject(actionset);
 
       pubset = xmlXPathEval(BAD_CAST "./public_addresses", ctxt);
       if (pubset && pubset->type == XPATH_NODESET && pubset->nodesetval &&
 	  pubset->nodesetval->nodeNr == 1)
-	public_addresses = parse_addresses_xml(pubset->nodesetval->nodeTab[0],
-					       ctxt);
+	parse_addresses_xml(pubset->nodesetval->nodeTab[0], ctxt,
+			    &public_addresses);
       xmlXPathFreeObject(pubset);
 
       privset = xmlXPathEval(BAD_CAST "./private_addresses", ctxt);
       if (privset && privset->type == XPATH_NODESET && privset->nodesetval &&
 	  privset->nodesetval->nodeNr == 1)
-	private_addresses = parse_addresses_xml(privset->nodesetval->nodeTab[0],
-						ctxt);
+	parse_addresses_xml(privset->nodesetval->nodeTab[0], ctxt,
+			    &private_addresses);
       xmlXPathFreeObject(privset);
 
       listret = add_to_instance_list(instances, href, id, name, owner_id,
