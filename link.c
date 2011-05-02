@@ -105,21 +105,6 @@ int add_to_link_list(struct deltacloud_link **links, char *href, char *rel,
   return -1;
 }
 
-struct deltacloud_link *find_by_rel_in_link_list(struct deltacloud_link **links,
-						 char *rel)
-{
-  struct deltacloud_link *curr;
-
-  curr = *links;
-  while (curr != NULL) {
-    if (STREQ(curr->rel, rel))
-      return curr;
-    curr = curr->next;
-  }
-
-  return NULL;
-}
-
 void free_link_list(struct deltacloud_link **links)
 {
   free_list(links, struct deltacloud_link, free_link);

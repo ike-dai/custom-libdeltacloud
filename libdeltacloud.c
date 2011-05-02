@@ -82,6 +82,21 @@ static void link_error(const char *name)
     SAFE_FREE(tmp);
 }
 
+static void data_error(const char *name)
+{
+  char *tmp;
+  int alloc_fail = 0;
+
+  if (asprintf(&tmp, "Expected %s data, received nothing", name) < 0) {
+    tmp = "Expected data, received nothing";
+    alloc_fail = 1;
+  }
+
+  set_error(DELTACLOUD_GET_URL_ERROR, tmp);
+  if (!alloc_fail)
+    SAFE_FREE(tmp);
+}
+
 static void find_by_name_error(const char *name, const char *type)
 {
   char *tmp;
@@ -350,11 +365,70 @@ static int internal_destroy(const char *href, const char *user,
     set_xml_error(data, DELTACLOUD_DELETE_URL_ERROR);
     goto cleanup;
   }
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(data);
+
+  return ret;
+}
+
+/*
+ * An internal function for fetching all of the elements of a particular
+ * type.  Note that although relname and rootname is the same for almost
+ * all types, there are a couple of them that don't conform to this pattern.
+ */
+static int internal_get(struct deltacloud_api *api, const char *relname,
+			const char *rootname,
+			int (*xml_cb)(xmlNodePtr, xmlXPathContextPtr, void **),
+			void **output)
+{
+  struct deltacloud_link *thislink = NULL;
+  char *data = NULL;
+  int ret = -1;
+
+  /* we only check api and output here, as those are the only parameters from
+   * the user
+   */
+  if (!valid_arg(api) || !valid_arg(output))
+    return -1;
+
+  deltacloud_for_each(thislink, api->links) {
+    if (STREQ(thislink->rel, relname))
+      break;
+  }
+  if (thislink == NULL) {
+    link_error(relname);
+    return -1;
+  }
+
+  if (get_url(thislink->href, api->user, api->password, &data) != 0)
+    /* get_url sets its own errors, so don't overwrite it here */
+    return -1;
+
+  if (data == NULL) {
+    /* if we made it here, it means that the transfer was successful (ret
+     * was 0), but the data that we expected wasn't returned.  This is probably
+     * a deltacloud server bug, so just set an error and bail out
+     */
+    data_error(relname);
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
+  *output = NULL;
+  if (parse_xml(data, rootname, output, xml_cb, 1) < 0)
+    goto cleanup;
 
   ret = 0;
 
  cleanup:
   SAFE_FREE(data);
+
   return ret;
 }
 
@@ -652,49 +726,8 @@ static int parse_one_instance(const char *data,
 int deltacloud_get_instances(struct deltacloud_api *api,
 			     struct deltacloud_instance **instances)
 {
-  struct deltacloud_link *thislink;
-  char *data = NULL;
-  int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(instances))
-    return -1;
-
-  thislink = find_by_rel_in_link_list(&api->links, "instances");
-  if (thislink == NULL) {
-    link_error("instances");
-    return -1;
-  }
-
-  if (get_url(thislink->href, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    return -1;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected instance data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
-
-  *instances = NULL;
-  if (parse_xml(data, "instances", (void **)instances,
-		parse_instance_xml, 1) < 0)
-    goto cleanup;
-
-  ret = 0;
-
- cleanup:
-  SAFE_FREE(data);
-
-  return ret;
+  return internal_get(api, "instances", "instances", parse_instance_xml,
+		      (void **)instances);
 }
 
 int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
@@ -812,48 +845,8 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 int deltacloud_get_realms(struct deltacloud_api *api,
 			  struct deltacloud_realm **realms)
 {
-  struct deltacloud_link *thislink;
-  char *data = NULL;
-  int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(realms))
-    return -1;
-
-  thislink = find_by_rel_in_link_list(&api->links, "realms");
-  if (thislink == NULL) {
-    link_error("realms");
-    return -1;
-  }
-
-  if (get_url(thislink->href, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    return -1;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected realm data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
-
-  *realms = NULL;
-  if (parse_xml(data, "realms", (void **)realms, parse_realm_xml, 1) < 0)
-    goto cleanup;
-
-  ret = 0;
-
- cleanup:
-  SAFE_FREE(data);
-
-  return ret;
+  return internal_get(api, "realms", "realms", parse_realm_xml,
+		      (void **)realms);
 }
 
 int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
@@ -1150,49 +1143,8 @@ static int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
 				     struct deltacloud_hardware_profile **profiles)
 {
-  struct deltacloud_link *thislink;
-  char *data = NULL;
-  int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(profiles))
-    return -1;
-
-  thislink = find_by_rel_in_link_list(&api->links, "hardware_profiles");
-  if (thislink == NULL) {
-    link_error("hardware_profiles");
-    return -1;
-  }
-
-  if (get_url(thislink->href, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    return -1;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected hardware profile data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
-
-  *profiles = NULL;
-  if (parse_xml(data, "hardware_profiles", (void **)profiles,
-		parse_hardware_profile_xml, 1) < 0)
-    goto cleanup;
-
-  ret = 0;
-
- cleanup:
-  SAFE_FREE(data);
-
-  return ret;
+  return internal_get(api, "hardware_profiles", "hardware_profiles",
+		      parse_hardware_profile_xml, (void **)profiles);
 }
 
 int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
@@ -1323,48 +1275,8 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 int deltacloud_get_images(struct deltacloud_api *api,
 			  struct deltacloud_image **images)
 {
-  struct deltacloud_link *thislink;
-  char *data = NULL;
-  int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(images))
-    return -1;
-
-  thislink = find_by_rel_in_link_list(&api->links, "images");
-  if (thislink == NULL) {
-    link_error("images");
-    return -1;
-  }
-
-  if (get_url(thislink->href, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    return -1;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected image data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
-
-  *images = NULL;
-  if (parse_xml(data, "images", (void **)images, parse_image_xml, 1) < 0)
-    goto cleanup;
-
-  ret = 0;
-
- cleanup:
-  SAFE_FREE(data);
-
-  return ret;
+  return internal_get(api, "images", "images", parse_image_xml,
+		      (void **)images);
 }
 
 int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
@@ -1481,49 +1393,8 @@ static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 int deltacloud_get_instance_states(struct deltacloud_api *api,
 				   struct deltacloud_instance_state **instance_states)
 {
-  struct deltacloud_link *thislink;
-  char *data = NULL;
-  int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(instance_states))
-    return -1;
-
-  thislink = find_by_rel_in_link_list(&api->links, "instance_states");
-  if (thislink == NULL) {
-    link_error("instance_states");
-    return -1;
-  }
-
-  if (get_url(thislink->href, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    return -1;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected instance state data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
-
-  *instance_states = NULL;
-  if (parse_xml(data, "states", (void **)instance_states,
-		parse_instance_state_xml, 1) < 0)
-    goto cleanup;
-
-  ret = 0;
-
- cleanup:
-  SAFE_FREE(data);
-
-  return ret;
+  return internal_get(api, "instance_states", "states",
+		      parse_instance_state_xml, (void **)instance_states);
 }
 
 int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
@@ -1644,49 +1515,8 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 int deltacloud_get_storage_volumes(struct deltacloud_api *api,
 				   struct deltacloud_storage_volume **storage_volumes)
 {
-  struct deltacloud_link *thislink;
-  char *data = NULL;
-  int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(storage_volumes))
-    return -1;
-
-  thislink = find_by_rel_in_link_list(&api->links, "storage_volumes");
-  if (thislink == NULL) {
-    link_error("storage_volumes");
-    return -1;
-  }
-
-  if (get_url(thislink->href, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    return -1;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected storage volume data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
-
-  *storage_volumes = NULL;
-  if (parse_xml(data, "storage_volumes", (void **)storage_volumes,
-		parse_storage_volume_xml, 1) < 0)
-    goto cleanup;
-
-  ret = 0;
-
- cleanup:
-  SAFE_FREE(data);
-
-  return ret;
+  return internal_get(api, "storage_volumes", "storage_volumes",
+		      parse_storage_volume_xml, (void **)storage_volumes);
 }
 
 int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
@@ -1820,49 +1650,8 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
 				     struct deltacloud_storage_snapshot **storage_snapshots)
 {
-  struct deltacloud_link *thislink;
-  char *data = NULL;
-  int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(storage_snapshots))
-    return -1;
-
-  thislink = find_by_rel_in_link_list(&api->links, "storage_snapshots");
-  if (thislink == NULL) {
-    link_error("storage_snapshots");
-    return -1;
-  }
-
-  if (get_url(thislink->href, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    return -1;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected storage snapshot data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
-
-  *storage_snapshots = NULL;
-  if (parse_xml(data, "storage_snapshots", (void **)storage_snapshots,
-		parse_storage_snapshot_xml, 1) < 0)
-    goto cleanup;
-
-  ret = 0;
-
- cleanup:
-  SAFE_FREE(data);
-
-  return ret;
+  return internal_get(api, "storage_snapshots", "storage_snapshots",
+		      parse_storage_snapshot_xml, (void **)storage_snapshots);
 }
 
 int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
@@ -1994,47 +1783,7 @@ static int parse_key_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 int deltacloud_get_keys(struct deltacloud_api *api,
 			struct deltacloud_key **keys)
 {
-  struct deltacloud_link *thislink;
-  char *data = NULL;
-  int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(keys))
-    return -1;
-
-  thislink = find_by_rel_in_link_list(&api->links, "keys");
-  if (thislink == NULL) {
-    link_error("keys");
-    return -1;
-  }
-
-  if (get_url(thislink->href, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    return -1;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR, "Expected key data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
-
-  *keys = NULL;
-  if (parse_xml(data, "keys", (void **)keys, parse_key_xml, 1) < 0)
-    goto cleanup;
-
-  ret = 0;
-
- cleanup:
-  SAFE_FREE(data);
-
-  return ret;
+  return internal_get(api, "keys", "keys", parse_key_xml, (void **)keys);
 }
 
 int deltacloud_get_key_by_id(struct deltacloud_api *api, const char *id,
@@ -2246,48 +1995,8 @@ static int parse_driver_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 int deltacloud_get_drivers(struct deltacloud_api *api,
 			   struct deltacloud_driver **drivers)
 {
-  struct deltacloud_link *thislink;
-  char *data = NULL;
-  int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(drivers))
-    return -1;
-
-  thislink = find_by_rel_in_link_list(&api->links, "drivers");
-  if (thislink == NULL) {
-    link_error("drivers");
-    return -1;
-  }
-
-  if (get_url(thislink->href, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    return -1;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected driver data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
-
-  *drivers = NULL;
-  if (parse_xml(data, "drivers", (void **)drivers, parse_driver_xml, 1) < 0)
-    goto cleanup;
-
-  ret = 0;
-
- cleanup:
-  SAFE_FREE(data);
-
-  return ret;
+  return internal_get(api, "drivers", "drivers", parse_driver_xml,
+		      (void **)drivers);
 }
 
 int deltacloud_get_driver_by_id(struct deltacloud_api *api, const char *id,
@@ -2454,7 +2163,10 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   if (!valid_arg(api) || !valid_arg(image_id))
     return -1;
 
-  thislink = find_by_rel_in_link_list(&api->links, "instances");
+  deltacloud_for_each(thislink, api->links) {
+    if (STREQ(thislink->rel, "instances"))
+      break;
+  }
   if (thislink == NULL) {
     link_error("instances");
     return -1;
