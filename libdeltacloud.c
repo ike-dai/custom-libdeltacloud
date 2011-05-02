@@ -433,6 +433,64 @@ static int internal_get(struct deltacloud_api *api, const char *relname,
   return ret;
 }
 
+static int internal_get_by_id(struct deltacloud_api *api, const char *id,
+			      const char *name,
+			      int (*parse_cb)(const char *, void *),
+			      void *output)
+{
+  char *url = NULL;
+  char *data = NULL;
+  char *safeid;
+  int ret = -1;
+
+  /* we only check api, id, and output here, as those are the only parameters
+   * from the user
+   */
+  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(output))
+    return -1;
+
+  safeid = curl_escape(id, 0);
+  if (safeid == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  if (asprintf(&url, "%s/%s/%s", api->url, name, safeid) < 0) {
+    oom_error();
+    goto cleanup;
+  }
+
+  if (get_url(url, api->user, api->password, &data) != 0)
+    /* get_url sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  if (data == NULL) {
+    /* if we made it here, it means that the transfer was successful (ret
+     * was 0), but the data that we expected wasn't returned.  This is probably
+     * a deltacloud server bug, so just set an error and bail out
+     */
+    data_error(name);
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
+  if (parse_cb(data, output) < 0)
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(data);
+  SAFE_FREE(url);
+  curl_free(safeid);
+
+  return ret;
+}
+
 int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 			  char *password)
 {
@@ -701,10 +759,17 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
-static int parse_one_instance(const char *data,
-			      struct deltacloud_instance *newinstance)
+int deltacloud_get_instances(struct deltacloud_api *api,
+			     struct deltacloud_instance **instances)
+{
+  return internal_get(api, "instances", "instances", parse_instance_xml,
+		      (void **)instances);
+}
+
+static int parse_one_instance(const char *data, void *output)
 {
   int ret = -1;
+  struct deltacloud_instance *newinstance = (struct deltacloud_instance *)output;
   struct deltacloud_instance *tmpinstance = NULL;
 
   if (parse_xml(data, "instance", (void **)&tmpinstance,
@@ -724,66 +789,10 @@ static int parse_one_instance(const char *data,
   return ret;
 }
 
-int deltacloud_get_instances(struct deltacloud_api *api,
-			     struct deltacloud_instance **instances)
-{
-  return internal_get(api, "instances", "instances", parse_instance_xml,
-		      (void **)instances);
-}
-
 int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
 				  struct deltacloud_instance *instance)
 {
-  char *url = NULL;
-  char *data = NULL;
-  char *safeid;
-  int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(instance))
-    return -1;
-
-  safeid = curl_escape(id, 0);
-  if (safeid == NULL) {
-    oom_error();
-    return -1;
-  }
-
-  if (asprintf(&url, "%s/instances/%s", api->url, safeid) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  if (get_url(url, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    goto cleanup;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected instance data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
-
-  memset(instance, 0, sizeof(struct deltacloud_instance));
-  if (parse_one_instance(data, instance) < 0)
-    goto cleanup;
-
-  ret = 0;
-
- cleanup:
-  SAFE_FREE(data);
-  SAFE_FREE(url);
-  curl_free(safeid);
-
-  return ret;
+  return internal_get_by_id(api, id, "instances", parse_one_instance, instance);
 }
 
 static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
@@ -850,52 +859,16 @@ int deltacloud_get_realms(struct deltacloud_api *api,
 		      (void **)realms);
 }
 
-int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
-			       struct deltacloud_realm *realm)
+static int parse_one_realm(const char *data, void *output)
 {
-  char *url = NULL;
-  char *data = NULL;
-  char *safeid;
-  struct deltacloud_realm *tmprealm = NULL;
   int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(realm))
-    return -1;
-
-  safeid = curl_escape(id, 0);
-  if (safeid == NULL) {
-    oom_error();
-    return -1;
-  }
-
-  if (asprintf(&url, "%s/realms/%s", api->url, safeid) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  if (get_url(url, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    goto cleanup;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected realm data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
+  struct deltacloud_realm *newrealm = (struct deltacloud_realm *)output;
+  struct deltacloud_realm *tmprealm = NULL;
 
   if (parse_xml(data, "realm", (void **)&tmprealm, parse_realm_xml, 0) < 0)
     goto cleanup;
 
-  if (copy_realm(realm, tmprealm) < 0) {
+  if (copy_realm(newrealm, tmprealm) < 0) {
     oom_error();
     goto cleanup;
   }
@@ -904,11 +877,14 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
 
  cleanup:
   deltacloud_free_realm_list(&tmprealm);
-  SAFE_FREE(data);
-  SAFE_FREE(url);
-  curl_free(safeid);
 
   return ret;
+}
+
+int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
+			       struct deltacloud_realm *realm)
+{
+  return internal_get_by_id(api, id, "realms", parse_one_realm, realm);
 }
 
 static struct deltacloud_property_range *parse_hardware_profile_ranges(xmlNodePtr property)
@@ -1148,54 +1124,17 @@ int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
 		      parse_hardware_profile_xml, (void **)profiles);
 }
 
-int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
-					  const char *id,
-					  struct deltacloud_hardware_profile *profile)
+static int parse_one_hwp(const char *data, void *output)
 {
-  char *url = NULL;
-  char *data = NULL;
-  char *safeid;
-  struct deltacloud_hardware_profile *tmpprofile = NULL;
   int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(profile))
-    return -1;
-
-  safeid = curl_escape(id, 0);
-  if (safeid == NULL) {
-    oom_error();
-    return -1;
-  }
-
-  if (asprintf(&url, "%s/hardware_profiles/%s", api->url, safeid) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  if (get_url(url, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    goto cleanup;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected hardware profile data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
+  struct deltacloud_hardware_profile *newprofile = (struct deltacloud_hardware_profile *)output;
+  struct deltacloud_hardware_profile *tmpprofile = NULL;
 
   if (parse_xml(data, "hardware_profile", (void **)&tmpprofile,
 		parse_hardware_profile_xml, 0) < 0)
     goto cleanup;
 
-  if (copy_hardware_profile(profile, tmpprofile) < 0) {
+  if (copy_hardware_profile(newprofile, tmpprofile) < 0) {
     oom_error();
     goto cleanup;
   }
@@ -1204,11 +1143,16 @@ int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
 
  cleanup:
   deltacloud_free_hardware_profile_list(&tmpprofile);
-  SAFE_FREE(data);
-  SAFE_FREE(url);
-  curl_free(safeid);
 
   return ret;
+}
+
+int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
+					  const char *id,
+					  struct deltacloud_hardware_profile *profile)
+{
+  return internal_get_by_id(api, id, "hardware_profiles", parse_one_hwp,
+			    profile);
 }
 
 static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
@@ -1280,52 +1224,16 @@ int deltacloud_get_images(struct deltacloud_api *api,
 		      (void **)images);
 }
 
-int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
-			       struct deltacloud_image *image)
+static int parse_one_image(const char *data, void *output)
 {
-  char *url = NULL;
-  char *data = NULL;
-  char *safeid;
-  struct deltacloud_image *tmpimage = NULL;
   int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(image))
-    return -1;
-
-  safeid = curl_escape(id, 0);
-  if (safeid == NULL) {
-    oom_error();
-    return -1;
-  }
-
-  if (asprintf(&url, "%s/images/%s", api->url, safeid) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  if (get_url(url, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    goto cleanup;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected image data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
+  struct deltacloud_image *newimage = (struct deltacloud_image *)output;
+  struct deltacloud_image *tmpimage = NULL;
 
   if (parse_xml(data, "image", (void **)&tmpimage, parse_image_xml, 0) < 0)
     goto cleanup;
 
-  if (copy_image(image, tmpimage) < 0) {
+  if (copy_image(newimage, tmpimage) < 0) {
     oom_error();
     goto cleanup;
   }
@@ -1334,11 +1242,14 @@ int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
 
  cleanup:
   deltacloud_free_image_list(&tmpimage);
-  SAFE_FREE(data);
-  SAFE_FREE(url);
-  curl_free(safeid);
 
   return ret;
+}
+
+int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
+			       struct deltacloud_image *image)
+{
+  return internal_get_by_id(api, id, "images", parse_one_image, image);
 }
 
 static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
@@ -1520,54 +1431,17 @@ int deltacloud_get_storage_volumes(struct deltacloud_api *api,
 		      parse_storage_volume_xml, (void **)storage_volumes);
 }
 
-int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
-					const char *id,
-					struct deltacloud_storage_volume *storage_volume)
+static int parse_one_storage_volume(const char *data, void *output)
 {
-  char *url = NULL;
-  char *data = NULL;
-  char *safeid;
-  struct deltacloud_storage_volume *tmpstorage_volume = NULL;
   int ret = -1;
+  struct deltacloud_storage_volume *newvolume = (struct deltacloud_storage_volume *)output;
+  struct deltacloud_storage_volume *tmpvolume = NULL;
 
-  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(storage_volume))
-    return -1;
-
-  safeid = curl_escape(id, 0);
-  if (safeid == NULL) {
-    oom_error();
-    return -1;
-  }
-
-  if (asprintf(&url, "%s/storage_volumes/%s", api->url, safeid) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  if (get_url(url, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    goto cleanup;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected storage volume data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
-
-  if (parse_xml(data, "storage_volume", (void **)&tmpstorage_volume,
+  if (parse_xml(data, "storage_volume", (void **)&tmpvolume,
 		parse_storage_volume_xml, 0) < 0)
     goto cleanup;
 
-  if (copy_storage_volume(storage_volume, tmpstorage_volume) < 0) {
+  if (copy_storage_volume(newvolume, tmpvolume) < 0) {
     oom_error();
     goto cleanup;
   }
@@ -1575,12 +1449,17 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
-  deltacloud_free_storage_volume_list(&tmpstorage_volume);
-  SAFE_FREE(data);
-  SAFE_FREE(url);
-  curl_free(safeid);
+  deltacloud_free_storage_volume_list(&tmpvolume);
 
   return ret;
+}
+
+int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
+					const char *id,
+					struct deltacloud_storage_volume *storage_volume)
+{
+  return internal_get_by_id(api, id, "storage_volumes",
+			    parse_one_storage_volume, storage_volume);
 }
 
 static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
@@ -1655,54 +1534,17 @@ int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
 		      parse_storage_snapshot_xml, (void **)storage_snapshots);
 }
 
-int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
-					  const char *id,
-					  struct deltacloud_storage_snapshot *storage_snapshot)
+static int parse_one_storage_snapshot(const char *data, void *output)
 {
-  char *url = NULL;
-  char *data = NULL;
-  char *safeid;
-  struct deltacloud_storage_snapshot *tmpstorage_snapshot = NULL;
   int ret = -1;
+  struct deltacloud_storage_snapshot *newsnapshot = (struct deltacloud_storage_snapshot *)output;
+  struct deltacloud_storage_snapshot *tmpsnapshot = NULL;
 
-  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(storage_snapshot))
-    return -1;
-
-  safeid = curl_escape(id, 0);
-  if (safeid == NULL) {
-    oom_error();
-    return -1;
-  }
-
-  if (asprintf(&url, "%s/storage_snapshots/%s", api->url, safeid) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  if (get_url(url, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    goto cleanup;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected storage snapshot data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
-
-  if (parse_xml(data, "storage_snapshot", (void **)&tmpstorage_snapshot,
+  if (parse_xml(data, "storage_snapshot", (void **)&tmpsnapshot,
 		parse_storage_snapshot_xml, 0) < 0)
     goto cleanup;
 
-  if (copy_storage_snapshot(storage_snapshot, tmpstorage_snapshot) < 0) {
+  if (copy_storage_snapshot(newsnapshot, tmpsnapshot) < 0) {
     oom_error();
     goto cleanup;
   }
@@ -1710,12 +1552,17 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
   ret = 0;
 
  cleanup:
-  deltacloud_free_storage_snapshot_list(&tmpstorage_snapshot);
-  SAFE_FREE(data);
-  SAFE_FREE(url);
-  curl_free(safeid);
+  deltacloud_free_storage_snapshot_list(&tmpsnapshot);
 
   return ret;
+}
+
+int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
+					  const char *id,
+					  struct deltacloud_storage_snapshot *storage_snapshot)
+{
+  return internal_get_by_id(api, id, "storage_snapshots",
+			    parse_one_storage_snapshot, storage_snapshot);
 }
 
 static int parse_key_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
@@ -1787,51 +1634,16 @@ int deltacloud_get_keys(struct deltacloud_api *api,
   return internal_get(api, "keys", "keys", parse_key_xml, (void **)keys);
 }
 
-int deltacloud_get_key_by_id(struct deltacloud_api *api, const char *id,
-			     struct deltacloud_key *key)
+static int parse_one_key(const char *data, void *output)
 {
-  char *url = NULL;
-  char *data = NULL;
-  char *safeid;
-  struct deltacloud_key *tmpkey = NULL;
   int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(key))
-    return -1;
-
-  safeid = curl_escape(id, 0);
-  if (safeid == NULL) {
-    oom_error();
-    return -1;
-  }
-
-  if (asprintf(&url, "%s/keys/%s", api->url, safeid) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  if (get_url(url, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    goto cleanup;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR, "Expected key data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
+  struct deltacloud_key *newkey = (struct deltacloud_key *)output;
+  struct deltacloud_key *tmpkey = NULL;
 
   if (parse_xml(data, "key", (void **)&tmpkey, parse_key_xml, 0) < 0)
     goto cleanup;
 
-  if (copy_key(key, tmpkey) < 0) {
+  if (copy_key(newkey, tmpkey) < 0) {
     oom_error();
     goto cleanup;
   }
@@ -1840,9 +1652,6 @@ int deltacloud_get_key_by_id(struct deltacloud_api *api, const char *id,
 
  cleanup:
   deltacloud_free_key_list(&tmpkey);
-  SAFE_FREE(data);
-  SAFE_FREE(url);
-  curl_free(safeid);
 
   return ret;
 }
@@ -1920,6 +1729,12 @@ int deltacloud_key_destroy(struct deltacloud_api *api,
     return -1;
 
   return internal_destroy(key->href, api->user, api->password);
+}
+
+int deltacloud_get_key_by_id(struct deltacloud_api *api, const char *id,
+			     struct deltacloud_key *key)
+{
+  return internal_get_by_id(api, id, "keys", parse_one_key, key);
 }
 
 static int parse_driver_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
@@ -2000,52 +1815,16 @@ int deltacloud_get_drivers(struct deltacloud_api *api,
 		      (void **)drivers);
 }
 
-int deltacloud_get_driver_by_id(struct deltacloud_api *api, const char *id,
-				struct deltacloud_driver *driver)
+static int parse_one_driver(const char *data, void *output)
 {
-  char *url = NULL;
-  char *data = NULL;
-  char *safeid;
-  struct deltacloud_driver *tmpdriver = NULL;
   int ret = -1;
-
-  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(driver))
-    return -1;
-
-  safeid = curl_escape(id, 0);
-  if (safeid == NULL) {
-    oom_error();
-    return -1;
-  }
-
-  if (asprintf(&url, "%s/drivers/%s", api->url, safeid) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  if (get_url(url, api->user, api->password, &data) != 0)
-    /* get_url sets its own errors, so don't overwrite it here */
-    goto cleanup;
-
-  if (data == NULL) {
-    /* if we made it here, it means that the transfer was successful (ret
-     * was 0), but the data that we expected wasn't returned.  This is probably
-     * a deltacloud server bug, so just set an error and bail out
-     */
-    set_error(DELTACLOUD_GET_URL_ERROR,
-	      "Expected driver data, received nothing");
-    goto cleanup;
-  }
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
-    goto cleanup;
-  }
+  struct deltacloud_driver *newdriver = (struct deltacloud_driver *)output;
+  struct deltacloud_driver *tmpdriver = NULL;
 
   if (parse_xml(data, "driver", (void **)&tmpdriver, parse_driver_xml, 0) < 0)
     goto cleanup;
 
-  if (copy_driver(driver, tmpdriver) < 0) {
+  if (copy_driver(newdriver, tmpdriver) < 0) {
     oom_error();
     goto cleanup;
   }
@@ -2054,11 +1833,14 @@ int deltacloud_get_driver_by_id(struct deltacloud_api *api, const char *id,
 
  cleanup:
   deltacloud_free_driver_list(&tmpdriver);
-  SAFE_FREE(data);
-  SAFE_FREE(url);
-  curl_free(safeid);
 
   return ret;
+}
+
+int deltacloud_get_driver_by_id(struct deltacloud_api *api, const char *id,
+				struct deltacloud_driver *driver)
+{
+  return internal_get_by_id(api, id, "drivers", parse_one_driver, driver);
 }
 
 int deltacloud_prepare_parameter(struct deltacloud_create_parameter *param,
