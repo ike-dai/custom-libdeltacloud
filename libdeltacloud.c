@@ -146,11 +146,9 @@ static char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
   return ret;
 }
 
-typedef int (*parse_xml_callback)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
-				  void **data);
-
 static int parse_xml(const char *xml_string, const char *name, void **data,
-		     parse_xml_callback cb, int multiple)
+		     int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			       void **data), int multiple)
 {
   xmlDocPtr xml;
   xmlNodePtr root;
