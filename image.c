@@ -48,7 +48,6 @@ int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src)
     goto error;
   if (strdup_or_null(&dst->state, src->state) < 0)
     goto error;
-  dst->next = NULL;
 
   return 0;
 

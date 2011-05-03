@@ -102,7 +102,6 @@ int copy_storage_volume(struct deltacloud_storage_volume *dst,
     goto error;
   if (copy_mount(&dst->mount, &src->mount) < 0)
     goto error;
-  dst->next = NULL;
 
   return 0;
 

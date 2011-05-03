@@ -87,7 +87,6 @@ int copy_instance_state(struct deltacloud_instance_state *dst,
     goto error;
   if (copy_transition_list(&dst->transitions, &src->transitions) < 0)
     goto error;
-  dst->next = NULL;
 
   return 0;
 

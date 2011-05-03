@@ -47,7 +47,6 @@ int copy_storage_snapshot(struct deltacloud_storage_snapshot *dst,
     goto error;
   if (strdup_or_null(&dst->storage_volume_id, src->storage_volume_id) < 0)
     goto error;
-  dst->next = NULL;
 
   return 0;
 

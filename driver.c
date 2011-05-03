@@ -26,9 +26,6 @@
 
 void free_provider(struct deltacloud_driver_provider *provider)
 {
-  if (provider == NULL)
-    return;
-
   SAFE_FREE(provider->id);
 }
 

@@ -61,7 +61,6 @@ int copy_instance(struct deltacloud_instance *dst,
     goto error;
   if (copy_address_list(&dst->private_addresses, &src->private_addresses) < 0)
     goto error;
-  dst->next = NULL;
 
   return 0;
 

@@ -44,7 +44,6 @@ int copy_realm(struct deltacloud_realm *dst, struct deltacloud_realm *src)
     goto error;
   if (strdup_or_null(&dst->limit, src->limit) < 0)
     goto error;
-  dst->next = NULL;
 
   return 0;
 

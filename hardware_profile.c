@@ -227,7 +227,6 @@ int copy_hardware_profile(struct deltacloud_hardware_profile *dst,
     goto error;
   if (copy_property_list(&dst->properties, &src->properties) < 0)
     goto error;
-  dst->next = NULL;
 
   return 0;
 
