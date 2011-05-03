@@ -75,6 +75,8 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0644,root,root) %{_includedir}/libdeltacloud/hardware_profile.h
 %attr(0644,root,root) %{_includedir}/libdeltacloud/key.h
 %attr(0644,root,root) %{_includedir}/libdeltacloud/driver.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/action.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/address.h
 %attr(0755,root,root) %{_libdir}/libdeltacloud.so
 %{_libdir}/pkgconfig/libdeltacloud.pc
 

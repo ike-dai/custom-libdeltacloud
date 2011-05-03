@@ -545,7 +545,7 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
   return ret;
 }
 
-static int parse_addresses_xml(xmlNodePtr instance, xmlXPathContextPtr ctxt,
+static int parse_addresses_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
 			       struct deltacloud_address **addresses)
 {
   struct deltacloud_address thisaddr;
@@ -564,8 +564,8 @@ static int parse_addresses_xml(xmlNodePtr instance, xmlXPathContextPtr ctxt,
 
   oldnode = ctxt->node;
 
-  ctxt->node = instance;
-  cur = instance->children;
+  ctxt->node = root;
+  cur = root->children;
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "address")) {
@@ -593,7 +593,7 @@ static int parse_addresses_xml(xmlNodePtr instance, xmlXPathContextPtr ctxt,
   return ret;
 }
 
-static int parse_actions_xml(xmlNodePtr instance,
+static int parse_actions_xml(xmlNodePtr root,
 			     struct deltacloud_action **actions)
 {
   struct deltacloud_action thisaction;
@@ -608,7 +608,7 @@ static int parse_actions_xml(xmlNodePtr instance,
    */
   memset(&thisaction, 0, sizeof(struct deltacloud_action));
 
-  cur = instance->children;
+  cur = root->children;
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "link")) {

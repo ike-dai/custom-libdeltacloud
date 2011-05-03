@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Red Hat, Inc.
+ * Copyright (C) 2011 Red Hat, Inc.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,42 +18,27 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef INSTANCES_H
-#define INSTANCES_H
-
-#include "hardware_profile.h"
-#include "action.h"
-#include "address.h"
+#ifndef ACTION_H
+#define ACTION_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct deltacloud_instance {
+struct deltacloud_action {
+  char *rel;
   char *href;
-  char *id;
-  char *name;
-  char *owner_id;
-  char *image_id;
-  char *image_href;
-  char *realm_id;
-  char *realm_href;
-  char *key_name;
-  char *state;
-  struct deltacloud_hardware_profile hwp;
-  struct deltacloud_action *actions;
-  struct deltacloud_address *public_addresses;
-  struct deltacloud_address *private_addresses;
+  char *method;
 
-  struct deltacloud_instance *next;
+  struct deltacloud_action *next;
 };
 
-int add_to_instance_list(struct deltacloud_instance **instances,
-			 struct deltacloud_instance *instance);
-int copy_instance(struct deltacloud_instance *dst,
-		  struct deltacloud_instance *src);
-void deltacloud_free_instance(struct deltacloud_instance *instance);
-void deltacloud_free_instance_list(struct deltacloud_instance **instances);
+void free_action(struct deltacloud_action *action);
+int add_to_action_list(struct deltacloud_action **actions,
+		       struct deltacloud_action *action);
+int copy_action_list(struct deltacloud_action **dst,
+		     struct deltacloud_action **src);
+void free_action_list(struct deltacloud_action **actions);
 
 #ifdef __cplusplus
 }
