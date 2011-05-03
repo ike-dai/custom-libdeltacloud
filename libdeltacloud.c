@@ -687,23 +687,35 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
       actionset = xmlXPathEval(BAD_CAST "./actions", ctxt);
       if (actionset && actionset->type == XPATH_NODESET &&
-	  actionset->nodesetval && actionset->nodesetval->nodeNr == 1)
-	parse_actions_xml(actionset->nodesetval->nodeTab[0],
-			  &(thisinst.actions));
+	  actionset->nodesetval && actionset->nodesetval->nodeNr == 1) {
+	if (parse_actions_xml(actionset->nodesetval->nodeTab[0],
+			      &(thisinst.actions)) < 0) {
+	  deltacloud_free_instance(&thisinst);
+	  goto cleanup;
+	}
+      }
       xmlXPathFreeObject(actionset);
 
       pubset = xmlXPathEval(BAD_CAST "./public_addresses", ctxt);
       if (pubset && pubset->type == XPATH_NODESET && pubset->nodesetval &&
-	  pubset->nodesetval->nodeNr == 1)
-	parse_addresses_xml(pubset->nodesetval->nodeTab[0], ctxt,
-			    &(thisinst.public_addresses));
+	  pubset->nodesetval->nodeNr == 1) {
+	if (parse_addresses_xml(pubset->nodesetval->nodeTab[0], ctxt,
+				&(thisinst.public_addresses)) < 0) {
+	  deltacloud_free_instance(&thisinst);
+	  goto cleanup;
+	}
+      }
       xmlXPathFreeObject(pubset);
 
       privset = xmlXPathEval(BAD_CAST "./private_addresses", ctxt);
       if (privset && privset->type == XPATH_NODESET && privset->nodesetval &&
-	  privset->nodesetval->nodeNr == 1)
-	parse_addresses_xml(privset->nodesetval->nodeTab[0], ctxt,
-			    &(thisinst.private_addresses));
+	  privset->nodesetval->nodeNr == 1) {
+	if (parse_addresses_xml(privset->nodesetval->nodeTab[0], ctxt,
+				&(thisinst.private_addresses)) < 0) {
+	  deltacloud_free_instance(&thisinst);
+	  goto cleanup;
+	}
+      }
       xmlXPathFreeObject(privset);
 
       listret = add_to_instance_list(instances, &thisinst);
