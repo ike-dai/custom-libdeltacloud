@@ -52,6 +52,9 @@ libdeltacloud_la_SOURCES =			\
 rpm: clean dist
 	@(unset CDPATH ; $(MAKE) dist && rpmbuild -ta $(distdir).tar.gz)
 
+srpm: clean dist
+	@(unset CDPATH ; $(MAKE) dist && rpmbuild -ts $(distdir).tar.gz)
+
 check_PROGRAMS = libdeltacloud-client
 
 LDADD = $(lib_LTLIBRARIES)
