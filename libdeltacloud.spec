@@ -64,20 +64,20 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %defattr(-,root,root,-)
-%attr(0644,root,root) %{_includedir}/libdeltacloud/libdeltacloud.h
-%attr(0644,root,root) %{_includedir}/libdeltacloud/link.h
-%attr(0644,root,root) %{_includedir}/libdeltacloud/instance.h
-%attr(0644,root,root) %{_includedir}/libdeltacloud/realm.h
-%attr(0644,root,root) %{_includedir}/libdeltacloud/image.h
-%attr(0644,root,root) %{_includedir}/libdeltacloud/instance_state.h
-%attr(0644,root,root) %{_includedir}/libdeltacloud/storage_volume.h
-%attr(0644,root,root) %{_includedir}/libdeltacloud/storage_snapshot.h
-%attr(0644,root,root) %{_includedir}/libdeltacloud/hardware_profile.h
-%attr(0644,root,root) %{_includedir}/libdeltacloud/key.h
-%attr(0644,root,root) %{_includedir}/libdeltacloud/driver.h
 %attr(0644,root,root) %{_includedir}/libdeltacloud/action.h
 %attr(0644,root,root) %{_includedir}/libdeltacloud/address.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/driver.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/hardware_profile.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/image.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/instance.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/instance_state.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/key.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/libdeltacloud.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/link.h
 %attr(0644,root,root) %{_includedir}/libdeltacloud/loadbalancer.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/realm.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/storage_snapshot.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/storage_volume.h
 %attr(0755,root,root) %{_libdir}/libdeltacloud.so
 %{_libdir}/pkgconfig/libdeltacloud.pc
 
