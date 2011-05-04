@@ -9,6 +9,7 @@ LIBDELTACLOUD_4.0.0 {
     global:
 	deltacloud_free;
 	deltacloud_get_hardware_profiles;
+	deltacloud_get_hardware_profile_by_id;
 	deltacloud_get_images;
 	deltacloud_get_image_by_id;
 	deltacloud_get_instances;
