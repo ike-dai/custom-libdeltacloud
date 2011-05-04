@@ -2376,6 +2376,18 @@ int deltacloud_instance_destroy(struct deltacloud_api *api,
   return internal_destroy(instance->href, api->user, api->password);
 }
 
+int deltacloud_has_link(struct deltacloud_api *api, const char *name)
+{
+  struct deltacloud_link *link;
+
+  deltacloud_for_each(link, api->links) {
+    if (strcmp(link->rel, name) == 0)
+      return 1;
+  }
+
+  return 0;
+}
+
 void deltacloud_free(struct deltacloud_api *api)
 {
   if (api == NULL)

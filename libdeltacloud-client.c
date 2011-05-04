@@ -341,267 +341,306 @@ int main(int argc, char *argv[])
   print_api(&api);
 
   fprintf(stderr, "---------------DRIVERS-------------------------\n");
-  if (deltacloud_get_drivers(&api, &drivers) < 0) {
-    fprintf(stderr, "Failed to get drivers: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
-  }
-  print_driver_list(drivers);
-
-  if (drivers != NULL) {
-    /* here we use the first driver from the list above */
-    if (deltacloud_get_driver_by_id(&api, drivers->id, &driver) < 0) {
-      fprintf(stderr, "Failed to get driver: %s\n",
+  if (deltacloud_supports_drivers(&api)) {
+    if (deltacloud_get_drivers(&api, &drivers) < 0) {
+      fprintf(stderr, "Failed to get drivers: %s\n",
 	      deltacloud_get_last_error_string());
-      deltacloud_free_driver_list(&drivers);
       goto cleanup;
     }
-    print_driver(&driver);
-    deltacloud_free_driver(&driver);
-  }
+    print_driver_list(drivers);
 
-  deltacloud_free_driver_list(&drivers);
+    if (drivers != NULL) {
+      /* here we use the first driver from the list above */
+      if (deltacloud_get_driver_by_id(&api, drivers->id, &driver) < 0) {
+	fprintf(stderr, "Failed to get driver: %s\n",
+		deltacloud_get_last_error_string());
+	deltacloud_free_driver_list(&drivers);
+	goto cleanup;
+      }
+      print_driver(&driver);
+      deltacloud_free_driver(&driver);
+    }
+
+    deltacloud_free_driver_list(&drivers);
+  }
 
   fprintf(stderr, "--------------HARDWARE PROFILES--------------\n");
-  if (deltacloud_get_hardware_profiles(&api, &profiles) < 0) {
-    fprintf(stderr, "Failed to get_hardware_profiles: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
-  }
-  print_hwp_list(profiles);
-
-  if (profiles != NULL) {
-    /* here we use the first hardware profile from the list above */
-    if (deltacloud_get_hardware_profile_by_id(&api, profiles->id, &hwp) < 0) {
-      fprintf(stderr, "Failed to get hardware profile by id: %s\n",
+  if (deltacloud_supports_hardware_profiles(&api)) {
+    if (deltacloud_get_hardware_profiles(&api, &profiles) < 0) {
+      fprintf(stderr, "Failed to get hardware_profiles: %s\n",
 	      deltacloud_get_last_error_string());
-      deltacloud_free_hardware_profile_list(&profiles);
       goto cleanup;
     }
-    print_hwp(&hwp);
-    deltacloud_free_hardware_profile(&hwp);
-  }
+    print_hwp_list(profiles);
 
-  deltacloud_free_hardware_profile_list(&profiles);
+    if (profiles != NULL) {
+      /* here we use the first hardware profile from the list above */
+      if (deltacloud_get_hardware_profile_by_id(&api, profiles->id, &hwp) < 0) {
+	fprintf(stderr, "Failed to get hardware profile by id: %s\n",
+		deltacloud_get_last_error_string());
+	deltacloud_free_hardware_profile_list(&profiles);
+	goto cleanup;
+      }
+      print_hwp(&hwp);
+      deltacloud_free_hardware_profile(&hwp);
+    }
+
+    deltacloud_free_hardware_profile_list(&profiles);
+  }
+  else
+    fprintf(stderr, "NOT SUPPORTED\n");
 
   fprintf(stderr, "--------------IMAGES-------------------------\n");
-  if (deltacloud_get_images(&api, &images) < 0) {
-    fprintf(stderr, "Failed to get_images: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
-  }
-  print_image_list(images);
-
-  if (images != NULL) {
-    /* here we use the first image from the list above */
-    if (deltacloud_get_image_by_id(&api, images->id, &image) < 0) {
-      fprintf(stderr, "Failed to get image by id: %s\n",
+  if (deltacloud_supports_images(&api)) {
+    if (deltacloud_get_images(&api, &images) < 0) {
+      fprintf(stderr, "Failed to get_images: %s\n",
 	      deltacloud_get_last_error_string());
-      deltacloud_free_image_list(&images);
       goto cleanup;
     }
-    print_image(&image);
-    deltacloud_free_image(&image);
-  }
+    print_image_list(images);
 
-  deltacloud_free_image_list(&images);
+    if (images != NULL) {
+      /* here we use the first image from the list above */
+      if (deltacloud_get_image_by_id(&api, images->id, &image) < 0) {
+	fprintf(stderr, "Failed to get image by id: %s\n",
+		deltacloud_get_last_error_string());
+	deltacloud_free_image_list(&images);
+	goto cleanup;
+      }
+      print_image(&image);
+      deltacloud_free_image(&image);
+    }
 
-  if (deltacloud_create_image(&api, "i-b8be86d7", NULL, 0) < 0) {
-    fprintf(stderr, "Failed to create image from instance: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
+    deltacloud_free_image_list(&images);
+
+    if (deltacloud_create_image(&api, "i-b8be86d7", NULL, 0) < 0) {
+      fprintf(stderr, "Failed to create image from instance: %s\n",
+	      deltacloud_get_last_error_string());
+      goto cleanup;
+    }
   }
+  else
+    fprintf(stderr, "NOT SUPPORTED\n");
 
   fprintf(stderr, "--------------REALMS-------------------------\n");
-  if (deltacloud_get_realms(&api, &realms) < 0) {
-    fprintf(stderr, "Failed to get_realms: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
-  }
-  print_realm_list(realms);
-
-  if (realms != NULL) {
-    /* here we use the first realm from the list above */
-    if (deltacloud_get_realm_by_id(&api, realms->id, &realm) < 0) {
-      fprintf(stderr, "Failed to get realm by id: %s\n",
+  if (deltacloud_supports_realms(&api)) {
+    if (deltacloud_get_realms(&api, &realms) < 0) {
+      fprintf(stderr, "Failed to get_realms: %s\n",
 	      deltacloud_get_last_error_string());
-      deltacloud_free_realm_list(&realms);
       goto cleanup;
     }
-    print_realm(&realm);
-    deltacloud_free_realm(&realm);
-  }
+    print_realm_list(realms);
 
-  deltacloud_free_realm_list(&realms);
+    if (realms != NULL) {
+      /* here we use the first realm from the list above */
+      if (deltacloud_get_realm_by_id(&api, realms->id, &realm) < 0) {
+	fprintf(stderr, "Failed to get realm by id: %s\n",
+		deltacloud_get_last_error_string());
+	deltacloud_free_realm_list(&realms);
+	goto cleanup;
+      }
+      print_realm(&realm);
+      deltacloud_free_realm(&realm);
+    }
+
+    deltacloud_free_realm_list(&realms);
+  }
+  else
+    fprintf(stderr, "NOT SUPPORTED\n");
 
   fprintf(stderr, "--------------INSTANCE STATES----------------\n");
-  if (deltacloud_get_instance_states(&api, &instance_states) < 0) {
-    fprintf(stderr, "Failed to get_instance_states: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
-  }
-  print_instance_state_list(instance_states);
-
-  if (instance_states != NULL) {
-    /* here we use the first instance_state from the list above */
-    if (deltacloud_get_instance_state_by_name(&api, instance_states->name,
-					      &instance_state) < 0) {
-      fprintf(stderr, "Failed to get instance_state: %s\n",
+  if (deltacloud_supports_instance_states(&api)) {
+    if (deltacloud_get_instance_states(&api, &instance_states) < 0) {
+      fprintf(stderr, "Failed to get_instance_states: %s\n",
 	      deltacloud_get_last_error_string());
-      deltacloud_free_instance_state_list(&instance_states);
       goto cleanup;
     }
-    print_instance_state(&instance_state);
-    deltacloud_free_instance_state(&instance_state);
-  }
+    print_instance_state_list(instance_states);
 
-  deltacloud_free_instance_state_list(&instance_states);
+    if (instance_states != NULL) {
+      /* here we use the first instance_state from the list above */
+      if (deltacloud_get_instance_state_by_name(&api, instance_states->name,
+						&instance_state) < 0) {
+	fprintf(stderr, "Failed to get instance_state: %s\n",
+		deltacloud_get_last_error_string());
+	deltacloud_free_instance_state_list(&instance_states);
+	goto cleanup;
+      }
+      print_instance_state(&instance_state);
+      deltacloud_free_instance_state(&instance_state);
+    }
+
+    deltacloud_free_instance_state_list(&instance_states);
+  }
+  else
+    fprintf(stderr, "NOT SUPPORTED\n");
 
   fprintf(stderr, "--------------INSTANCES---------------------\n");
-  if (deltacloud_get_instances(&api, &instances) < 0) {
-    fprintf(stderr, "Failed to get_instances: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
-  }
-  print_instance_list(instances);
-
-  if (instances != NULL) {
-    /* here we use the first instance from the list above */
-    if (deltacloud_get_instance_by_id(&api, instances->id, &instance) < 0) {
-      fprintf(stderr, "Failed to get instance by id: %s\n",
+  if (deltacloud_supports_instances(&api)) {
+    if (deltacloud_get_instances(&api, &instances) < 0) {
+      fprintf(stderr, "Failed to get_instances: %s\n",
 	      deltacloud_get_last_error_string());
-      deltacloud_free_instance_list(&instances);
       goto cleanup;
     }
-    print_instance(&instance);
-    deltacloud_free_instance(&instance);
-  }
+    print_instance_list(instances);
 
-  deltacloud_free_instance_list(&instances);
+    if (instances != NULL) {
+      /* here we use the first instance from the list above */
+      if (deltacloud_get_instance_by_id(&api, instances->id, &instance) < 0) {
+	fprintf(stderr, "Failed to get instance by id: %s\n",
+		deltacloud_get_last_error_string());
+	deltacloud_free_instance_list(&instances);
+	goto cleanup;
+      }
+      print_instance(&instance);
+      deltacloud_free_instance(&instance);
+    }
+
+    deltacloud_free_instance_list(&instances);
+  }
+  else
+    fprintf(stderr, "NOT SUPPORTED\n");
 
   fprintf(stderr, "--------------STORAGE VOLUMES---------------\n");
-  if (deltacloud_get_storage_volumes(&api, &storage_volumes) < 0) {
-    fprintf(stderr, "Failed to get_storage_volumes: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
-  }
-  print_storage_volume_list(storage_volumes);
-
-  if (storage_volumes != NULL) {
-    /* here we use the first storage volume from the list above */
-    if (deltacloud_get_storage_volume_by_id(&api, storage_volumes->id,
-					    &storage_volume) < 0) {
-      fprintf(stderr, "Failed to get storage volume by ID: %s\n",
+  if (deltacloud_supports_storage_volumes(&api)) {
+    if (deltacloud_get_storage_volumes(&api, &storage_volumes) < 0) {
+      fprintf(stderr, "Failed to get_storage_volumes: %s\n",
 	      deltacloud_get_last_error_string());
-      deltacloud_free_storage_volume_list(&storage_volumes);
       goto cleanup;
     }
-    print_storage_volume(&storage_volume);
-    deltacloud_free_storage_volume(&storage_volume);
-  }
+    print_storage_volume_list(storage_volumes);
 
-  deltacloud_free_storage_volume_list(&storage_volumes);
+    if (storage_volumes != NULL) {
+      /* here we use the first storage volume from the list above */
+      if (deltacloud_get_storage_volume_by_id(&api, storage_volumes->id,
+					      &storage_volume) < 0) {
+	fprintf(stderr, "Failed to get storage volume by ID: %s\n",
+		deltacloud_get_last_error_string());
+	deltacloud_free_storage_volume_list(&storage_volumes);
+	goto cleanup;
+      }
+      print_storage_volume(&storage_volume);
+      deltacloud_free_storage_volume(&storage_volume);
+    }
+
+    deltacloud_free_storage_volume_list(&storage_volumes);
+  }
+  else
+    fprintf(stderr, "NOT SUPPORTED\n");
 
   fprintf(stderr, "--------------STORAGE SNAPSHOTS-------------\n");
-  if (deltacloud_get_storage_snapshots(&api, &storage_snapshots) < 0) {
-    fprintf(stderr, "Failed to get_storage_snapshots: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
-  }
-  print_storage_snapshot_list(storage_snapshots);
-
-  if (storage_snapshots != NULL) {
-    /* here we use the first storage snapshot from the list above */
-    if (deltacloud_get_storage_snapshot_by_id(&api, storage_snapshots->id,
-					      &storage_snapshot) < 0) {
-      fprintf(stderr, "Failed to get storage_snapshot by ID: %s\n",
+  if (deltacloud_supports_storage_snapshots(&api)) {
+    if (deltacloud_get_storage_snapshots(&api, &storage_snapshots) < 0) {
+      fprintf(stderr, "Failed to get_storage_snapshots: %s\n",
 	      deltacloud_get_last_error_string());
-      deltacloud_free_storage_snapshot_list(&storage_snapshots);
       goto cleanup;
     }
-    print_storage_snapshot(&storage_snapshot);
-    deltacloud_free_storage_snapshot(&storage_snapshot);
-  }
+    print_storage_snapshot_list(storage_snapshots);
 
-  deltacloud_free_storage_snapshot_list(&storage_snapshots);
+    if (storage_snapshots != NULL) {
+      /* here we use the first storage snapshot from the list above */
+      if (deltacloud_get_storage_snapshot_by_id(&api, storage_snapshots->id,
+						&storage_snapshot) < 0) {
+	fprintf(stderr, "Failed to get storage_snapshot by ID: %s\n",
+		deltacloud_get_last_error_string());
+	deltacloud_free_storage_snapshot_list(&storage_snapshots);
+	goto cleanup;
+      }
+      print_storage_snapshot(&storage_snapshot);
+      deltacloud_free_storage_snapshot(&storage_snapshot);
+    }
+
+    deltacloud_free_storage_snapshot_list(&storage_snapshots);
+  }
+  else
+    fprintf(stderr, "NOT SUPPORTED\n");
 
   fprintf(stderr, "--------------KEYS----------------------------\n");
-  if (deltacloud_get_keys(&api, &keys) < 0) {
-    fprintf(stderr, "Failed to get keys: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
-  }
-  print_key_list(keys);
-
-  if (keys != NULL) {
-    /* here we use the first key from the list above */
-    if (deltacloud_get_key_by_id(&api, keys->id, &key) < 0) {
-      fprintf(stderr, "Failed to get key by ID: %s\n",
+  if (deltacloud_supports_keys(&api)) {
+    if (deltacloud_get_keys(&api, &keys) < 0) {
+      fprintf(stderr, "Failed to get keys: %s\n",
 	      deltacloud_get_last_error_string());
-      deltacloud_free_key_list(&keys);
+      goto cleanup;
+    }
+    print_key_list(keys);
+
+    if (keys != NULL) {
+      /* here we use the first key from the list above */
+      if (deltacloud_get_key_by_id(&api, keys->id, &key) < 0) {
+	fprintf(stderr, "Failed to get key by ID: %s\n",
+		deltacloud_get_last_error_string());
+	deltacloud_free_key_list(&keys);
+	goto cleanup;
+      }
+      print_key(&key);
+      deltacloud_free_key(&key);
+    }
+
+    deltacloud_free_key_list(&keys);
+
+    if (deltacloud_create_key(&api, "testkey", NULL, 0) < 0) {
+      fprintf(stderr, "Failed to create key: %s\n",
+	      deltacloud_get_last_error_string());
+      goto cleanup;
+    }
+
+    if (deltacloud_get_key_by_id(&api, "testkey", &key) < 0) {
+      fprintf(stderr, "Failed to retrieve just created key: %s\n",
+	      deltacloud_get_last_error_string());
       goto cleanup;
     }
     print_key(&key);
+    deltacloud_key_destroy(&api, &key);
     deltacloud_free_key(&key);
   }
-
-  deltacloud_free_key_list(&keys);
-
-  if (deltacloud_create_key(&api, "testkey", NULL, 0) < 0) {
-    fprintf(stderr, "Failed to create key: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
-  }
-
-  if (deltacloud_get_key_by_id(&api, "testkey", &key) < 0) {
-    fprintf(stderr, "Failed to retrieve just created key: %s\n",
-	    deltacloud_get_last_error_string());
-  }
-  print_key(&key);
-  deltacloud_key_destroy(&api, &key);
-  deltacloud_free_key(&key);
+  else
+    fprintf(stderr, "NOT SUPPORTED\n");
 
   fprintf(stderr, "------------------LOAD BALANCERS-------------------\n");
-  if (deltacloud_get_loadbalancers(&api, &lbs) < 0) {
-    fprintf(stderr, "Failed to get load balancers: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
-  }
-  print_loadbalancer_list(lbs);
-
-  if (lbs != NULL) {
-    if (deltacloud_get_loadbalancer_by_id(&api, "my-load-balancer", &lb) < 0) {
-      fprintf(stderr, "Failed to get load balancer by id: %s\n",
+  if (deltacloud_supports_loadbalancers(&api)) {
+    if (deltacloud_get_loadbalancers(&api, &lbs) < 0) {
+      fprintf(stderr, "Failed to get load balancers: %s\n",
 	      deltacloud_get_last_error_string());
-      deltacloud_free_loadbalancer_list(&lbs);
       goto cleanup;
     }
-    print_loadbalancer(&lb);
+    print_loadbalancer_list(lbs);
+
+    if (lbs != NULL) {
+      if (deltacloud_get_loadbalancer_by_id(&api, lbs->id, &lb) < 0) {
+	fprintf(stderr, "Failed to get load balancer by id: %s\n",
+		deltacloud_get_last_error_string());
+	deltacloud_free_loadbalancer_list(&lbs);
+	goto cleanup;
+      }
+      print_loadbalancer(&lb);
+      deltacloud_free_loadbalancer(&lb);
+    }
+
+    deltacloud_free_loadbalancer_list(&lbs);
+
+    if (deltacloud_create_loadbalancer(&api, "lb2", "us-east-1a", "HTTP", 80,
+				       80, NULL, 0) < 0) {
+      fprintf(stderr, "Failed to create load balancer: %s\n",
+	      deltacloud_get_last_error_string());
+      goto cleanup;
+    }
+
+    if (deltacloud_get_loadbalancer_by_id(&api, "lb2", &lb) < 0) {
+      fprintf(stderr, "Failed to get load balancer by id: %s\n",
+	      deltacloud_get_last_error_string());
+      goto cleanup;
+    }
+
+    if (deltacloud_loadbalancer_destroy(&api, &lb) < 0) {
+      fprintf(stderr, "Failed to destroy loadbalancer: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_free_loadbalancer(&lb);
+      goto cleanup;
+    }
     deltacloud_free_loadbalancer(&lb);
   }
-
-  deltacloud_free_loadbalancer_list(&lbs);
-
-  if (deltacloud_create_loadbalancer(&api, "lb2", "us-east-1a", "HTTP", 80,
-				     80, NULL, 0) < 0) {
-    fprintf(stderr, "Failed to create load balancer: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
-  }
-
-  if (deltacloud_get_loadbalancer_by_id(&api, "lb2", &lb) < 0) {
-    fprintf(stderr, "Failed to get load balancer by id: %s\n",
-	    deltacloud_get_last_error_string());
-    goto cleanup;
-  }
-
-  if (deltacloud_loadbalancer_destroy(&api, &lb) < 0) {
-    fprintf(stderr, "Failed to destroy loadbalancer: %s\n",
-	    deltacloud_get_last_error_string());
-    deltacloud_free_loadbalancer(&lb);
-    goto cleanup;
-  }
-  deltacloud_free_loadbalancer(&lb);
+  else
+    fprintf(stderr, "NOT SUPPORTED\n");
 
   fprintf(stderr, "--------------CREATE INSTANCE PARAMS--------\n");
   if (deltacloud_prepare_parameter(&stackparams[0], "name", "foo") < 0) {
