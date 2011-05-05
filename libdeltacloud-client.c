@@ -23,6 +23,22 @@
 #include <string.h>
 #include "libdeltacloud.h"
 
+static void print_key(struct deltacloud_key *key)
+{
+  fprintf(stderr, "Key %s\n", key->id);
+  fprintf(stderr, "\tHref: %s\n", key->href);
+  fprintf(stderr, "\tType: %s, State: %s\n", key->type, key->state);
+  fprintf(stderr, "\tFingerprint: %s\n", key->fingerprint);
+}
+
+static void print_key_list(struct deltacloud_key *keys)
+{
+  struct deltacloud_key *key;
+
+  deltacloud_for_each(key, keys)
+    print_key(key);
+}
+
 static void print_instance_state(struct deltacloud_instance_state *state)
 {
   struct deltacloud_instance_state_transition *transition;
@@ -232,6 +248,8 @@ int main(int argc, char *argv[])
   struct deltacloud_instance instance;
   struct deltacloud_storage_volume storage_volume;
   struct deltacloud_storage_snapshot storage_snapshot;
+  struct deltacloud_key *keys;
+  struct deltacloud_key key;
   char *instid;
   struct deltacloud_create_parameter stackparams[2];
   struct deltacloud_create_parameter *heapparams[2];
@@ -406,6 +424,42 @@ int main(int argc, char *argv[])
   }
 
   deltacloud_free_storage_snapshot_list(&storage_snapshots);
+
+  fprintf(stderr, "--------------KEYS----------------------------\n");
+  if (deltacloud_get_keys(&api, &keys) < 0) {
+    fprintf(stderr, "Failed to get keys: %s\n",
+	    deltacloud_get_last_error_string());
+    goto cleanup;
+  }
+  print_key_list(keys);
+
+  if (keys != NULL) {
+    /* here we use the first key from the list above */
+    if (deltacloud_get_key_by_id(&api, keys->id, &key) < 0) {
+      fprintf(stderr, "Failed to get key by ID: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_free_key_list(&keys);
+      goto cleanup;
+    }
+    print_key(&key);
+    deltacloud_free_key(&key);
+  }
+
+  deltacloud_free_key_list(&keys);
+
+  if (deltacloud_create_key(&api, "testkey", NULL, 0) < 0) {
+    fprintf(stderr, "Failed to create key: %s\n",
+	    deltacloud_get_last_error_string());
+    goto cleanup;
+  }
+
+  if (deltacloud_get_key_by_id(&api, "testkey", &key) < 0) {
+    fprintf(stderr, "Failed to retrieve just created key: %s\n",
+	    deltacloud_get_last_error_string());
+  }
+  print_key(&key);
+  deltacloud_key_destroy(&api, &key);
+  deltacloud_free_key(&key);
 
   fprintf(stderr, "--------------CREATE INSTANCE PARAMS--------\n");
   if (deltacloud_prepare_parameter(&stackparams[0], "name", "foo") < 0) {

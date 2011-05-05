@@ -1989,6 +1989,250 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
   return ret;
 }
 
+static int parse_key_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
+{
+  struct deltacloud_key **keys = (struct deltacloud_key **)data;
+  int ret = -1;
+  char *href = NULL, *id = NULL, *type = NULL, *state = NULL;
+  char *fingerprint = NULL;
+  xmlNodePtr oldnode;
+  int listret;
+
+  oldnode = ctxt->node;
+
+  while (cur != NULL) {
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "key")) {
+      href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      if (href == NULL) {
+	xml_error("key", "Failed to parse XML", "did not see href property");
+	goto cleanup;
+      }
+
+      id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      if (id == NULL) {
+	xml_error("key", "Failed to parse XML", "did not see id property");
+	SAFE_FREE(href);
+	goto cleanup;
+      }
+
+      type = (char *)xmlGetProp(cur, BAD_CAST "type");
+      if (type == NULL) {
+	xml_error("key", "Failed to parse XML", "did not see type property");
+	SAFE_FREE(href);
+	SAFE_FREE(id);
+	goto cleanup;
+      }
+
+      ctxt->node = cur;
+      state = getXPathString("string(./state)", ctxt);
+      fingerprint = getXPathString("string(./fingerprint)", ctxt);
+
+      listret = add_to_key_list(keys, href, id, type, state, fingerprint);
+      SAFE_FREE(href);
+      SAFE_FREE(id);
+      SAFE_FREE(type);
+      SAFE_FREE(state);
+      SAFE_FREE(fingerprint);
+      if (listret < 0) {
+	oom_error();
+	goto cleanup;
+      }
+    }
+    cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  ctxt->node = oldnode;
+  if (ret < 0)
+    deltacloud_free_key_list(keys);
+
+  return ret;
+}
+
+int deltacloud_get_keys(struct deltacloud_api *api,
+			struct deltacloud_key **keys)
+{
+  struct deltacloud_link *thislink;
+  char *data = NULL;
+  int ret = -1;
+
+  if (!valid_arg(api) || !valid_arg(keys))
+    return -1;
+
+  thislink = find_by_rel_in_link_list(&api->links, "keys");
+  if (thislink == NULL) {
+    link_error("keys");
+    return -1;
+  }
+
+  if (get_url(thislink->href, api->user, api->password, &data) != 0)
+    /* get_url sets its own errors, so don't overwrite it here */
+    return -1;
+
+  if (data == NULL) {
+    /* if we made it here, it means that the transfer was successful (ret
+     * was 0), but the data that we expected wasn't returned.  This is probably
+     * a deltacloud server bug, so just set an error and bail out
+     */
+    set_error(DELTACLOUD_GET_URL_ERROR, "Expected key data, received nothing");
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
+  *keys = NULL;
+  if (parse_xml(data, "keys", (void **)keys, parse_key_xml, 1) < 0)
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(data);
+
+  return ret;
+}
+
+int deltacloud_get_key_by_id(struct deltacloud_api *api, const char *id,
+			     struct deltacloud_key *key)
+{
+  char *url = NULL;
+  char *data = NULL;
+  char *safeid;
+  struct deltacloud_key *tmpkey = NULL;
+  int ret = -1;
+
+  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(key))
+    return -1;
+
+  safeid = curl_escape(id, 0);
+  if (safeid == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  if (asprintf(&url, "%s/keys/%s", api->url, safeid) < 0) {
+    oom_error();
+    goto cleanup;
+  }
+
+  if (get_url(url, api->user, api->password, &data) != 0)
+    /* get_url sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  if (data == NULL) {
+    /* if we made it here, it means that the transfer was successful (ret
+     * was 0), but the data that we expected wasn't returned.  This is probably
+     * a deltacloud server bug, so just set an error and bail out
+     */
+    set_error(DELTACLOUD_GET_URL_ERROR, "Expected key data, received nothing");
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
+  if (parse_xml(data, "key", (void **)&tmpkey, parse_key_xml, 0) < 0)
+    goto cleanup;
+
+  if (copy_key(key, tmpkey) < 0) {
+    oom_error();
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  deltacloud_free_key_list(&tmpkey);
+  SAFE_FREE(data);
+  SAFE_FREE(url);
+  curl_free(safeid);
+
+  return ret;
+}
+
+int deltacloud_create_key(struct deltacloud_api *api, const char *name,
+			  struct deltacloud_create_parameter *params,
+			  int params_length)
+{
+  struct deltacloud_link *thislink;
+  size_t param_string_length;
+  FILE *paramfp;
+  int ret = -1;
+  char *data = NULL;
+  char *param_string = NULL;
+  char *safevalue = NULL;
+
+  if (!valid_arg(api) || !valid_arg(name))
+    return -1;
+
+  deltacloud_for_each(thislink, api->links) {
+    if (STREQ(thislink->rel, "keys"))
+      break;
+  }
+  if (thislink == NULL) {
+    link_error("keys");
+    return -1;
+  }
+
+  paramfp = open_memstream(&param_string, &param_string_length);
+  if (paramfp == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  /* since the parameters come from the user, we must not trust them and
+   * URL escape them before use
+   */
+
+  safevalue = curl_escape(name, 0);
+  if (safevalue == NULL) {
+      oom_error();
+      goto cleanup;
+  }
+  fprintf(paramfp, "name=%s", safevalue);
+  SAFE_FREE(safevalue);
+
+  fclose(paramfp);
+  paramfp = NULL;
+
+  if (post_url(thislink->href, api->user, api->password, param_string,
+	       &data, NULL) != 0)
+    /* post_url sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  if (data != NULL && is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  if (paramfp != NULL)
+    fclose(paramfp);
+  SAFE_FREE(param_string);
+  SAFE_FREE(data);
+
+  return ret;
+}
+
+int deltacloud_key_destroy(struct deltacloud_api *api,
+			   struct deltacloud_key *key)
+{
+  if (!valid_arg(api) || !valid_arg(key))
+    return -1;
+
+  return internal_destroy(key->href, api->user, api->password);
+}
+
 int deltacloud_prepare_parameter(struct deltacloud_create_parameter *param,
 				 const char *name, const char *value)
 {

@@ -19,6 +19,7 @@ LIBDELTACLOUD_6.0.0 {
 LIBDELTACLOUD_7.0.0 {
     global:
 	deltacloud_create_instance;
+	deltacloud_create_key;
 	deltacloud_free;
 	deltacloud_get_hardware_profiles;
 	deltacloud_get_hardware_profile_by_id;
@@ -29,6 +30,8 @@ LIBDELTACLOUD_7.0.0 {
 	deltacloud_get_instance_by_name;
 	deltacloud_get_instance_states;
 	deltacloud_get_instance_state_by_name;
+	deltacloud_get_keys;
+	deltacloud_get_key_by_id;
 	deltacloud_get_last_error;
 	deltacloud_get_last_error_string;
 	deltacloud_get_realms;
@@ -42,4 +45,5 @@ LIBDELTACLOUD_7.0.0 {
 	deltacloud_instance_reboot;
 	deltacloud_instance_start;
 	deltacloud_instance_destroy;
+	deltacloud_key_destroy;
 } LIBDELTACLOUD_6.0.0;

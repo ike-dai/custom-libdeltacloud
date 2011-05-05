@@ -29,6 +29,7 @@
 #include "storage_volume.h"
 #include "storage_snapshot.h"
 #include "hardware_profile.h"
+#include "key.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,6 +96,16 @@ int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
 int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
 					  const char *id,
 					  struct deltacloud_hardware_profile *profile);
+
+int deltacloud_get_keys(struct deltacloud_api *api,
+			struct deltacloud_key **keys);
+int deltacloud_get_key_by_id(struct deltacloud_api *api, const char *id,
+			     struct deltacloud_key *key);
+int deltacloud_create_key(struct deltacloud_api *api, const char *name,
+			  struct deltacloud_create_parameter *params,
+			  int params_length);
+int deltacloud_key_destroy(struct deltacloud_api *api,
+			   struct deltacloud_key *key);
 
 int deltacloud_prepare_parameter(struct deltacloud_create_parameter *param,
 				 const char *name, const char *value);

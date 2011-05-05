@@ -37,6 +37,8 @@ libdeltacloud_la_SOURCES =			\
   storage_snapshot.c				\
   include/libdeltacloud/storage_volume.h	\
   storage_volume.c                      	\
+  include/libdeltacloud/key.h			\
+  key.c						\
   libdeltacloud.syms
 
 rpm: clean dist
