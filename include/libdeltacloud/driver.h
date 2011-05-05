@@ -18,8 +18,8 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef DRIVER_H
-#define DRIVER_H
+#ifndef LIBDELTACLOUD_DRIVER_H
+#define LIBDELTACLOUD_DRIVER_H
 
 #ifdef __cplusplus
 extern "C" {

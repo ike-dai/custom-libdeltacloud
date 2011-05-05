@@ -18,8 +18,8 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef ACTION_H
-#define ACTION_H
+#ifndef LIBDELTACLOUD_ACTION_H
+#define LIBDELTACLOUD_ACTION_H
 
 #ifdef __cplusplus
 extern "C" {

@@ -18,8 +18,8 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef IMAGE_H
-#define IMAGE_H
+#ifndef LIBDELTACLOUD_IMAGE_H
+#define LIBDELTACLOUD_IMAGE_H
 
 #ifdef __cplusplus
 extern "C" {

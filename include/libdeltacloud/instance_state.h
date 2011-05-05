@@ -18,8 +18,8 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef INSTANCE_STATE_H
-#define INSTANCE_STATE_H
+#ifndef LIBDELTACLOUD_INSTANCE_STATE_H
+#define LIBDELTACLOUD_INSTANCE_STATE_H
 
 #ifdef __cplusplus
 extern "C" {

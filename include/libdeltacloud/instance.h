@@ -18,8 +18,8 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef INSTANCES_H
-#define INSTANCES_H
+#ifndef LIBDELTACLOUD_INSTANCES_H
+#define LIBDELTACLOUD_INSTANCES_H
 
 #include "hardware_profile.h"
 #include "action.h"

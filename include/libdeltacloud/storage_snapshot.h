@@ -18,8 +18,8 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef STORAGE_SNAPSHOT_H
-#define STORAGE_SNAPSHOT_H
+#ifndef LIBDELTACLOUD_STORAGE_SNAPSHOT_H
+#define LIBDELTACLOUD_STORAGE_SNAPSHOT_H
 
 #ifdef __cplusplus
 extern "C" {

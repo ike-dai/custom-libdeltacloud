@@ -18,8 +18,8 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef ADDRESS_H
-#define ADDRESS_H
+#ifndef LIBDELTACLOUD_ADDRESS_H
+#define LIBDELTACLOUD_ADDRESS_H
 
 #ifdef __cplusplus
 extern "C" {

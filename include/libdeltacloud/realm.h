@@ -18,8 +18,8 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef REALM_H
-#define REALM_H
+#ifndef LIBDELTACLOUD_REALM_H
+#define LIBDELTACLOUD_REALM_H
 
 #ifdef __cplusplus
 extern "C" {

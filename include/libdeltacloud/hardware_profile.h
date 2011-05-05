@@ -18,8 +18,8 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef HARDWARE_PROFILE_H
-#define HARDWARE_PROFILE_H
+#ifndef LIBDELTACLOUD_HARDWARE_PROFILE_H
+#define LIBDELTACLOUD_HARDWARE_PROFILE_H
 
 #ifdef __cplusplus
 extern "C" {

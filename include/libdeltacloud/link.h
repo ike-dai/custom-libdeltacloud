@@ -18,8 +18,8 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef LINK_H
-#define LINK_H
+#ifndef LIBDELTACLOUD_LINK_H
+#define LIBDELTACLOUD_LINK_H
 
 #ifdef __cplusplus
 extern "C" {

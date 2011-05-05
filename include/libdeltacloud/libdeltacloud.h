@@ -18,8 +18,8 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef LIBDELTACLOUD_API_H
-#define LIBDELTACLOUD_API_H
+#ifndef LIBDELTACLOUD_H
+#define LIBDELTACLOUD_H
 
 #include "link.h"
 #include "instance.h"

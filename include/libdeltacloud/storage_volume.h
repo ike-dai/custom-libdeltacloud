@@ -18,8 +18,8 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef STORAGE_VOLUME_H
-#define STORAGE_VOLUME_H
+#ifndef LIBDELTACLOUD_STORAGE_VOLUME_H
+#define LIBDELTACLOUD_STORAGE_VOLUME_H
 
 #ifdef __cplusplus
 extern "C" {
