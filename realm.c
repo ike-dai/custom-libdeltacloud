@@ -29,11 +29,9 @@ int add_to_realm_list(struct deltacloud_realm **realms, char *href, char *id,
 {
   struct deltacloud_realm *onerealm;
 
-  onerealm = malloc(sizeof(struct deltacloud_realm));
+  onerealm = calloc(1, sizeof(struct deltacloud_realm));
   if (onerealm == NULL)
     return -1;
-
-  memset(onerealm, 0, sizeof(struct deltacloud_realm));
 
   if (strdup_or_null(&onerealm->href, href) < 0)
     goto error;
@@ -45,7 +43,6 @@ int add_to_realm_list(struct deltacloud_realm **realms, char *href, char *id,
     goto error;
   if (strdup_or_null(&onerealm->limit, limit) < 0)
     goto error;
-  onerealm->next = NULL;
 
   add_to_list(realms, struct deltacloud_realm, onerealm);
 

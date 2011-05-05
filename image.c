@@ -31,11 +31,9 @@ int add_to_image_list(struct deltacloud_image **images, const char *href,
 {
   struct deltacloud_image *oneimage;
 
-  oneimage = malloc(sizeof(struct deltacloud_image));
+  oneimage = calloc(1, sizeof(struct deltacloud_image));
   if (oneimage == NULL)
     return -1;
-
-  memset(oneimage, 0, sizeof(struct deltacloud_image));
 
   if (strdup_or_null(&oneimage->href, href) < 0)
     goto error;
@@ -51,7 +49,6 @@ int add_to_image_list(struct deltacloud_image **images, const char *href,
     goto error;
   if (strdup_or_null(&oneimage->state, state) < 0)
     goto error;
-  oneimage->next = NULL;
 
   add_to_list(images, struct deltacloud_image, oneimage);
 

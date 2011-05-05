@@ -37,16 +37,12 @@ int add_to_provider_list(struct deltacloud_driver_provider **providers,
 {
   struct deltacloud_driver_provider *oneprovider;
 
-  oneprovider = malloc(sizeof(struct deltacloud_driver_provider));
+  oneprovider = calloc(1, sizeof(struct deltacloud_driver_provider));
   if (oneprovider == NULL)
     return -1;
 
-  memset(oneprovider, 0, sizeof(struct deltacloud_driver_provider));
-
   if (strdup_or_null(&oneprovider->id, id) < 0)
     goto error;
-
-  oneprovider->next = NULL;
 
   add_to_list(providers, struct deltacloud_driver_provider, oneprovider);
 
@@ -92,11 +88,9 @@ int add_to_driver_list(struct deltacloud_driver **drivers, const char *href,
 {
   struct deltacloud_driver *onedriver;
 
-  onedriver = malloc(sizeof(struct deltacloud_driver));
+  onedriver = malloc(1, sizeof(struct deltacloud_driver));
   if (onedriver == NULL)
     return -1;
-
-  memset(onedriver, 0, sizeof(struct deltacloud_driver));
 
   if (strdup_or_null(&onedriver->href, href) < 0)
     goto error;
@@ -106,8 +100,6 @@ int add_to_driver_list(struct deltacloud_driver **drivers, const char *href,
     goto error;
   if (copy_provider_list(&onedriver->providers, &providers) < 0)
     goto error;
-
-  onedriver->next = NULL;
 
   add_to_list(drivers, struct deltacloud_driver, onedriver);
 

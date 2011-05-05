@@ -34,15 +34,12 @@ int add_to_address_list(struct deltacloud_address **addresses,
 {
   struct deltacloud_address *oneaddress;
 
-  oneaddress = malloc(sizeof(struct deltacloud_address));
+  oneaddress = calloc(1, sizeof(struct deltacloud_address));
   if (oneaddress == NULL)
     return -1;
 
-  memset(oneaddress, 0, sizeof(struct deltacloud_address));
-
   if (strdup_or_null(&oneaddress->address, address) < 0)
     goto error;
-  oneaddress->next = NULL;
 
   add_to_list(addresses, struct deltacloud_address, oneaddress);
 
@@ -84,11 +81,9 @@ int add_to_action_list(struct deltacloud_action **actions, const char *rel,
 {
   struct deltacloud_action *oneaction;
 
-  oneaction = malloc(sizeof(struct deltacloud_action));
+  oneaction = calloc(1, sizeof(struct deltacloud_action));
   if (oneaction == NULL)
     return -1;
-
-  memset(oneaction, 0, sizeof(struct deltacloud_action));
 
   if (strdup_or_null(&oneaction->rel, rel) < 0)
     goto error;
@@ -96,7 +91,6 @@ int add_to_action_list(struct deltacloud_action **actions, const char *rel,
     goto error;
   if (strdup_or_null(&oneaction->method, method) < 0)
     goto error;
-  oneaction->next = NULL;
 
   add_to_list(actions, struct deltacloud_action, oneaction);
 
@@ -137,11 +131,9 @@ int add_to_instance_list(struct deltacloud_instance **instances,
 {
   struct deltacloud_instance *oneinstance;
 
-  oneinstance = malloc(sizeof(struct deltacloud_instance));
+  oneinstance = calloc(1, sizeof(struct deltacloud_instance));
   if (oneinstance == NULL)
     return -1;
-
-  memset(oneinstance, 0, sizeof(struct deltacloud_instance));
 
   if (strdup_or_null(&oneinstance->href, href) < 0)
     goto error;
@@ -170,7 +162,6 @@ int add_to_instance_list(struct deltacloud_instance **instances,
   if (copy_address_list(&oneinstance->private_addresses,
 			&private_addresses) < 0)
     goto error;
-  oneinstance->next = NULL;
 
   add_to_list(instances, struct deltacloud_instance, oneinstance);
 

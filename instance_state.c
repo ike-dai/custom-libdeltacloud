@@ -37,11 +37,10 @@ int add_to_transition_list(struct deltacloud_instance_state_transition **transit
 {
   struct deltacloud_instance_state_transition *onetransition;
 
-  onetransition = malloc(sizeof(struct deltacloud_instance_state_transition));
+  onetransition = calloc(1,
+			 sizeof(struct deltacloud_instance_state_transition));
   if (onetransition == NULL)
     return -1;
-
-  memset(onetransition, 0, sizeof(struct deltacloud_instance_state_transition));
 
   if (strdup_or_null(&onetransition->action, action) < 0)
     goto error;
@@ -49,7 +48,6 @@ int add_to_transition_list(struct deltacloud_instance_state_transition **transit
     goto error;
   if (strdup_or_null(&onetransition->auto_bool, auto_bool) < 0)
     goto error;
-  onetransition->next = NULL;
 
   add_to_list(transitions, struct deltacloud_instance_state_transition,
 	      onetransition);
@@ -87,17 +85,14 @@ int add_to_instance_state_list(struct deltacloud_instance_state **instance_state
 {
   struct deltacloud_instance_state *oneinstance_state;
 
-  oneinstance_state = malloc(sizeof(struct deltacloud_instance_state));
+  oneinstance_state = calloc(1, sizeof(struct deltacloud_instance_state));
   if (oneinstance_state == NULL)
     return -1;
-
-  memset(oneinstance_state, 0, sizeof(struct deltacloud_instance_state));
 
   if (strdup_or_null(&oneinstance_state->name, name) < 0)
     goto error;
   if (copy_transition_list(&oneinstance_state->transitions, &transitions) < 0)
     goto error;
-  oneinstance_state->next = NULL;
 
   add_to_list(instance_states, struct deltacloud_instance_state,
 	      oneinstance_state);

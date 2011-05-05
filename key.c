@@ -42,11 +42,9 @@ int add_to_key_list(struct deltacloud_key **keys, const char *href,
 {
   struct deltacloud_key *onekey;
 
-  onekey = malloc(sizeof(struct deltacloud_key));
+  onekey = calloc(1, sizeof(struct deltacloud_key));
   if (onekey == NULL)
     return -1;
-
-  memset(onekey, 0, sizeof(struct deltacloud_key));
 
   if (strdup_or_null(&onekey->href, href) < 0)
     goto error;
@@ -58,8 +56,6 @@ int add_to_key_list(struct deltacloud_key **keys, const char *href,
     goto error;
   if (strdup_or_null(&onekey->fingerprint, fingerprint) < 0)
     goto error;
-
-  onekey->next = NULL;
 
   add_to_list(keys, struct deltacloud_key, onekey);
 

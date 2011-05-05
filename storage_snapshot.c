@@ -32,11 +32,9 @@ int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_sn
 {
   struct deltacloud_storage_snapshot *onestorage_snapshot;
 
-  onestorage_snapshot = malloc(sizeof(struct deltacloud_storage_snapshot));
+  onestorage_snapshot = calloc(1, sizeof(struct deltacloud_storage_snapshot));
   if (onestorage_snapshot == NULL)
     return -1;
-
-  memset(onestorage_snapshot, 0, sizeof(struct deltacloud_storage_snapshot));
 
   if (strdup_or_null(&onestorage_snapshot->href, href) < 0)
     goto error;
@@ -51,7 +49,6 @@ int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_sn
     goto error;
   if (strdup_or_null(&onestorage_snapshot->storage_volume_id, storage_volume_id) < 0)
     goto error;
-  onestorage_snapshot->next = NULL;
 
   add_to_list(storage_snapshots, struct deltacloud_storage_snapshot,
 	      onestorage_snapshot);

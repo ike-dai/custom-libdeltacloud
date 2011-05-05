@@ -81,11 +81,9 @@ int add_to_link_list(struct deltacloud_link **links, char *href, char *rel,
 {
   struct deltacloud_link *onelink;
 
-  onelink = malloc(sizeof(struct deltacloud_link));
+  onelink = calloc(1, sizeof(struct deltacloud_link));
   if (onelink == NULL)
     return -1;
-
-  memset(onelink, 0, sizeof(struct deltacloud_link));
 
   if (strdup_or_null(&onelink->href, href) < 0)
     goto error;
@@ -93,7 +91,6 @@ int add_to_link_list(struct deltacloud_link **links, char *href, char *rel,
     goto error;
   if (copy_feature_list(&onelink->features, &features) < 0)
     goto error;
-  onelink->next = NULL;
 
   add_to_list(links, struct deltacloud_link, onelink);
 

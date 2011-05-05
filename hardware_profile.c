@@ -35,18 +35,14 @@ int add_to_range_list(struct deltacloud_property_range **ranges,
 {
   struct deltacloud_property_range *onerange;
 
-  onerange = malloc(sizeof(struct deltacloud_property_range));
+  onerange = calloc(1, sizeof(struct deltacloud_property_range));
   if (onerange == NULL)
     return -1;
-
-  memset(onerange, 0, sizeof(struct deltacloud_property_range));
 
   if (strdup_or_null(&onerange->first, first) < 0)
     goto error;
   if (strdup_or_null(&onerange->last, last_val) < 0)
     goto error;
-
-  onerange->next = NULL;
 
   add_to_list(ranges, struct deltacloud_property_range, onerange);
 
@@ -86,16 +82,12 @@ int add_to_enum_list(struct deltacloud_property_enum **enums,
 {
   struct deltacloud_property_enum *oneenum;
 
-  oneenum = malloc(sizeof(struct deltacloud_property_enum));
+  oneenum = calloc(1, sizeof(struct deltacloud_property_enum));
   if (oneenum == NULL)
     return -1;
 
-  memset(oneenum, 0, sizeof(struct deltacloud_property_enum));
-
   if (strdup_or_null(&oneenum->value, value) < 0)
     goto error;
-
-  oneenum->next = NULL;
 
   add_to_list(enums, struct deltacloud_property_enum, oneenum);
 
@@ -139,11 +131,9 @@ int add_to_param_list(struct deltacloud_property_param **params,
 {
   struct deltacloud_property_param *oneparam;
 
-  oneparam = malloc(sizeof(struct deltacloud_property_param));
+  oneparam = calloc(1, sizeof(struct deltacloud_property_param));
   if (oneparam == NULL)
     return -1;
-
-  memset(oneparam, 0, sizeof(struct deltacloud_property_param));
 
   if (strdup_or_null(&oneparam->href, href) < 0)
     goto error;
@@ -153,8 +143,6 @@ int add_to_param_list(struct deltacloud_property_param **params,
     goto error;
   if (strdup_or_null(&oneparam->operation, operation) < 0)
     goto error;
-
-  oneparam->next = NULL;
 
   add_to_list(params, struct deltacloud_property_param, oneparam);
 
@@ -209,11 +197,9 @@ int add_to_property_list(struct deltacloud_property **props, const char *kind,
 {
   struct deltacloud_property *oneprop;
 
-  oneprop = malloc(sizeof(struct deltacloud_property));
+  oneprop = calloc(1, sizeof(struct deltacloud_property));
   if (oneprop == NULL)
     return -1;
-
-  memset(oneprop, 0, sizeof(struct deltacloud_property));
 
   if (strdup_or_null(&oneprop->kind, kind) < 0)
     goto error;
@@ -229,8 +215,6 @@ int add_to_property_list(struct deltacloud_property **props, const char *kind,
     goto error;
   if (copy_range_list(&oneprop->ranges, &ranges) < 0)
     goto error;
-
-  oneprop->next = NULL;
 
   add_to_list(props, struct deltacloud_property, oneprop);
 
@@ -264,11 +248,9 @@ int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
 {
   struct deltacloud_hardware_profile *oneprofile;
 
-  oneprofile = malloc(sizeof(struct deltacloud_hardware_profile));
+  oneprofile = calloc(1, sizeof(struct deltacloud_hardware_profile));
   if (oneprofile == NULL)
     return -1;
-
-  memset(oneprofile, 0, sizeof(struct deltacloud_hardware_profile));
 
   if (strdup_or_null(&oneprofile->id, id) < 0)
     goto error;
@@ -278,8 +260,6 @@ int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
     goto error;
   if (copy_property_list(&oneprofile->properties, &props) < 0)
     goto error;
-
-  oneprofile->next = NULL;
 
   add_to_list(profiles, struct deltacloud_hardware_profile, oneprofile);
 

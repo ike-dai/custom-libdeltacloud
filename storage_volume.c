@@ -83,11 +83,9 @@ int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volume
 {
   struct deltacloud_storage_volume *onestorage_volume;
 
-  onestorage_volume = malloc(sizeof(struct deltacloud_storage_volume));
+  onestorage_volume = calloc(1, sizeof(struct deltacloud_storage_volume));
   if (onestorage_volume == NULL)
     return -1;
-
-  memset(onestorage_volume, 0, sizeof(struct deltacloud_storage_volume));
 
   if (strdup_or_null(&onestorage_volume->href, href) < 0)
     goto error;
@@ -107,7 +105,6 @@ int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volume
     goto error;
   if (copy_mount(&onestorage_volume->mount, mount) < 0)
     goto error;
-  onestorage_volume->next = NULL;
 
   add_to_list(storage_volumes, struct deltacloud_storage_volume,
 	      onestorage_volume);
