@@ -46,6 +46,7 @@ void free_feature_list(struct deltacloud_feature **features);
 
 int add_to_link_list(struct deltacloud_link **links,
 		     struct deltacloud_link *link);
+int copy_link_list(struct deltacloud_link **dst, struct deltacloud_link **src);
 void free_link(struct deltacloud_link *link);
 void free_link_list(struct deltacloud_link **links);
 

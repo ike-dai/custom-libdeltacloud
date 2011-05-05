@@ -96,6 +96,11 @@ int add_to_link_list(struct deltacloud_link **links,
   return -1;
 }
 
+int copy_link_list(struct deltacloud_link **dst, struct deltacloud_link **src)
+{
+  copy_list(dst, src, struct deltacloud_link, add_to_link_list, free_link_list);
+}
+
 void free_link_list(struct deltacloud_link **links)
 {
   free_list(links, struct deltacloud_link, free_link);
