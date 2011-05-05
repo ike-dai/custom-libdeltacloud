@@ -488,6 +488,118 @@ static int internal_get_by_id(struct deltacloud_api *api, const char *id,
   return ret;
 }
 
+static int add_safe_value(FILE *fp, const char *name, const char *value)
+{
+  char *safevalue;
+
+  safevalue = curl_escape(value, 0);
+  if (safevalue == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  /* if we are not at the beginning of the stream, we need to append a & */
+  if (ftell(fp) != 0)
+    fprintf(fp, "&");
+
+  fprintf(fp, "%s=%s", name, safevalue);
+
+  SAFE_FREE(safevalue);
+
+  return 0;
+}
+
+static void free_parameters(struct deltacloud_create_parameter *params,
+			    int params_length)
+{
+  int i;
+
+  for (i = 0; i < params_length; i++)
+    deltacloud_free_parameter_value(&params[i]);
+}
+
+static int copy_parameters(struct deltacloud_create_parameter *dst,
+			   struct deltacloud_create_parameter *src,
+			   int params_length)
+{
+  int i;
+
+  for (i = 0; i < params_length; i++) {
+    if (deltacloud_prepare_parameter(&dst[i], src[i].name, src[i].value) < 0)
+      /* this isn't entirely orthogonal, since this function can allocate
+       * memory that it doesn't free.  We just depend on the higher layers
+       * to free the whole thing as necessary
+       */
+      /* deltacloud_prepare_parameter already set the error */
+      return -1;
+  }
+
+  return i;
+}
+
+static int internal_create(struct deltacloud_api *api, const char *link,
+			   struct deltacloud_create_parameter *params,
+			   int params_length, char **headers)
+{
+  struct deltacloud_link *thislink;
+  size_t param_string_length;
+  FILE *paramfp;
+  int ret = -1;
+  char *data = NULL;
+  char *param_string = NULL;
+  int i;
+
+  deltacloud_for_each(thislink, api->links) {
+    if (STREQ(thislink->rel, link))
+      break;
+  }
+  if (thislink == NULL) {
+    link_error(link);
+    return -1;
+  }
+
+  paramfp = open_memstream(&param_string, &param_string_length);
+  if (paramfp == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  /* since the parameters come from the user, we must not trust them and
+   * URL escape them before use
+   */
+
+  for (i = 0; i < params_length; i++) {
+    if (params[i].value != NULL) {
+      if (add_safe_value(paramfp, params[i].name, params[i].value) < 0)
+	/* add_safe_value already set the error */
+	goto cleanup;
+    }
+  }
+
+  fclose(paramfp);
+  paramfp = NULL;
+
+  if (post_url(thislink->href, api->user, api->password, param_string,
+	       &data, headers) != 0)
+    /* post_url sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  if (data != NULL && is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  if (paramfp != NULL)
+    fclose(paramfp);
+  SAFE_FREE(param_string);
+  SAFE_FREE(data);
+
+  return ret;
+}
+
 int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 			  char *password)
 {
@@ -1169,64 +1281,38 @@ int deltacloud_create_image(struct deltacloud_api *api, const char *instance_id,
 			    struct deltacloud_create_parameter *params,
 			    int params_length)
 {
-  struct deltacloud_link *thislink;
-  size_t param_string_length;
-  FILE *paramfp;
-  int ret = -1;
-  char *data = NULL;
-  char *param_string = NULL;
-  char *safevalue = NULL;
+  struct deltacloud_create_parameter *internal_params;
+  int ret;
+  int pos;
 
   if (!valid_arg(api) || !valid_arg(instance_id))
     return -1;
 
-  deltacloud_for_each(thislink, api->links) {
-    if (STREQ(thislink->rel, "images"))
-      break;
-  }
-  if (thislink == NULL) {
-    link_error("images");
-    return -1;
-  }
-
-  paramfp = open_memstream(&param_string, &param_string_length);
-  if (paramfp == NULL) {
+  internal_params = calloc(params_length + 1,
+			   sizeof(struct deltacloud_create_parameter));
+  if (internal_params == NULL) {
     oom_error();
     return -1;
   }
 
-  /* since the parameters come from the user, we must not trust them and
-   * URL escape them before use
-   */
-
-  safevalue = curl_escape(instance_id, 0);
-  if (safevalue == NULL) {
-      oom_error();
-      goto cleanup;
-  }
-  fprintf(paramfp, "instance_id=%s", safevalue);
-  SAFE_FREE(safevalue);
-
-  fclose(paramfp);
-  paramfp = NULL;
-
-  if (post_url(thislink->href, api->user, api->password, param_string,
-	       &data, NULL) != 0)
-    /* post_url sets its own errors, so don't overwrite it here */
+  pos = copy_parameters(internal_params, params, params_length);
+  if (pos < 0)
+    /* copy_parameters already set the error */
     goto cleanup;
 
-  if (data != NULL && is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
+  if (deltacloud_prepare_parameter(&internal_params[pos++], "instance_id",
+				   instance_id) < 0)
+    /* deltacloud_prepare_parameter already set the error */
     goto cleanup;
-  }
+
+  if (internal_create(api, "images", internal_params, pos, NULL) < 0)
+    goto cleanup;
 
   ret = 0;
 
  cleanup:
-  if (paramfp != NULL)
-    fclose(paramfp);
-  SAFE_FREE(param_string);
-  SAFE_FREE(data);
+  free_parameters(internal_params, pos);
+  SAFE_FREE(internal_params);
 
   return ret;
 }
@@ -1603,64 +1689,38 @@ int deltacloud_create_key(struct deltacloud_api *api, const char *name,
 			  struct deltacloud_create_parameter *params,
 			  int params_length)
 {
-  struct deltacloud_link *thislink;
-  size_t param_string_length;
-  FILE *paramfp;
+  struct deltacloud_create_parameter *internal_params;
   int ret = -1;
-  char *data = NULL;
-  char *param_string = NULL;
-  char *safevalue = NULL;
+  int pos;
 
   if (!valid_arg(api) || !valid_arg(name))
     return -1;
 
-  deltacloud_for_each(thislink, api->links) {
-    if (STREQ(thislink->rel, "keys"))
-      break;
-  }
-  if (thislink == NULL) {
-    link_error("keys");
-    return -1;
-  }
-
-  paramfp = open_memstream(&param_string, &param_string_length);
-  if (paramfp == NULL) {
+  internal_params = calloc(params_length + 1,
+			   sizeof(struct deltacloud_create_parameter));
+  if (internal_params == NULL) {
     oom_error();
     return -1;
   }
 
-  /* since the parameters come from the user, we must not trust them and
-   * URL escape them before use
-   */
-
-  safevalue = curl_escape(name, 0);
-  if (safevalue == NULL) {
-      oom_error();
-      goto cleanup;
-  }
-  fprintf(paramfp, "name=%s", safevalue);
-  SAFE_FREE(safevalue);
-
-  fclose(paramfp);
-  paramfp = NULL;
-
-  if (post_url(thislink->href, api->user, api->password, param_string,
-	       &data, NULL) != 0)
-    /* post_url sets its own errors, so don't overwrite it here */
+  pos = copy_parameters(internal_params, params, params_length);
+  if (pos < 0)
+    /* copy_parameters already set the error */
     goto cleanup;
 
-  if (data != NULL && is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
+  if (deltacloud_prepare_parameter(&internal_params[pos++], "name", name) < 0)
+    /* deltacloud_create_parameter already set the error */
     goto cleanup;
-  }
+
+  if (internal_create(api, "keys", internal_params, pos, NULL) < 0)
+    /* internal_create already set the error */
+    goto cleanup;
 
   ret = 0;
 
  cleanup:
-  if (paramfp != NULL)
-    fclose(paramfp);
-  SAFE_FREE(param_string);
-  SAFE_FREE(data);
+  free_parameters(internal_params, pos);
+  SAFE_FREE(internal_params);
 
   return ret;
 }
@@ -1874,70 +1934,34 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       struct deltacloud_create_parameter *params,
 			       int params_length, char **instance_id)
 {
-  struct deltacloud_link *thislink;
-  size_t param_string_length;
-  FILE *paramfp;
+  struct deltacloud_create_parameter *internal_params;
   int ret = -1;
-  char *data = NULL;
-  char *param_string = NULL;
-  int i;
-  char *safevalue = NULL;
+  int pos;
   char *headers = NULL;
 
   if (!valid_arg(api) || !valid_arg(image_id))
     return -1;
 
-  deltacloud_for_each(thislink, api->links) {
-    if (STREQ(thislink->rel, "instances"))
-      break;
-  }
-  if (thislink == NULL) {
-    link_error("instances");
-    return -1;
-  }
-
-  paramfp = open_memstream(&param_string, &param_string_length);
-  if (paramfp == NULL) {
+  internal_params = calloc(params_length + 1,
+			   sizeof(struct deltacloud_create_parameter));
+  if (internal_params == NULL) {
     oom_error();
     return -1;
   }
 
-  /* since the parameters come from the user, we must not trust them and
-   * URL escape them before use
-   */
-
-  safevalue = curl_escape(image_id, 0);
-  if (safevalue == NULL) {
-      oom_error();
-      goto cleanup;
-  }
-  fprintf(paramfp, "image_id=%s", safevalue);
-  SAFE_FREE(safevalue);
-
-  for (i = 0; i < params_length; i++) {
-    if (params[i].value != NULL) {
-      safevalue = curl_escape(params[i].value, 0);
-      if (safevalue == NULL) {
-	oom_error();
-	goto cleanup;
-      }
-      fprintf(paramfp, "&%s=%s", params[i].name, safevalue);
-      SAFE_FREE(safevalue);
-    }
-  }
-
-  fclose(paramfp);
-  paramfp = NULL;
-
-  if (post_url(thislink->href, api->user, api->password, param_string,
-	       &data, &headers) != 0)
-    /* post_url sets its own errors, so don't overwrite it here */
+  pos = copy_parameters(internal_params, params, params_length);
+  if (pos < 0)
+    /* copy_parameters already set the error */
     goto cleanup;
 
-  if (data != NULL && is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
+  if (deltacloud_prepare_parameter(&internal_params[pos++], "image_id",
+				   image_id) < 0)
+    /* deltacloud_prepare_parameter already set the error */
     goto cleanup;
-  }
+
+  if (internal_create(api, "instances", internal_params, pos, &headers) < 0)
+    /* internal_create already set the error */
+    goto cleanup;
 
   if (headers == NULL) {
     set_error(DELTACLOUD_POST_URL_ERROR,
@@ -1955,10 +1979,8 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   ret = 0;
 
  cleanup:
-  if (paramfp != NULL)
-    fclose(paramfp);
-  SAFE_FREE(param_string);
-  SAFE_FREE(data);
+  free_parameters(internal_params, pos);
+  SAFE_FREE(internal_params);
   SAFE_FREE(headers);
 
   return ret;
