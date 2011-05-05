@@ -40,15 +40,13 @@ struct deltacloud_instance_state {
   struct deltacloud_instance_state *next;
 };
 
-int add_to_transition_list(struct deltacloud_instance_state_transition **transitions, const char *action,
-			   const char *to, const char *auto_bool);
+void free_transition(struct deltacloud_instance_state_transition *transition);
+int add_to_transition_list(struct deltacloud_instance_state_transition **transitions,
+			   struct deltacloud_instance_state_transition *transition);
 void free_transition_list(struct deltacloud_instance_state_transition **transitions);
 
 int add_to_instance_state_list(struct deltacloud_instance_state **instance_states,
-			       const char *name,
-			       struct deltacloud_instance_state_transition *transitions);
-struct deltacloud_instance_state *find_by_name_in_instance_state_list(struct deltacloud_instance_state **instance_states,
-							   const char *name);
+			       struct deltacloud_instance_state *state);
 int copy_instance_state(struct deltacloud_instance_state *dst,
 			struct deltacloud_instance_state *src);
 void deltacloud_free_instance_state(struct deltacloud_instance_state *instance_state);

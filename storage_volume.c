@@ -73,50 +73,6 @@ static int copy_mount(struct deltacloud_storage_volume_mount *dst,
   return -1;
 }
 
-int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
-			       const char *href, const char *id,
-			       const char *created, const char *state,
-			       struct deltacloud_storage_volume_capacity *capacity,
-			       const char *device, const char *instance_href,
-			       const char *realm_id,
-			       struct deltacloud_storage_volume_mount *mount)
-{
-  struct deltacloud_storage_volume *onestorage_volume;
-
-  onestorage_volume = calloc(1, sizeof(struct deltacloud_storage_volume));
-  if (onestorage_volume == NULL)
-    return -1;
-
-  if (strdup_or_null(&onestorage_volume->href, href) < 0)
-    goto error;
-  if (strdup_or_null(&onestorage_volume->id, id) < 0)
-    goto error;
-  if (strdup_or_null(&onestorage_volume->created, created) < 0)
-    goto error;
-  if (strdup_or_null(&onestorage_volume->state, state) < 0)
-    goto error;
-  if (copy_capacity(&onestorage_volume->capacity, capacity) < 0)
-    goto error;
-  if (strdup_or_null(&onestorage_volume->device, device) < 0)
-    goto error;
-  if (strdup_or_null(&onestorage_volume->instance_href, instance_href) < 0)
-    goto error;
-  if (strdup_or_null(&onestorage_volume->realm_id, realm_id) < 0)
-    goto error;
-  if (copy_mount(&onestorage_volume->mount, mount) < 0)
-    goto error;
-
-  add_to_list(storage_volumes, struct deltacloud_storage_volume,
-	      onestorage_volume);
-
-  return 0;
-
- error:
-  deltacloud_free_storage_volume(onestorage_volume);
-  SAFE_FREE(onestorage_volume);
-  return -1;
-}
-
 int copy_storage_volume(struct deltacloud_storage_volume *dst,
 			struct deltacloud_storage_volume *src)
 {
@@ -152,6 +108,29 @@ int copy_storage_volume(struct deltacloud_storage_volume *dst,
 
  error:
   deltacloud_free_storage_volume(dst);
+  return -1;
+}
+
+int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
+			       struct deltacloud_storage_volume *volume)
+{
+  struct deltacloud_storage_volume *onestorage_volume;
+
+  onestorage_volume = calloc(1, sizeof(struct deltacloud_storage_volume));
+  if (onestorage_volume == NULL)
+    return -1;
+
+  if (copy_storage_volume(onestorage_volume, volume) < 0)
+    goto error;
+
+  add_to_list(storage_volumes, struct deltacloud_storage_volume,
+	      onestorage_volume);
+
+  return 0;
+
+ error:
+  deltacloud_free_storage_volume(onestorage_volume);
+  SAFE_FREE(onestorage_volume);
   return -1;
 }
 

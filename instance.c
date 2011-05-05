@@ -24,13 +24,13 @@
 #include "common.h"
 #include "instance.h"
 
-static void free_address(struct deltacloud_address *addr)
+void free_address(struct deltacloud_address *addr)
 {
   SAFE_FREE(addr->address);
 }
 
 int add_to_address_list(struct deltacloud_address **addresses,
-			const char *address)
+			struct deltacloud_address *address)
 {
   struct deltacloud_address *oneaddress;
 
@@ -38,7 +38,7 @@ int add_to_address_list(struct deltacloud_address **addresses,
   if (oneaddress == NULL)
     return -1;
 
-  if (strdup_or_null(&oneaddress->address, address) < 0)
+  if (strdup_or_null(&oneaddress->address, address->address) < 0)
     goto error;
 
   add_to_list(addresses, struct deltacloud_address, oneaddress);
@@ -51,16 +51,10 @@ int add_to_address_list(struct deltacloud_address **addresses,
   return -1;
 }
 
-static int copy_address(struct deltacloud_address **dst,
-			struct deltacloud_address *curr)
-{
-  return add_to_address_list(dst, curr->address);
-}
-
 static int copy_address_list(struct deltacloud_address **dst,
 			     struct deltacloud_address **src)
 {
-  copy_list(dst, src, struct deltacloud_address, copy_address,
+  copy_list(dst, src, struct deltacloud_address, add_to_address_list,
 	    free_address_list);
 }
 
@@ -69,15 +63,15 @@ void free_address_list(struct deltacloud_address **addresses)
   free_list(addresses, struct deltacloud_address, free_address);
 }
 
-static void free_action(struct deltacloud_action *action)
+void free_action(struct deltacloud_action *action)
 {
   SAFE_FREE(action->rel);
   SAFE_FREE(action->href);
   SAFE_FREE(action->method);
 }
 
-int add_to_action_list(struct deltacloud_action **actions, const char *rel,
-		       const char *href, const char *method)
+int add_to_action_list(struct deltacloud_action **actions,
+		       struct deltacloud_action *action)
 {
   struct deltacloud_action *oneaction;
 
@@ -85,11 +79,11 @@ int add_to_action_list(struct deltacloud_action **actions, const char *rel,
   if (oneaction == NULL)
     return -1;
 
-  if (strdup_or_null(&oneaction->rel, rel) < 0)
+  if (strdup_or_null(&oneaction->rel, action->rel) < 0)
     goto error;
-  if (strdup_or_null(&oneaction->href, href) < 0)
+  if (strdup_or_null(&oneaction->href, action->href) < 0)
     goto error;
-  if (strdup_or_null(&oneaction->method, method) < 0)
+  if (strdup_or_null(&oneaction->method, action->method) < 0)
     goto error;
 
   add_to_list(actions, struct deltacloud_action, oneaction);
@@ -102,75 +96,16 @@ int add_to_action_list(struct deltacloud_action **actions, const char *rel,
   return -1;
 }
 
-static int copy_action(struct deltacloud_action **dst,
-		       struct deltacloud_action *curr)
-{
-  return add_to_action_list(dst, curr->rel, curr->href, curr->method);
-}
-
 static int copy_action_list(struct deltacloud_action **dst,
 			    struct deltacloud_action **src)
 {
-  copy_list(dst, src, struct deltacloud_action, copy_action, free_action_list);
+  copy_list(dst, src, struct deltacloud_action, add_to_action_list,
+	    free_action_list);
 }
 
 void free_action_list(struct deltacloud_action **actions)
 {
   free_list(actions, struct deltacloud_action, free_action);
-}
-
-int add_to_instance_list(struct deltacloud_instance **instances,
-			 const char *href, const char *id, const char *name,
-			 const char *owner_id, const char *image_id,
-			 const char *image_href, const char *realm_id,
-			 const char *realm_href, const char *state,
-			 struct deltacloud_hardware_profile *hwp,
-			 struct deltacloud_action *actions,
-			 struct deltacloud_address *public_addresses,
-			 struct deltacloud_address *private_addresses)
-{
-  struct deltacloud_instance *oneinstance;
-
-  oneinstance = calloc(1, sizeof(struct deltacloud_instance));
-  if (oneinstance == NULL)
-    return -1;
-
-  if (strdup_or_null(&oneinstance->href, href) < 0)
-    goto error;
-  if (strdup_or_null(&oneinstance->id, id) < 0)
-    goto error;
-  if (strdup_or_null(&oneinstance->name, name) < 0)
-    goto error;
-  if (strdup_or_null(&oneinstance->owner_id, owner_id) < 0)
-    goto error;
-  if (strdup_or_null(&oneinstance->image_id, image_id) < 0)
-    goto error;
-  if (strdup_or_null(&oneinstance->image_href, image_href) < 0)
-    goto error;
-  if (strdup_or_null(&oneinstance->realm_id, realm_id) < 0)
-    goto error;
-  if (strdup_or_null(&oneinstance->realm_href, realm_href) < 0)
-    goto error;
-  if (strdup_or_null(&oneinstance->state, state) < 0)
-    goto error;
-  if (copy_hardware_profile(&oneinstance->hwp, hwp) < 0)
-    goto error;
-  if (copy_action_list(&oneinstance->actions, &actions) < 0)
-    goto error;
-  if (copy_address_list(&oneinstance->public_addresses, &public_addresses) < 0)
-    goto error;
-  if (copy_address_list(&oneinstance->private_addresses,
-			&private_addresses) < 0)
-    goto error;
-
-  add_to_list(instances, struct deltacloud_instance, oneinstance);
-
-  return 0;
-
- error:
-  deltacloud_free_instance(oneinstance);
-  SAFE_FREE(oneinstance);
-  return -1;
 }
 
 int copy_instance(struct deltacloud_instance *dst,
@@ -216,6 +151,28 @@ int copy_instance(struct deltacloud_instance *dst,
 
  error:
   deltacloud_free_instance(dst);
+  return -1;
+}
+
+int add_to_instance_list(struct deltacloud_instance **instances,
+			 struct deltacloud_instance *instance)
+{
+  struct deltacloud_instance *oneinstance;
+
+  oneinstance = calloc(1, sizeof(struct deltacloud_instance));
+  if (oneinstance == NULL)
+    return -1;
+
+  if (copy_instance(oneinstance, instance) < 0)
+    goto error;
+
+  add_to_list(instances, struct deltacloud_instance, oneinstance);
+
+  return 0;
+
+ error:
+  deltacloud_free_instance(oneinstance);
+  SAFE_FREE(oneinstance);
   return -1;
 }
 

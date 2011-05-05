@@ -24,13 +24,13 @@
 #include "common.h"
 #include "link.h"
 
-static void free_feature(struct deltacloud_feature *feature)
+void free_feature(struct deltacloud_feature *feature)
 {
   SAFE_FREE(feature->name);
 }
 
 int add_to_feature_list(struct deltacloud_feature **features,
-			char *name)
+			struct deltacloud_feature *feature)
 {
   struct deltacloud_feature *onefeature;
 
@@ -38,7 +38,7 @@ int add_to_feature_list(struct deltacloud_feature **features,
   if (onefeature == NULL)
     return -1;
 
-  if (strdup_or_null(&onefeature->name, name) < 0)
+  if (strdup_or_null(&onefeature->name, feature->name) < 0)
     goto error;
 
   add_to_list(features, struct deltacloud_feature, onefeature);
@@ -51,17 +51,11 @@ int add_to_feature_list(struct deltacloud_feature **features,
   return -1;
 }
 
-static int copy_feature(struct deltacloud_feature **dst,
-			struct deltacloud_feature *curr)
-{
-  return add_to_feature_list(dst, curr->name);
-}
-
 static int copy_feature_list(struct deltacloud_feature **dst,
-                     struct deltacloud_feature **src)
+		      struct deltacloud_feature **src)
 {
-  copy_list(dst, src, struct deltacloud_feature, copy_feature,
-           free_feature_list);
+  copy_list(dst, src, struct deltacloud_feature, add_to_feature_list,
+	    free_feature_list);
 }
 
 void free_feature_list(struct deltacloud_feature **features)
@@ -69,15 +63,15 @@ void free_feature_list(struct deltacloud_feature **features)
   free_list(features, struct deltacloud_feature, free_feature);
 }
 
-static void free_link(struct deltacloud_link *link)
+void free_link(struct deltacloud_link *link)
 {
   SAFE_FREE(link->href);
   SAFE_FREE(link->rel);
   free_feature_list(&link->features);
 }
 
-int add_to_link_list(struct deltacloud_link **links, char *href, char *rel,
-		     struct deltacloud_feature *features)
+int add_to_link_list(struct deltacloud_link **links,
+		     struct deltacloud_link *link)
 {
   struct deltacloud_link *onelink;
 
@@ -85,11 +79,11 @@ int add_to_link_list(struct deltacloud_link **links, char *href, char *rel,
   if (onelink == NULL)
     return -1;
 
-  if (strdup_or_null(&onelink->href, href) < 0)
+  if (strdup_or_null(&onelink->href, link->href) < 0)
     goto error;
-  if (strdup_or_null(&onelink->rel, rel) < 0)
+  if (strdup_or_null(&onelink->rel, link->rel) < 0)
     goto error;
-  if (copy_feature_list(&onelink->features, &features) < 0)
+  if (copy_feature_list(&onelink->features, &link->features) < 0)
     goto error;
 
   add_to_list(links, struct deltacloud_link, onelink);

@@ -24,36 +24,6 @@
 #include "common.h"
 #include "realm.h"
 
-int add_to_realm_list(struct deltacloud_realm **realms, char *href, char *id,
-		      char *name, char *state, char *limit)
-{
-  struct deltacloud_realm *onerealm;
-
-  onerealm = calloc(1, sizeof(struct deltacloud_realm));
-  if (onerealm == NULL)
-    return -1;
-
-  if (strdup_or_null(&onerealm->href, href) < 0)
-    goto error;
-  if (strdup_or_null(&onerealm->id, id) < 0)
-    goto error;
-  if (strdup_or_null(&onerealm->name, name) < 0)
-    goto error;
-  if (strdup_or_null(&onerealm->state, state) < 0)
-    goto error;
-  if (strdup_or_null(&onerealm->limit, limit) < 0)
-    goto error;
-
-  add_to_list(realms, struct deltacloud_realm, onerealm);
-
-  return 0;
-
- error:
-  deltacloud_free_realm(onerealm);
-  SAFE_FREE(onerealm);
-  return -1;
-}
-
 int copy_realm(struct deltacloud_realm *dst, struct deltacloud_realm *src)
 {
   /* with a NULL src, we just return success.  A NULL dst is an error */
@@ -80,6 +50,28 @@ int copy_realm(struct deltacloud_realm *dst, struct deltacloud_realm *src)
 
  error:
   deltacloud_free_realm(dst);
+  return -1;
+}
+
+int add_to_realm_list(struct deltacloud_realm **realms,
+		      struct deltacloud_realm *realm)
+{
+  struct deltacloud_realm *onerealm;
+
+  onerealm = calloc(1, sizeof(struct deltacloud_realm));
+  if (onerealm == NULL)
+    return -1;
+
+  if (copy_realm(onerealm, realm) < 0)
+    goto error;
+
+  add_to_list(realms, struct deltacloud_realm, onerealm);
+
+  return 0;
+
+ error:
+  deltacloud_free_realm(onerealm);
+  SAFE_FREE(onerealm);
   return -1;
 }
 

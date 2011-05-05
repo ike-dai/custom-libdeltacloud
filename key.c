@@ -36,37 +36,6 @@ void deltacloud_free_key(struct deltacloud_key *key)
   SAFE_FREE(key->fingerprint);
 }
 
-int add_to_key_list(struct deltacloud_key **keys, const char *href,
-		    const char *id, const char *type, const char *state,
-		    const char *fingerprint)
-{
-  struct deltacloud_key *onekey;
-
-  onekey = calloc(1, sizeof(struct deltacloud_key));
-  if (onekey == NULL)
-    return -1;
-
-  if (strdup_or_null(&onekey->href, href) < 0)
-    goto error;
-  if (strdup_or_null(&onekey->id, id) < 0)
-    goto error;
-  if (strdup_or_null(&onekey->type, type) < 0)
-    goto error;
-  if (strdup_or_null(&onekey->state, state) < 0)
-    goto error;
-  if (strdup_or_null(&onekey->fingerprint, fingerprint) < 0)
-    goto error;
-
-  add_to_list(keys, struct deltacloud_key, onekey);
-
-  return 0;
-
- error:
-  deltacloud_free_key(onekey);
-  SAFE_FREE(onekey);
-  return -1;
-}
-
 int copy_key(struct deltacloud_key *dst, struct deltacloud_key *src)
 {
   /* with a NULL src, we just return success.  A NULL dst is an error */
@@ -92,6 +61,28 @@ int copy_key(struct deltacloud_key *dst, struct deltacloud_key *src)
 
  error:
   deltacloud_free_key(dst);
+  return -1;
+}
+
+int add_to_key_list(struct deltacloud_key **keys,
+		    struct deltacloud_key *key)
+{
+  struct deltacloud_key *onekey;
+
+  onekey = calloc(1, sizeof(struct deltacloud_key));
+  if (onekey == NULL)
+    return -1;
+
+  if (copy_key(onekey, key) < 0)
+    goto error;
+
+  add_to_list(keys, struct deltacloud_key, onekey);
+
+  return 0;
+
+ error:
+  deltacloud_free_key(onekey);
+  SAFE_FREE(onekey);
   return -1;
 }
 

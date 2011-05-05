@@ -35,9 +35,8 @@ struct deltacloud_key {
   struct deltacloud_key *next;
 };
 
-int add_to_key_list(struct deltacloud_key **keys, const char *href,
-		    const char *id, const char *type, const char *state,
-		    const char *fingerprint);
+int add_to_key_list(struct deltacloud_key **keys,
+		    struct deltacloud_key *key);
 
 int copy_key(struct deltacloud_key *dst, struct deltacloud_key *src);
 

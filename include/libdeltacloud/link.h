@@ -39,11 +39,14 @@ struct deltacloud_link {
   struct deltacloud_link *next;
 };
 
-int add_to_feature_list(struct deltacloud_feature **features, char *name);
+int add_to_feature_list(struct deltacloud_feature **features,
+			struct deltacloud_feature *feature);
+void free_feature(struct deltacloud_feature *feature);
 void free_feature_list(struct deltacloud_feature **features);
 
-int add_to_link_list(struct deltacloud_link **links, char *href, char *rel,
-		     struct deltacloud_feature *features);
+int add_to_link_list(struct deltacloud_link **links,
+		     struct deltacloud_link *link);
+void free_link(struct deltacloud_link *link);
 void free_link_list(struct deltacloud_link **links);
 
 #ifdef __cplusplus

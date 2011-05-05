@@ -254,15 +254,17 @@ static void set_xml_error(const char *xml, int type)
 static int parse_feature_xml(xmlNodePtr featurenode,
 			     struct deltacloud_feature **features)
 {
-  char *name;
+  struct deltacloud_feature thisfeature;
   int listret;
+
+  memset(&thisfeature, 0, sizeof(struct deltacloud_feature));
 
   while (featurenode != NULL) {
     if (featurenode->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)featurenode->name, "feature")) {
-      name = (char *)xmlGetProp(featurenode, BAD_CAST "name");
-      listret = add_to_feature_list(features, name);
-      SAFE_FREE(name);
+      thisfeature.name = (char *)xmlGetProp(featurenode, BAD_CAST "name");
+      listret = add_to_feature_list(features, &thisfeature);
+      free_feature(&thisfeature);
       if (listret < 0) {
 	free_feature_list(features);
 	oom_error();
@@ -278,11 +280,12 @@ static int parse_feature_xml(xmlNodePtr featurenode,
 static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 {
   struct deltacloud_api **api = (struct deltacloud_api **)data;
+  struct deltacloud_link thislink;
   xmlNodePtr linknode;
-  char *href = NULL, *rel = NULL;
   int ret = -1;
   int listret;
-  struct deltacloud_feature *features = NULL;
+
+  memset(&thislink, 0, sizeof(struct deltacloud_link));
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
@@ -294,27 +297,17 @@ static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
       while (linknode != NULL) {
 	if (linknode->type == XML_ELEMENT_NODE &&
 	    STREQ((const char *)linknode->name, "link")) {
-	  href = (char *)xmlGetProp(linknode, BAD_CAST "href");
-	  if (href == NULL) {
-	    xml_error("api", "Failed to parse XML",
-		      "did not see href property");
-	    goto cleanup;
-	  }
 
-	  rel = (char *)xmlGetProp(linknode, BAD_CAST "rel");
-	  if (rel == NULL) {
-	    xml_error("api", "Failed to parse XML", "did not see rel property");
-	    goto cleanup;
-	  }
-
-	  if (parse_feature_xml(linknode->children, &features) < 0)
+	  thislink.href = (char *)xmlGetProp(linknode, BAD_CAST "href");
+	  thislink.rel = (char *)xmlGetProp(linknode, BAD_CAST "rel");
+	  if (parse_feature_xml(linknode->children, &(thislink.features)) < 0) {
 	    /* parse_feature_xml already set the error */
+	    free_link(&thislink);
 	    goto cleanup;
+	  }
 
-	  listret = add_to_link_list(&((*api)->links), href, rel, features);
-	  SAFE_FREE(href);
-	  SAFE_FREE(rel);
-	  free_feature_list(&features);
+	  listret = add_to_link_list(&((*api)->links), &thislink);
+	  free_link(&thislink);
 	  if (listret < 0) {
 	    oom_error();
 	    goto cleanup;
@@ -330,11 +323,6 @@ static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
   ret = 0;
 
  cleanup:
-  /* in the normal case, these aren't necessary, but they will be for the
-   * error case
-   */
-  SAFE_FREE(href);
-  SAFE_FREE(rel);
   /* if we hit some kind of failure here, in theory we would want to clean
    * up the api structure.  However, deltacloud_initialize() also does some
    * allocation of memory, so it does a deltacloud_free() on error, so we leave
@@ -560,10 +548,17 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 static int parse_addresses_xml(xmlNodePtr instance, xmlXPathContextPtr ctxt,
 			       struct deltacloud_address **addresses)
 {
+  struct deltacloud_address thisaddr;
   xmlNodePtr oldnode, cur;
-  char *address = NULL;
   int listret;
   int ret = -1;
+
+  /* you might convince yourself that memory corruption is possible after the
+   * first iteration of the loop.  That is, after that first iteration, the
+   * structure could point to uninitialized memory since we don't re-zero it.
+   * Luckily the "free" function zeros out the memory, so we are good to go.
+   */
+  memset(&thisaddr, 0, sizeof(struct deltacloud_address));
 
   *addresses = NULL;
 
@@ -574,10 +569,10 @@ static int parse_addresses_xml(xmlNodePtr instance, xmlXPathContextPtr ctxt,
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "address")) {
-      address = getXPathString("string(./address)", ctxt);
-      if (address != NULL) {
-	listret = add_to_address_list(addresses, address);
-	SAFE_FREE(address);
+      thisaddr.address = getXPathString("string(./address)", ctxt);
+      if (thisaddr.address != NULL) {
+	listret = add_to_address_list(addresses, &thisaddr);
+	free_address(&thisaddr);
 	if (listret < 0) {
 	  oom_error();
 	  goto cleanup;
@@ -601,35 +596,30 @@ static int parse_addresses_xml(xmlNodePtr instance, xmlXPathContextPtr ctxt,
 static int parse_actions_xml(xmlNodePtr instance,
 			     struct deltacloud_action **actions)
 {
+  struct deltacloud_action thisaction;
   xmlNodePtr cur;
-  char *rel = NULL, *href = NULL, *method = NULL;
   int ret = -1;
   int listret;
+
+  /* you might convince yourself that memory corruption is possible after the
+   * first iteration of the loop.  That is, after that first iteration, the
+   * structure could point to uninitialized memory since we don't re-zero it.
+   * Luckily the "free" function zeros out the memory, so we are good to go.
+   */
+  memset(&thisaction, 0, sizeof(struct deltacloud_action));
 
   cur = instance->children;
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "link")) {
-      href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      if (href == NULL) {
-	xml_error("actions", "Failed to parse XML",
-		  "did not see href property");
-	goto cleanup;
-      }
 
-      rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
-      if (rel == NULL) {
-	xml_error("actions", "Failed to parse XML", "did not see rel property");
-	SAFE_FREE(href);
-	goto cleanup;
-      }
+      thisaction.href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thisaction.rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
+      thisaction.method = (char *)xmlGetProp(cur, BAD_CAST "method");
 
-      method = (char *)xmlGetProp(cur, BAD_CAST "method");
+      listret = add_to_action_list(actions, &thisaction);
+      free_action(&thisaction);
 
-      listret = add_to_action_list(actions, rel, href, method);
-      SAFE_FREE(href);
-      SAFE_FREE(rel);
-      SAFE_FREE(method);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;
@@ -653,17 +643,19 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			      void **data)
 {
   struct deltacloud_instance **instances = (struct deltacloud_instance **)data;
+  struct deltacloud_instance thisinst;
+  struct deltacloud_hardware_profile *hwp = NULL;
   xmlNodePtr oldnode;
   xmlXPathObjectPtr hwpset, actionset, pubset, privset;
-  char *href = NULL, *id = NULL, *name = NULL, *owner_id = NULL;
-  char *image_id = NULL, *image_href = NULL, *realm_href = NULL;
-  char *realm_id = NULL, *state = NULL;
-  struct deltacloud_hardware_profile *hwp = NULL;
-  struct deltacloud_action *actions = NULL;
-  struct deltacloud_address *public_addresses = NULL;
-  struct deltacloud_address *private_addresses = NULL;
   int listret;
   int ret = -1;
+
+  /* you might convince yourself that memory corruption is possible after the
+   * first iteration of the loop.  That is, after that first iteration, the
+   * structure could point to uninitialized memory since we don't re-zero it.
+   * Luckily the "free" function zeros out the memory, so we are good to go.
+   */
+  memset(&thisinst, 0, sizeof(struct deltacloud_instance));
 
   oldnode = ctxt->node;
 
@@ -671,74 +663,51 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "instance")) {
 
-      href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      if (href == NULL) {
-	xml_error("instance", "Failed to parse XML",
-		  "did not see rel property");
-	goto cleanup;
-      }
-
-      id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      if (id == NULL) {
-	xml_error("instance", "Failed to parse XML", "did not see id property");
-	SAFE_FREE(href);
-	goto cleanup;
-      }
-
       ctxt->node = cur;
 
-      name = getXPathString("string(./name)", ctxt);
-      owner_id = getXPathString("string(./owner_id)", ctxt);
-      image_id = getXPathString("string(./image/@id)", ctxt);
-      image_href = getXPathString("string(./image/@href)", ctxt);
-      realm_id = getXPathString("string(./realm/@id)", ctxt);
-      realm_href = getXPathString("string(./realm/@href)", ctxt);
-      state = getXPathString("string(./state)", ctxt);
+      thisinst.href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thisinst.id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      thisinst.name = getXPathString("string(./name)", ctxt);
+      thisinst.owner_id = getXPathString("string(./owner_id)", ctxt);
+      thisinst.image_id = getXPathString("string(./image/@id)", ctxt);
+      thisinst.image_href = getXPathString("string(./image/@href)", ctxt);
+      thisinst.realm_id = getXPathString("string(./realm/@id)", ctxt);
+      thisinst.realm_href = getXPathString("string(./realm/@href)", ctxt);
+      thisinst.state = getXPathString("string(./state)", ctxt);
 
       hwpset = xmlXPathEval(BAD_CAST "./hardware_profile", ctxt);
       if (hwpset && hwpset->type == XPATH_NODESET && hwpset->nodesetval &&
-	  hwpset->nodesetval->nodeNr == 1)
+	  hwpset->nodesetval->nodeNr == 1) {
 	parse_hardware_profile_xml(hwpset->nodesetval->nodeTab[0], ctxt,
 				   (void **)&hwp);
+	copy_hardware_profile(&(thisinst.hwp), hwp);
+	deltacloud_free_hardware_profile_list(&hwp);
+      }
       xmlXPathFreeObject(hwpset);
 
       actionset = xmlXPathEval(BAD_CAST "./actions", ctxt);
       if (actionset && actionset->type == XPATH_NODESET &&
 	  actionset->nodesetval && actionset->nodesetval->nodeNr == 1)
-	parse_actions_xml(actionset->nodesetval->nodeTab[0], &actions);
+	parse_actions_xml(actionset->nodesetval->nodeTab[0],
+			  &(thisinst.actions));
       xmlXPathFreeObject(actionset);
 
       pubset = xmlXPathEval(BAD_CAST "./public_addresses", ctxt);
       if (pubset && pubset->type == XPATH_NODESET && pubset->nodesetval &&
 	  pubset->nodesetval->nodeNr == 1)
 	parse_addresses_xml(pubset->nodesetval->nodeTab[0], ctxt,
-			    &public_addresses);
+			    &(thisinst.public_addresses));
       xmlXPathFreeObject(pubset);
 
       privset = xmlXPathEval(BAD_CAST "./private_addresses", ctxt);
       if (privset && privset->type == XPATH_NODESET && privset->nodesetval &&
 	  privset->nodesetval->nodeNr == 1)
 	parse_addresses_xml(privset->nodesetval->nodeTab[0], ctxt,
-			    &private_addresses);
+			    &(thisinst.private_addresses));
       xmlXPathFreeObject(privset);
 
-      listret = add_to_instance_list(instances, href, id, name, owner_id,
-				     image_id, image_href, realm_id, realm_href,
-				     state, hwp, actions, public_addresses,
-				     private_addresses);
-      SAFE_FREE(id);
-      SAFE_FREE(name);
-      SAFE_FREE(owner_id);
-      SAFE_FREE(image_id);
-      SAFE_FREE(image_href);
-      SAFE_FREE(realm_id);
-      SAFE_FREE(realm_href);
-      SAFE_FREE(state);
-      SAFE_FREE(href);
-      free_address_list(&public_addresses);
-      free_address_list(&private_addresses);
-      free_action_list(&actions);
-      deltacloud_free_hardware_profile_list(&hwp);
+      listret = add_to_instance_list(instances, &thisinst);
+      deltacloud_free_instance(&thisinst);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;
@@ -797,41 +766,34 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			   void **data)
 {
   struct deltacloud_realm **realms = (struct deltacloud_realm **)data;
+  struct deltacloud_realm thisrealm;
   xmlNodePtr oldnode;
   int ret = -1;
-  char *href = NULL, *id = NULL, *name = NULL, *state = NULL, *limit = NULL;
   int listret;
+
+  /* you might convince yourself that memory corruption is possible after the
+   * first iteration of the loop.  That is, after that first iteration, the
+   * structure could point to uninitialized memory since we don't re-zero it.
+   * Luckily the "free" function zeros out the memory, so we are good to go.
+   */
+  memset(&thisrealm, 0, sizeof(struct deltacloud_realm));
 
   oldnode = ctxt->node;
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "realm")) {
-      href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      if (href == NULL) {
-	xml_error("realm", "Failed to parse XML", "did not see href property");
-	goto cleanup;
-      }
-
-      id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      if (id == NULL) {
-	xml_error("realm", "Failed to parse XML", "did not see id property");
-	SAFE_FREE(href);
-	goto cleanup;
-      }
 
       ctxt->node = cur;
 
-      name = getXPathString("string(./name)", ctxt);
-      state = getXPathString("string(./state)", ctxt);
-      limit = getXPathString("string(./limit)", ctxt);
+      thisrealm.href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thisrealm.id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      thisrealm.name = getXPathString("string(./name)", ctxt);
+      thisrealm.state = getXPathString("string(./state)", ctxt);
+      thisrealm.limit = getXPathString("string(./limit)", ctxt);
 
-      listret = add_to_realm_list(realms, href, id, name, state, limit);
-      SAFE_FREE(href);
-      SAFE_FREE(id);
-      SAFE_FREE(name);
-      SAFE_FREE(state);
-      SAFE_FREE(limit);
+      listret = add_to_realm_list(realms, &thisrealm);
+      deltacloud_free_realm(&thisrealm);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;
@@ -885,126 +847,78 @@ int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
   return internal_get_by_id(api, id, "realms", parse_one_realm, realm);
 }
 
-static int parse_hardware_profile_ranges(xmlNodePtr property,
-					 struct deltacloud_property_range **ranges)
+static int parse_hwp_params_enums_ranges(xmlNodePtr property,
+					 struct deltacloud_property *prop)
 {
-  xmlNodePtr prop_cur;
-  char *first = NULL, *last = NULL;
+  struct deltacloud_property_param thisparam;
+  struct deltacloud_property_enum thisenum;
+  struct deltacloud_property_range thisrange;
+  xmlNodePtr enum_cur;
   int listret;
   int ret = -1;
 
-  prop_cur = property->children;
+  memset(&thisparam, 0, sizeof(struct deltacloud_property_param));
+  memset(&thisenum, 0, sizeof(struct deltacloud_property_enum));
+  memset(&thisrange, 0, sizeof(struct deltacloud_property_range));
 
-  while (prop_cur != NULL) {
-    if (prop_cur->type == XML_ELEMENT_NODE &&
-	STREQ((const char *)prop_cur->name, "range")) {
+  while (property != NULL) {
+    if (property->type == XML_ELEMENT_NODE) {
+      if (STREQ((const char *)property->name, "param")) {
+	thisparam.href = (char *)xmlGetProp(property, BAD_CAST "href");
+	thisparam.method = (char *)xmlGetProp(property, BAD_CAST "method");
+	thisparam.name = (char *)xmlGetProp(property, BAD_CAST "name");
+	thisparam.operation = (char *)xmlGetProp(property,
+						 BAD_CAST "operation");
 
-      first = (char *)xmlGetProp(prop_cur, BAD_CAST "first");
-      last = (char *)xmlGetProp(prop_cur, BAD_CAST "last");
-
-      listret = add_to_range_list(ranges, first, last);
-      SAFE_FREE(first);
-      SAFE_FREE(last);
-      if (listret < 0) {
-	oom_error();
-	goto cleanup;
-      }
-    }
-
-    prop_cur = prop_cur->next;
-  }
-
-  ret = 0;
-
- cleanup:
-  if (ret < 0)
-    free_range_list(ranges);
-  return ret;
-}
-
-static int parse_hardware_profile_enums(xmlNodePtr property,
-					struct deltacloud_property_enum **enums)
-{
-  xmlNodePtr prop_cur, enum_cur;
-  char *enum_value = NULL;
-  int listret;
-  int ret = -1;
-
-  prop_cur = property->children;
-
-  while (prop_cur != NULL) {
-    if (prop_cur->type == XML_ELEMENT_NODE &&
-	STREQ((const char *)prop_cur->name, "enum")) {
-
-      enum_cur = prop_cur->children;
-      while (enum_cur != NULL) {
-	if (enum_cur->type == XML_ELEMENT_NODE &&
-	    STREQ((const char *)enum_cur->name, "entry")) {
-	  enum_value = (char *)xmlGetProp(enum_cur, BAD_CAST "value");
-
-	  listret = add_to_enum_list(enums, enum_value);
-	  SAFE_FREE(enum_value);
-	  if (listret < 0) {
-	    oom_error();
-	    goto cleanup;
-	  }
+	listret = add_to_param_list(&prop->params, &thisparam);
+	free_param(&thisparam);
+	if (listret < 0) {
+	  oom_error();
+	  goto cleanup;
 	}
+      }
+      else if(STREQ((const char *)property->name, "enum")) {
+	enum_cur = property->children;
+	while (enum_cur != NULL) {
+	  if (enum_cur->type == XML_ELEMENT_NODE &&
+	      STREQ((const char *)enum_cur->name, "entry")) {
+	    thisenum.value = (char *)xmlGetProp(enum_cur, BAD_CAST "value");
 
-	enum_cur = enum_cur->next;
+	    listret = add_to_enum_list(&prop->enums, &thisenum);
+	    free_enum(&thisenum);
+	    if (listret < 0) {
+	      oom_error();
+	      goto cleanup;
+	    }
+	  }
+
+	  enum_cur = enum_cur->next;
+	}
+      }
+      else if (STREQ((const char *)property->name, "range")) {
+	thisrange.first = (char *)xmlGetProp(property, BAD_CAST "first");
+	thisrange.last = (char *)xmlGetProp(property, BAD_CAST "last");
+
+	listret = add_to_range_list(&prop->ranges, &thisrange);
+	free_range(&thisrange);
+	if (listret < 0) {
+	  oom_error();
+	  goto cleanup;
+	}
       }
     }
-
-    prop_cur = prop_cur->next;
+    property = property->next;
   }
 
   ret = 0;
 
  cleanup:
-  if (ret < 0)
-    free_enum_list(enums);
-  return ret;
-}
-
-static int parse_hardware_profile_params(xmlNodePtr property,
-					 struct deltacloud_property_param **params)
-{
-  xmlNodePtr prop_cur;
-  char *param_href = NULL, *param_method = NULL, *param_name = NULL;
-  char *param_operation = NULL;
-  int listret;
-  int ret = -1;
-
-  prop_cur = property->children;
-
-  while (prop_cur != NULL) {
-    if (prop_cur->type == XML_ELEMENT_NODE &&
-	STREQ((const char *)prop_cur->name, "param")) {
-
-      param_href = (char *)xmlGetProp(prop_cur, BAD_CAST "href");
-      param_method = (char *)xmlGetProp(prop_cur, BAD_CAST "method");
-      param_name = (char *)xmlGetProp(prop_cur, BAD_CAST "name");
-      param_operation = (char *)xmlGetProp(prop_cur, BAD_CAST "operation");
-
-      listret = add_to_param_list(params, param_href,
-				  param_method, param_name,
-				  param_operation);
-      SAFE_FREE(param_href);
-      SAFE_FREE(param_method);
-      SAFE_FREE(param_name);
-      SAFE_FREE(param_operation);
-      if (listret < 0) {
-	oom_error();
-	goto cleanup;
-      }
-    }
-    prop_cur = prop_cur->next;
+  if (ret < 0) {
+    free_param_list(&prop->params);
+    free_enum_list(&prop->enums);
+    free_range_list(&prop->ranges);
   }
 
-  ret = 0;
-
- cleanup:
-  if (ret < 0)
-    free_param_list(params);
   return ret;
 }
 
@@ -1012,39 +926,32 @@ static int parse_hardware_profile_properties(xmlNodePtr hwp,
 					     struct deltacloud_property **props)
 {
   xmlNodePtr profile_cur;
-  struct deltacloud_property_param *params = NULL;
-  struct deltacloud_property_enum *enums = NULL;
-  struct deltacloud_property_range *ranges = NULL;
-  char *kind = NULL, *name = NULL, *unit = NULL, *value = NULL;
+  struct deltacloud_property thisprop;
   int listret;
   int ret = -1;
+
+  memset(&thisprop, 0, sizeof(struct deltacloud_property));
 
   profile_cur = hwp->children;
 
   while (profile_cur != NULL) {
     if (profile_cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)profile_cur->name, "property")) {
-      kind = (char *)xmlGetProp(profile_cur, BAD_CAST "kind");
-      name = (char *)xmlGetProp(profile_cur, BAD_CAST "name");
-      unit = (char *)xmlGetProp(profile_cur, BAD_CAST "unit");
-      value = (char *)xmlGetProp(profile_cur, BAD_CAST "value");
+      thisprop.kind = (char *)xmlGetProp(profile_cur, BAD_CAST "kind");
+      thisprop.name = (char *)xmlGetProp(profile_cur, BAD_CAST "name");
+      thisprop.unit = (char *)xmlGetProp(profile_cur, BAD_CAST "unit");
+      thisprop.value = (char *)xmlGetProp(profile_cur, BAD_CAST "value");
 
-      parse_hardware_profile_params(profile_cur, &params);
-      parse_hardware_profile_enums(profile_cur, &enums);
-      parse_hardware_profile_ranges(profile_cur, &ranges);
+      if (parse_hwp_params_enums_ranges(profile_cur->children, &thisprop) < 0) {
+	/* parse_hwp_params_enums_ranges already set the error */
+	free_prop(&thisprop);
+	goto cleanup;
+      }
 
-      listret = add_to_property_list(props, kind, name, unit, value, params,
-				     enums, ranges);
-      SAFE_FREE(kind);
-      SAFE_FREE(name);
-      SAFE_FREE(unit);
-      SAFE_FREE(value);
-      free_param_list(&params);
-      free_enum_list(&enums);
-      free_range_list(&ranges);
+      listret = add_to_property_list(props, &thisprop);
+      free_prop(&thisprop);
       if (listret < 0) {
 	oom_error();
-	free_property_list(props);
 	goto cleanup;
       }
     }
@@ -1055,6 +962,8 @@ static int parse_hardware_profile_properties(xmlNodePtr hwp,
   ret = 0;
 
  cleanup:
+  if (ret < 0)
+    free_property_list(props);
   return ret;
 }
 
@@ -1062,43 +971,33 @@ static int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				      void **data)
 {
   struct deltacloud_hardware_profile **profiles = (struct deltacloud_hardware_profile **)data;
-  struct deltacloud_property *props = NULL;
-  char *href = NULL, *id = NULL, *name = NULL;
+  struct deltacloud_hardware_profile thishwp;
   xmlNodePtr oldnode;
   int ret = -1;
   int listret;
+
+  memset(&thishwp, 0, sizeof(struct deltacloud_hardware_profile));
 
   oldnode = ctxt->node;
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "hardware_profile")) {
+
       ctxt->node = cur;
 
-      href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      if (href == NULL) {
-	xml_error("hardware_profile", "Failed to parse XML",
-		  "did not see href property");
+      thishwp.href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thishwp.id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      thishwp.name = getXPathString("string(./name)", ctxt);
+
+      if (parse_hardware_profile_properties(cur, &(thishwp.properties)) < 0) {
+	/* parse_hardware_profile_properties already set the error */
+	deltacloud_free_hardware_profile(&thishwp);
 	goto cleanup;
       }
 
-      id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      if (id == NULL) {
-	xml_error("hardware_profile", "Failed to parse XML",
-		  "did not see id property");
-	SAFE_FREE(href);
-	goto cleanup;
-      }
-
-      name = getXPathString("string(./name)", ctxt);
-
-      parse_hardware_profile_properties(cur, &props);
-
-      listret = add_to_hardware_profile_list(profiles, id, href, name, props);
-      SAFE_FREE(id);
-      SAFE_FREE(href);
-      SAFE_FREE(name);
-      free_property_list(&props);
+      listret = add_to_hardware_profile_list(profiles, &thishwp);
+      deltacloud_free_hardware_profile(&thishwp);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;
@@ -1160,46 +1059,36 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			   void **data)
 {
   struct deltacloud_image **images = (struct deltacloud_image **)data;
+  struct deltacloud_image thisimage;
   xmlNodePtr oldnode;
-  char *href = NULL, *id = NULL, *description = NULL, *architecture = NULL;
-  char *owner_id = NULL, *name = NULL, *state = NULL;
   int listret;
   int ret = -1;
+
+  /* you might convince yourself that memory corruption is possible after the
+   * first iteration of the loop.  That is, after that first iteration, the
+   * structure could point to uninitialized memory since we don't re-zero it.
+   * Luckily the "free" function zeros out the memory, so we are good to go.
+   */
+  memset(&thisimage, 0, sizeof(struct deltacloud_image));
 
   oldnode = ctxt->node;
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "image")) {
-      href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      if (href == NULL) {
-	xml_error("image", "Failed to parse XML", "did not see href property");
-	goto cleanup;
-      }
-
-      id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      if (id == NULL) {
-	xml_error("image", "Failed to parse XML", "did not see id property");
-	SAFE_FREE(href);
-	goto cleanup;
-      }
 
       ctxt->node = cur;
-      description = getXPathString("string(./description)", ctxt);
-      architecture = getXPathString("string(./architecture)", ctxt);
-      owner_id = getXPathString("string(./owner_id)", ctxt);
-      name = getXPathString("string(./name)", ctxt);
-      state = getXPathString("string(./state)", ctxt);
 
-      listret = add_to_image_list(images, href, id, description, architecture,
-				  owner_id, name, state);
-      SAFE_FREE(href);
-      SAFE_FREE(id);
-      SAFE_FREE(description);
-      SAFE_FREE(architecture);
-      SAFE_FREE(owner_id);
-      SAFE_FREE(name);
-      SAFE_FREE(state);
+      thisimage.href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thisimage.id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      thisimage.description = getXPathString("string(./description)", ctxt);
+      thisimage.architecture = getXPathString("string(./architecture)", ctxt);
+      thisimage.owner_id = getXPathString("string(./owner_id)", ctxt);
+      thisimage.name = getXPathString("string(./name)", ctxt);
+      thisimage.state = getXPathString("string(./state)", ctxt);
+
+      listret = add_to_image_list(images, &thisimage);
+      deltacloud_free_image(&thisimage);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;
@@ -1257,39 +1146,51 @@ static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				    void **data)
 {
   struct deltacloud_instance_state **instance_states = (struct deltacloud_instance_state **)data;
+  struct deltacloud_instance_state thisstate;
+  struct deltacloud_instance_state_transition thistrans;
   xmlNodePtr state_cur;
-  char *name = NULL, *action = NULL, *to = NULL, *auto_bool = NULL;
-  struct deltacloud_instance_state_transition *transitions = NULL;
   int ret = -1;
   int listret;
+
+  /* you might convince yourself that memory corruption is possible after the
+   * first iteration of the loop.  That is, after that first iteration, the
+   * structure could point to uninitialized memory since we don't re-zero it.
+   * Luckily the "free" function zeros out the memory, so we are good to go.
+   */
+  memset(&thisstate, 0, sizeof(struct deltacloud_instance_state));
+  memset(&thistrans, 0, sizeof(struct deltacloud_instance_state_transition));
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "state")) {
-      name = (char *)xmlGetProp(cur, BAD_CAST "name");
+
+      thisstate.name = (char *)xmlGetProp(cur, BAD_CAST "name");
 
       state_cur = cur->children;
       while (state_cur != NULL) {
 	if (state_cur->type == XML_ELEMENT_NODE &&
 	    STREQ((const char *)state_cur->name, "transition")) {
-	  action = (char *)xmlGetProp(state_cur, BAD_CAST "action");
-	  to = (char *)xmlGetProp(state_cur, BAD_CAST "to");
-	  auto_bool = (char *)xmlGetProp(state_cur, BAD_CAST "auto");
-	  add_to_transition_list(&transitions, action, to, auto_bool);
-	  SAFE_FREE(action);
-	  SAFE_FREE(to);
-	  SAFE_FREE(auto_bool);
+	  thistrans.action = (char *)xmlGetProp(state_cur, BAD_CAST "action");
+	  thistrans.to = (char *)xmlGetProp(state_cur, BAD_CAST "to");
+	  thistrans.auto_bool = (char *)xmlGetProp(state_cur, BAD_CAST "auto");
+	  listret = add_to_transition_list(&(thisstate.transitions),
+					   &thistrans);
+	  free_transition(&thistrans);
+	  if (listret < 0) {
+	    deltacloud_free_instance_state(&thisstate);
+	    oom_error();
+	    goto cleanup;
+	  }
 	}
 	state_cur = state_cur->next;
       }
-      listret = add_to_instance_state_list(instance_states, name, transitions);
-      SAFE_FREE(name);
-      free_transition_list(&transitions);
+
+      listret = add_to_instance_state_list(instance_states, &thisstate);
+      deltacloud_free_instance_state(&thisstate);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;
       }
-      transitions = NULL;
     }
     cur = cur->next;
   }
@@ -1315,7 +1216,7 @@ int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
 					  struct deltacloud_instance_state *instance_state)
 {
   struct deltacloud_instance_state *statelist = NULL;
-  struct deltacloud_instance_state *found;
+  struct deltacloud_instance_state *state;
   int instance_ret;
   int ret = -1;
 
@@ -1330,12 +1231,16 @@ int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
   if (instance_ret < 0)
     return instance_ret;
 
-  found = find_by_name_in_instance_state_list(&statelist, name);
-  if (found == NULL) {
+  deltacloud_for_each(state, statelist) {
+    if (STREQ(state->name, name))
+      break;
+  }
+  if (state == NULL) {
     find_by_name_error(name, "instance_state");
     goto cleanup;
   }
-  if (copy_instance_state(instance_state, found) < 0) {
+
+  if (copy_instance_state(instance_state, state) < 0) {
     oom_error();
     goto cleanup;
   }
@@ -1351,62 +1256,41 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				    void **data)
 {
   struct deltacloud_storage_volume **storage_volumes = (struct deltacloud_storage_volume **)data;
+  struct deltacloud_storage_volume thisvolume;
   xmlNodePtr oldnode;
   int ret = -1;
-  char *href = NULL, *id = NULL, *created = NULL, *state = NULL;
-  struct deltacloud_storage_volume_capacity capacity;
-  char *device = NULL, *instance_href = NULL, *realm_id = NULL;
-  struct deltacloud_storage_volume_mount mount;
   int listret;
 
-  memset(&capacity, 0, sizeof(struct deltacloud_storage_volume_capacity));
-  memset(&mount, 0, sizeof(struct deltacloud_storage_volume_mount));
+  memset(&thisvolume, 0, sizeof(struct deltacloud_storage_volume));
 
   oldnode = ctxt->node;
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "storage_volume")) {
-      href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      if (href == NULL) {
-	xml_error("storage_volume", "Failed to parse XML",
-		  "did not see href property");
-	goto cleanup;
-      }
-
-      id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      if (id == NULL) {
-	xml_error("storage_volume", "Failed to parse XML",
-		  "did not see id property");
-	SAFE_FREE(href);
-	goto cleanup;
-      }
 
       ctxt->node = cur;
-      created = getXPathString("string(./created)", ctxt);
-      state = getXPathString("string(./state)", ctxt);
-      capacity.unit = getXPathString("string(./capacity/@unit)", ctxt);
-      capacity.size = getXPathString("string(./capacity)", ctxt);
-      device = getXPathString("string(./device)", ctxt);
-      instance_href = getXPathString("string(./instance/@href)", ctxt);
-      realm_id = getXPathString("string(./realm_id)", ctxt);
-      mount.instance_href = getXPathString("string(./mount/instance/@href)",
-					   ctxt);
-      mount.instance_id = getXPathString("string(./mount/instance/@id)", ctxt);
-      mount.device_name = getXPathString("string(./mount/device/@name)", ctxt);
 
-      listret = add_to_storage_volume_list(storage_volumes, href, id, created,
-					   state, &capacity, device,
-					   instance_href, realm_id, &mount);
-      SAFE_FREE(id);
-      SAFE_FREE(created);
-      SAFE_FREE(state);
-      free_capacity(&capacity);
-      SAFE_FREE(device);
-      SAFE_FREE(instance_href);
-      SAFE_FREE(href);
-      SAFE_FREE(realm_id);
-      free_mount(&mount);
+      thisvolume.href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thisvolume.id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      thisvolume.created = getXPathString("string(./created)", ctxt);
+      thisvolume.state = getXPathString("string(./state)", ctxt);
+      thisvolume.capacity.unit = getXPathString("string(./capacity/@unit)",
+						ctxt);
+      thisvolume.capacity.size = getXPathString("string(./capacity)", ctxt);
+      thisvolume.device = getXPathString("string(./device)", ctxt);
+      thisvolume.instance_href = getXPathString("string(./instance/@href)",
+						ctxt);
+      thisvolume.realm_id = getXPathString("string(./realm_id)", ctxt);
+      thisvolume.mount.instance_href = getXPathString("string(./mount/instance/@href)",
+					   ctxt);
+      thisvolume.mount.instance_id = getXPathString("string(./mount/instance/@id)",
+						    ctxt);
+      thisvolume.mount.device_name = getXPathString("string(./mount/device/@name)",
+						    ctxt);
+
+      listret = add_to_storage_volume_list(storage_volumes, &thisvolume);
+      deltacloud_free_storage_volume(&thisvolume);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;
@@ -1467,49 +1351,32 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				      void **data)
 {
   struct deltacloud_storage_snapshot **storage_snapshots = (struct deltacloud_storage_snapshot **)data;
+  struct deltacloud_storage_snapshot thissnapshot;
   int ret = -1;
   xmlNodePtr oldnode;
-  char *href = NULL, *id = NULL, *created = NULL, *state = NULL;
-  char *storage_volume_href = NULL, *storage_volume_id = NULL;
   int listret;
+
+  memset(&thissnapshot, 0, sizeof(struct deltacloud_storage_snapshot));
 
   oldnode = ctxt->node;
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "storage_snapshot")) {
-      href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      if (href == NULL) {
-	xml_error("storage_snapshot", "Failed to parse XML",
-		  "did not see href property");
-	goto cleanup;
-      }
-
-      id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      if (id == NULL) {
-	xml_error("storage_snapshot", "Failed to parse XML",
-		  "did not see id property");
-	SAFE_FREE(href);
-	goto cleanup;
-      }
 
       ctxt->node = cur;
-      created = getXPathString("string(./created)", ctxt);
-      state = getXPathString("string(./state)", ctxt);
-      storage_volume_href = getXPathString("string(./storage_volume/@href)",
-					   ctxt);
-      storage_volume_id = getXPathString("string(./storage_volume/@id)", ctxt);
 
-      listret = add_to_storage_snapshot_list(storage_snapshots, href, id,
-					     created, state,
-					     storage_volume_href,
-					     storage_volume_id);
-      SAFE_FREE(id);
-      SAFE_FREE(created);
-      SAFE_FREE(state);
-      SAFE_FREE(storage_volume_href);
-      SAFE_FREE(storage_volume_id);
-      SAFE_FREE(href);
+      thissnapshot.href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thissnapshot.id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      thissnapshot.created = getXPathString("string(./created)", ctxt);
+      thissnapshot.state = getXPathString("string(./state)", ctxt);
+      thissnapshot.storage_volume_href = getXPathString("string(./storage_volume/@href)",
+					   ctxt);
+      thissnapshot.storage_volume_id = getXPathString("string(./storage_volume/@id)",
+						      ctxt);
+
+      listret = add_to_storage_snapshot_list(storage_snapshots, &thissnapshot);
+      deltacloud_free_storage_snapshot(&thissnapshot);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;
@@ -1569,48 +1436,34 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 static int parse_key_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 {
   struct deltacloud_key **keys = (struct deltacloud_key **)data;
+  struct deltacloud_key thiskey;
   int ret = -1;
-  char *href = NULL, *id = NULL, *type = NULL, *state = NULL;
-  char *fingerprint = NULL;
   xmlNodePtr oldnode;
   int listret;
+
+  /* you might convince yourself that memory corruption is possible after the
+   * first iteration of the loop.  That is, after that first iteration, the
+   * structure could point to uninitialized memory since we don't re-zero it.
+   * Luckily the "free" function zeros out the memory, so we are good to go.
+   */
+  memset(&thiskey, 0, sizeof(struct deltacloud_key));
 
   oldnode = ctxt->node;
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "key")) {
-      href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      if (href == NULL) {
-	xml_error("key", "Failed to parse XML", "did not see href property");
-	goto cleanup;
-      }
-
-      id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      if (id == NULL) {
-	xml_error("key", "Failed to parse XML", "did not see id property");
-	SAFE_FREE(href);
-	goto cleanup;
-      }
-
-      type = (char *)xmlGetProp(cur, BAD_CAST "type");
-      if (type == NULL) {
-	xml_error("key", "Failed to parse XML", "did not see type property");
-	SAFE_FREE(href);
-	SAFE_FREE(id);
-	goto cleanup;
-      }
 
       ctxt->node = cur;
-      state = getXPathString("string(./state)", ctxt);
-      fingerprint = getXPathString("string(./fingerprint)", ctxt);
 
-      listret = add_to_key_list(keys, href, id, type, state, fingerprint);
-      SAFE_FREE(href);
-      SAFE_FREE(id);
-      SAFE_FREE(type);
-      SAFE_FREE(state);
-      SAFE_FREE(fingerprint);
+      thiskey.href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thiskey.id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      thiskey.type = (char *)xmlGetProp(cur, BAD_CAST "type");
+      thiskey.state = getXPathString("string(./state)", ctxt);
+      thiskey.fingerprint = getXPathString("string(./fingerprint)", ctxt);
+
+      listret = add_to_key_list(keys, &thiskey);
+      deltacloud_free_key(&thiskey);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;
@@ -1742,43 +1595,44 @@ static int parse_driver_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			    void **data)
 {
   struct deltacloud_driver **drivers = (struct deltacloud_driver **)data;
+  struct deltacloud_driver thisdriver;
+  struct deltacloud_driver_provider thisprovider;
   int ret = -1;
-  char *href = NULL, *id = NULL, *name = NULL, *provider_id;
   xmlNodePtr oldnode, providernode;
-  struct deltacloud_driver_provider *providers = NULL;
   int listret;
 
   oldnode = ctxt->node;
 
+  /* you might convince yourself that memory corruption is possible after the
+   * first iteration of the loop.  That is, after that first iteration, the
+   * structure could point to uninitialized memory since we don't re-zero it.
+   * Luckily the "free" function zeros out the memory, so we are good to go.
+   */
+  memset(&thisdriver, 0, sizeof(struct deltacloud_driver));
+  memset(&thisprovider, 0, sizeof(struct deltacloud_driver_provider));
+
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "driver")) {
-      href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      if (href == NULL) {
-	xml_error("key", "Failed to parse XML", "did not see href property");
-	goto cleanup;
-      }
-
-      id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      if (id == NULL) {
-	xml_error("key", "Failed to parse XML", "did not see id property");
-	SAFE_FREE(href);
-	goto cleanup;
-      }
 
       ctxt->node = cur;
-      name = getXPathString("string(./name)", ctxt);
+
+      thisdriver.href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thisdriver.id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      thisdriver.name = getXPathString("string(./name)", ctxt);
 
       providernode = cur->children;
       while (providernode != NULL) {
 	if (providernode->type == XML_ELEMENT_NODE &&
 	    STREQ((const char *)providernode->name, "provider")) {
-	  provider_id = (char *)xmlGetProp(providernode, BAD_CAST "id");
 
-	  listret = add_to_provider_list(&providers, provider_id);
-	  SAFE_FREE(provider_id);
+	  thisprovider.id = (char *)xmlGetProp(providernode, BAD_CAST "id");
+
+	  listret = add_to_provider_list(&(thisdriver.providers),
+					 &thisprovider);
+	  free_provider(&thisprovider);
 	  if (listret < 0) {
-	    free_provider_list(&providers);
+	    free_provider_list(&(thisdriver.providers));
 	    oom_error();
 	    goto cleanup;
 	  }
@@ -1786,11 +1640,8 @@ static int parse_driver_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	providernode = providernode->next;
       }
 
-      listret = add_to_driver_list(drivers, href, id, name, providers);
-      SAFE_FREE(href);
-      SAFE_FREE(id);
-      SAFE_FREE(name);
-      free_provider_list(&providers);
+      listret = add_to_driver_list(drivers, &thisdriver);
+      deltacloud_free_driver(&thisdriver);
       if (listret < 0) {
 	oom_error();
 	goto cleanup;

@@ -24,43 +24,6 @@
 #include "common.h"
 #include "storage_snapshot.h"
 
-int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots,
-				 const char *href, const char *id,
-				 const char *created, const char *state,
-				 const char *storage_volume_href,
-				 const char *storage_volume_id)
-{
-  struct deltacloud_storage_snapshot *onestorage_snapshot;
-
-  onestorage_snapshot = calloc(1, sizeof(struct deltacloud_storage_snapshot));
-  if (onestorage_snapshot == NULL)
-    return -1;
-
-  if (strdup_or_null(&onestorage_snapshot->href, href) < 0)
-    goto error;
-  if (strdup_or_null(&onestorage_snapshot->id, id) < 0)
-    goto error;
-  if (strdup_or_null(&onestorage_snapshot->created, created) < 0)
-    goto error;
-  if (strdup_or_null(&onestorage_snapshot->state, state) < 0)
-    goto error;
-  if (strdup_or_null(&onestorage_snapshot->storage_volume_href,
-		     storage_volume_href) < 0)
-    goto error;
-  if (strdup_or_null(&onestorage_snapshot->storage_volume_id, storage_volume_id) < 0)
-    goto error;
-
-  add_to_list(storage_snapshots, struct deltacloud_storage_snapshot,
-	      onestorage_snapshot);
-
-  return 0;
-
- error:
-  deltacloud_free_storage_snapshot(onestorage_snapshot);
-  SAFE_FREE(onestorage_snapshot);
-  return -1;
-}
-
 int copy_storage_snapshot(struct deltacloud_storage_snapshot *dst,
 			  struct deltacloud_storage_snapshot *src)
 {
@@ -90,6 +53,29 @@ int copy_storage_snapshot(struct deltacloud_storage_snapshot *dst,
 
  error:
   deltacloud_free_storage_snapshot(dst);
+  return -1;
+}
+
+int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots,
+				 struct deltacloud_storage_snapshot *snapshot)
+{
+  struct deltacloud_storage_snapshot *onestorage_snapshot;
+
+  onestorage_snapshot = calloc(1, sizeof(struct deltacloud_storage_snapshot));
+  if (onestorage_snapshot == NULL)
+    return -1;
+
+  if (copy_storage_snapshot(onestorage_snapshot, snapshot) < 0)
+    goto error;
+
+  add_to_list(storage_snapshots, struct deltacloud_storage_snapshot,
+	      onestorage_snapshot);
+
+  return 0;
+
+ error:
+  deltacloud_free_storage_snapshot(onestorage_snapshot);
+  SAFE_FREE(onestorage_snapshot);
   return -1;
 }
 

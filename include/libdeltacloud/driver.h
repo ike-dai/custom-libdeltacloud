@@ -40,13 +40,13 @@ struct deltacloud_driver {
   struct deltacloud_driver *next;
 };
 
+void free_provider(struct deltacloud_driver_provider *provider);
 int add_to_provider_list(struct deltacloud_driver_provider **providers,
-			 char *id);
+			 struct deltacloud_driver_provider *provider);
 void free_provider_list(struct deltacloud_driver_provider **providers);
 
-int add_to_driver_list(struct deltacloud_driver **drivers, const char *href,
-		       const char *id, const char *name,
-		       struct deltacloud_driver_provider *providers);
+int add_to_driver_list(struct deltacloud_driver **drivers,
+		       struct deltacloud_driver *driver);
 void deltacloud_free_driver(struct deltacloud_driver *driver);
 void deltacloud_free_driver_list(struct deltacloud_driver **drivers);
 int copy_driver(struct deltacloud_driver *dst, struct deltacloud_driver *src);

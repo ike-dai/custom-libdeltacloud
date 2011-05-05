@@ -24,7 +24,7 @@
 #include "common.h"
 #include "instance_state.h"
 
-static void free_transition(struct deltacloud_instance_state_transition *transition)
+void free_transition(struct deltacloud_instance_state_transition *transition)
 {
   SAFE_FREE(transition->action);
   SAFE_FREE(transition->to);
@@ -32,8 +32,7 @@ static void free_transition(struct deltacloud_instance_state_transition *transit
 }
 
 int add_to_transition_list(struct deltacloud_instance_state_transition **transitions,
-			   const char *action, const char *to,
-			   const char *auto_bool)
+			   struct deltacloud_instance_state_transition *transition)
 {
   struct deltacloud_instance_state_transition *onetransition;
 
@@ -42,11 +41,11 @@ int add_to_transition_list(struct deltacloud_instance_state_transition **transit
   if (onetransition == NULL)
     return -1;
 
-  if (strdup_or_null(&onetransition->action, action) < 0)
+  if (strdup_or_null(&onetransition->action, transition->action) < 0)
     goto error;
-  if (strdup_or_null(&onetransition->to, to) < 0)
+  if (strdup_or_null(&onetransition->to, transition->to) < 0)
     goto error;
-  if (strdup_or_null(&onetransition->auto_bool, auto_bool) < 0)
+  if (strdup_or_null(&onetransition->auto_bool, transition->auto_bool) < 0)
     goto error;
 
   add_to_list(transitions, struct deltacloud_instance_state_transition,
@@ -60,64 +59,17 @@ int add_to_transition_list(struct deltacloud_instance_state_transition **transit
   return -1;
 }
 
-static int copy_transition(struct deltacloud_instance_state_transition **dst,
-			   struct deltacloud_instance_state_transition *curr)
-{
-  return add_to_transition_list(dst, curr->action, curr->to, curr->auto_bool);
-}
-
 static int copy_transition_list(struct deltacloud_instance_state_transition **dst,
 				struct deltacloud_instance_state_transition **src)
 {
   copy_list(dst, src, struct deltacloud_instance_state_transition,
-	    copy_transition, free_transition_list);
+	    add_to_transition_list, free_transition_list);
 }
 
 void free_transition_list(struct deltacloud_instance_state_transition **transitions)
 {
   free_list(transitions, struct deltacloud_instance_state_transition,
 	    free_transition);
-}
-
-int add_to_instance_state_list(struct deltacloud_instance_state **instance_states,
-			       const char *name,
-			       struct deltacloud_instance_state_transition *transitions)
-{
-  struct deltacloud_instance_state *oneinstance_state;
-
-  oneinstance_state = calloc(1, sizeof(struct deltacloud_instance_state));
-  if (oneinstance_state == NULL)
-    return -1;
-
-  if (strdup_or_null(&oneinstance_state->name, name) < 0)
-    goto error;
-  if (copy_transition_list(&oneinstance_state->transitions, &transitions) < 0)
-    goto error;
-
-  add_to_list(instance_states, struct deltacloud_instance_state,
-	      oneinstance_state);
-
-  return 0;
-
- error:
-  deltacloud_free_instance_state(oneinstance_state);
-  SAFE_FREE(oneinstance_state);
-  return -1;
-}
-
-struct deltacloud_instance_state *find_by_name_in_instance_state_list(struct deltacloud_instance_state **instance_states,
-							   const char *name)
-{
-  struct deltacloud_instance_state *curr;
-
-  curr = *instance_states;
-  while (curr != NULL) {
-    if (STREQ(curr->name, name))
-      return curr;
-    curr = curr->next;
-  }
-
-  return NULL;
 }
 
 int copy_instance_state(struct deltacloud_instance_state *dst,
@@ -141,6 +93,29 @@ int copy_instance_state(struct deltacloud_instance_state *dst,
 
  error:
   deltacloud_free_instance_state(dst);
+  return -1;
+}
+
+int add_to_instance_state_list(struct deltacloud_instance_state **instance_states,
+			       struct deltacloud_instance_state *state)
+{
+  struct deltacloud_instance_state *oneinstance_state;
+
+  oneinstance_state = calloc(1, sizeof(struct deltacloud_instance_state));
+  if (oneinstance_state == NULL)
+    return -1;
+
+  if (copy_instance_state(oneinstance_state, state) < 0)
+     goto error;
+
+  add_to_list(instance_states, struct deltacloud_instance_state,
+	      oneinstance_state);
+
+  return 0;
+
+ error:
+  deltacloud_free_instance_state(oneinstance_state);
+  SAFE_FREE(oneinstance_state);
   return -1;
 }
 

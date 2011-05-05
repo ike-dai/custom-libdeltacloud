@@ -60,23 +60,18 @@ struct deltacloud_instance {
   struct deltacloud_instance *next;
 };
 
+void free_address(struct deltacloud_address *addr);
 int add_to_address_list(struct deltacloud_address **addreses,
-			const char *address);
+			struct deltacloud_address *address);
 void free_address_list(struct deltacloud_address **addresses);
 
-int add_to_action_list(struct deltacloud_action **actions, const char *rel,
-		       const char *href, const char *method);
+void free_action(struct deltacloud_action *action);
+int add_to_action_list(struct deltacloud_action **actions,
+		       struct deltacloud_action *action);
 void free_action_list(struct deltacloud_action **actions);
 
 int add_to_instance_list(struct deltacloud_instance **instances,
-			 const char *href, const char *id, const char *name,
-			 const char *owner_id, const char *image_id,
-			 const char *image_href, const char *realm_id,
-			 const char *realm_href, const char *state,
-			 struct deltacloud_hardware_profile *hwp,
-			 struct deltacloud_action *actions,
-			 struct deltacloud_address *public_addresses,
-			 struct deltacloud_address *private_addresses);
+			 struct deltacloud_instance *instance);
 int copy_instance(struct deltacloud_instance *dst,
 		  struct deltacloud_instance *src);
 void deltacloud_free_instance(struct deltacloud_instance *instance);

@@ -37,10 +37,8 @@ struct deltacloud_image {
   struct deltacloud_image *next;
 };
 
-int add_to_image_list(struct deltacloud_image **images, const char *href,
-		      const char *id, const char *description,
-		      const char *architecture, const char *owner_id,
-		      const char *name, const char *state);
+int add_to_image_list(struct deltacloud_image **images,
+		      struct deltacloud_image *image);
 int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src);
 void deltacloud_free_image(struct deltacloud_image *image);
 void deltacloud_free_image_list(struct deltacloud_image **images);

@@ -33,7 +33,7 @@ void free_provider(struct deltacloud_driver_provider *provider)
 }
 
 int add_to_provider_list(struct deltacloud_driver_provider **providers,
-			 char *id)
+			 struct deltacloud_driver_provider *provider)
 {
   struct deltacloud_driver_provider *oneprovider;
 
@@ -41,7 +41,7 @@ int add_to_provider_list(struct deltacloud_driver_provider **providers,
   if (oneprovider == NULL)
     return -1;
 
-  if (strdup_or_null(&oneprovider->id, id) < 0)
+  if (strdup_or_null(&oneprovider->id, provider->id) < 0)
     goto error;
 
   add_to_list(providers, struct deltacloud_driver_provider, oneprovider);
@@ -54,16 +54,10 @@ int add_to_provider_list(struct deltacloud_driver_provider **providers,
   return -1;
 }
 
-static int copy_provider(struct deltacloud_driver_provider **dst,
-			 struct deltacloud_driver_provider *curr)
-{
-  return add_to_provider_list(dst, curr->id);
-}
-
 static int copy_provider_list(struct deltacloud_driver_provider **dst,
 			      struct deltacloud_driver_provider **src)
 {
-  copy_list(dst, src, struct deltacloud_driver_provider, copy_provider,
+  copy_list(dst, src, struct deltacloud_driver_provider, add_to_provider_list,
 	    free_provider_list);
 }
 
@@ -80,35 +74,7 @@ void deltacloud_free_driver(struct deltacloud_driver *driver)
   SAFE_FREE(driver->href);
   SAFE_FREE(driver->id);
   SAFE_FREE(driver->name);
-}
-
-int add_to_driver_list(struct deltacloud_driver **drivers, const char *href,
-		       const char *id, const char *name,
-		       struct deltacloud_driver_provider *providers)
-{
-  struct deltacloud_driver *onedriver;
-
-  onedriver = malloc(1, sizeof(struct deltacloud_driver));
-  if (onedriver == NULL)
-    return -1;
-
-  if (strdup_or_null(&onedriver->href, href) < 0)
-    goto error;
-  if (strdup_or_null(&onedriver->id, id) < 0)
-    goto error;
-  if (strdup_or_null(&onedriver->name, name) < 0)
-    goto error;
-  if (copy_provider_list(&onedriver->providers, &providers) < 0)
-    goto error;
-
-  add_to_list(drivers, struct deltacloud_driver, onedriver);
-
-  return 0;
-
- error:
-  deltacloud_free_driver(onedriver);
-  SAFE_FREE(onedriver);
-  return -1;
+  free_provider_list(&driver->providers);
 }
 
 int copy_driver(struct deltacloud_driver *dst, struct deltacloud_driver *src)
@@ -127,12 +93,35 @@ int copy_driver(struct deltacloud_driver *dst, struct deltacloud_driver *src)
     goto error;
   if (strdup_or_null(&dst->name, src->name) < 0)
     goto error;
-  dst->next = NULL;
+  if (copy_provider_list(&dst->providers, &src->providers) < 0)
+    goto error;
 
   return 0;
 
  error:
   deltacloud_free_driver(dst);
+  return -1;
+}
+
+int add_to_driver_list(struct deltacloud_driver **drivers,
+		       struct deltacloud_driver *driver)
+{
+  struct deltacloud_driver *onedriver;
+
+  onedriver = calloc(1, sizeof(struct deltacloud_driver));
+  if (onedriver == NULL)
+    return -1;
+
+  if (copy_driver(onedriver, driver) < 0)
+    goto error;
+
+  add_to_list(drivers, struct deltacloud_driver, onedriver);
+
+  return 0;
+
+ error:
+  deltacloud_free_driver(onedriver);
+  SAFE_FREE(onedriver);
   return -1;
 }
 

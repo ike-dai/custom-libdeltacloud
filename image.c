@@ -24,42 +24,6 @@
 #include "common.h"
 #include "image.h"
 
-int add_to_image_list(struct deltacloud_image **images, const char *href,
-		      const char *id, const char *description,
-		      const char *architecture, const char *owner_id,
-		      const char *name, const char *state)
-{
-  struct deltacloud_image *oneimage;
-
-  oneimage = calloc(1, sizeof(struct deltacloud_image));
-  if (oneimage == NULL)
-    return -1;
-
-  if (strdup_or_null(&oneimage->href, href) < 0)
-    goto error;
-  if (strdup_or_null(&oneimage->id, id) < 0)
-    goto error;
-  if (strdup_or_null(&oneimage->description, description) < 0)
-    goto error;
-  if (strdup_or_null(&oneimage->architecture, architecture) < 0)
-    goto error;
-  if (strdup_or_null(&oneimage->owner_id, owner_id) < 0)
-    goto error;
-  if (strdup_or_null(&oneimage->name, name) < 0)
-    goto error;
-  if (strdup_or_null(&oneimage->state, state) < 0)
-    goto error;
-
-  add_to_list(images, struct deltacloud_image, oneimage);
-
-  return 0;
-
- error:
-  deltacloud_free_image(oneimage);
-  SAFE_FREE(oneimage);
-  return -1;
-}
-
 int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src)
 {
   /* with a NULL src, we just return success.  A NULL dst is an error */
@@ -90,6 +54,28 @@ int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src)
 
  error:
   deltacloud_free_image(dst);
+  return -1;
+}
+
+int add_to_image_list(struct deltacloud_image **images,
+		      struct deltacloud_image *image)
+{
+  struct deltacloud_image *oneimage;
+
+  oneimage = calloc(1, sizeof(struct deltacloud_image));
+  if (oneimage == NULL)
+    return -1;
+
+  if (copy_image(oneimage, image) < 0)
+    goto error;
+
+  add_to_list(images, struct deltacloud_image, oneimage);
+
+  return 0;
+
+ error:
+  deltacloud_free_image(oneimage);
+  SAFE_FREE(oneimage);
   return -1;
 }
 
