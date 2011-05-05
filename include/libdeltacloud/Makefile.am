@@ -4,7 +4,7 @@ libdeltacloudincdir = $(includedir)/libdeltacloud
 
 libdeltacloudinc_HEADERS = libdeltacloud.h link.h instance.h realm.h image.h \
 	hardware_profile.h instance_state.h storage_volume.h \
-	storage_snapshot.h key.h driver.h action.h address.h
+	storage_snapshot.h key.h driver.h action.h address.h loadbalancer.h
 
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(libdeltacloudincdir)

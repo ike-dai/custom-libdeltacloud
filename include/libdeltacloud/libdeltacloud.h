@@ -31,6 +31,7 @@
 #include "hardware_profile.h"
 #include "key.h"
 #include "driver.h"
+#include "loadbalancer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -115,6 +116,19 @@ int deltacloud_get_drivers(struct deltacloud_api *api,
 			   struct deltacloud_driver **drivers);
 int deltacloud_get_driver_by_id(struct deltacloud_api *api, const char *id,
 				struct deltacloud_driver *driver);
+
+int deltacloud_get_loadbalancers(struct deltacloud_api *api,
+				 struct deltacloud_loadbalancer **balancers);
+int deltacloud_get_loadbalancer_by_id(struct deltacloud_api *api,
+				      const char *id,
+				      struct deltacloud_loadbalancer *balancer);
+int deltacloud_create_loadbalancer(struct deltacloud_api *api, const char *name,
+				   const char *realm_id, const char *protocol,
+				   int balancer_port, int instance_port,
+				   struct deltacloud_create_parameter *params,
+				   int params_length);
+int deltacloud_loadbalancer_destroy(struct deltacloud_api *api,
+				    struct deltacloud_loadbalancer *balancer);
 
 int deltacloud_prepare_parameter(struct deltacloud_create_parameter *param,
 				 const char *name, const char *value);

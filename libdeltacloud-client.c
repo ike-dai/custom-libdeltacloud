@@ -23,6 +23,78 @@
 #include <string.h>
 #include "libdeltacloud.h"
 
+static void print_link_list(struct deltacloud_link *links)
+{
+  struct deltacloud_link *link;
+  struct deltacloud_feature *feature;
+
+  deltacloud_for_each(link, links) {
+    fprintf(stderr, "Link:\n");
+    fprintf(stderr, "\tRel: %s\n", link->rel);
+    fprintf(stderr, "\tHref: %s\n", link->href);
+    fprintf(stderr, "\tFeatures: ");
+    deltacloud_for_each(feature, link->features)
+      fprintf(stderr, "%s, ", feature->name);
+    fprintf(stderr, "\n");
+  }
+}
+
+static void print_address_list(const char *header,
+			       struct deltacloud_address *addresses)
+{
+  struct deltacloud_address *addr;
+
+  fprintf(stderr, "\t%s:\n", header);
+  deltacloud_for_each(addr, addresses)
+    fprintf(stderr, "\t\tAddress: %s\n", addr->address);
+}
+
+static void print_action_list(struct deltacloud_action *actions)
+{
+  struct deltacloud_action *action;
+
+  fprintf(stderr, "\tActions:\n");
+  deltacloud_for_each(action, actions) {
+    fprintf(stderr, "\t\tAction rel: %s, method: %s\n", action->rel,
+	    action->method);
+    fprintf(stderr, "\t\t\tHref: %s\n", action->href);
+  }
+}
+
+static void print_loadbalancer(struct deltacloud_loadbalancer *lb)
+{
+  struct deltacloud_loadbalancer_listener *listener;
+  struct deltacloud_loadbalancer_instance *instance;
+
+  fprintf(stderr, "LoadBalancer %s\n", lb->id);
+  fprintf(stderr, "\tHref: %s\n", lb->href);
+  fprintf(stderr, "\tCreated At: %s\n", lb->created_at);
+  fprintf(stderr, "\tRealm Href: %s\n", lb->realm_href);
+  fprintf(stderr, "\tRealm ID: %s\n", lb->realm_id);
+  print_action_list(lb->actions);
+  print_address_list("Public Addresses", lb->public_addresses);
+  fprintf(stderr, "\tListeners:\n");
+  deltacloud_for_each(listener, lb->listeners) {
+    fprintf(stderr, "\t\tListener protocol: %s, lb_port %s, instance_port %s\n",
+	    listener->protocol, listener->load_balancer_port,
+	    listener->instance_port);
+  }
+  fprintf(stderr, "\tInstances:\n");
+  deltacloud_for_each(instance, lb->instances) {
+    fprintf(stderr, "\t\tInstance: %s\n", instance->id);
+    fprintf(stderr, "\t\t\tHref: %s\n", instance->href);
+    print_link_list(instance->links);
+  }
+}
+
+static void print_loadbalancer_list(struct deltacloud_loadbalancer *lbs)
+{
+  struct deltacloud_loadbalancer *lb;
+
+  deltacloud_for_each(lb, lbs)
+    print_loadbalancer(lb);
+}
+
 static void print_provider(struct deltacloud_driver_provider *provider)
 {
   fprintf(stderr, "\tProvider: %s\n", provider->id);
@@ -116,22 +188,6 @@ static void print_image_list(struct deltacloud_image *images)
     print_image(image);
 }
 
-static void print_link_list(struct deltacloud_link *links)
-{
-  struct deltacloud_link *link;
-  struct deltacloud_feature *feature;
-
-  deltacloud_for_each(link, links) {
-    fprintf(stderr, "Link:\n");
-    fprintf(stderr, "\tRel: %s\n", link->rel);
-    fprintf(stderr, "\tHref: %s\n", link->href);
-    fprintf(stderr, "\tFeatures: ");
-    deltacloud_for_each(feature, link->features)
-      fprintf(stderr, "%s, ", feature->name);
-    fprintf(stderr, "\n");
-  }
-}
-
 static void print_api(struct deltacloud_api *api)
 {
   fprintf(stderr, "API %s:\n", api->url);
@@ -178,9 +234,6 @@ static void print_hwp_list(struct deltacloud_hardware_profile *profiles)
 
 static void print_instance(struct deltacloud_instance *instance)
 {
-  struct deltacloud_action *action;
-  struct deltacloud_address *addr;
-
   fprintf(stderr, "Instance: %s\n", instance->name);
   fprintf(stderr, "\tHref: %s, ID: %s\n", instance->href, instance->id);
   fprintf(stderr, "\tOwner ID: %s\n", instance->owner_id);
@@ -192,18 +245,9 @@ static void print_instance(struct deltacloud_instance *instance)
 	  instance->state);
   fprintf(stderr, "\t");
   print_hwp(&instance->hwp);
-  fprintf(stderr, "\tActions:\n");
-  deltacloud_for_each(action, instance->actions) {
-    fprintf(stderr, "\t\tAction rel: %s, method: %s\n", action->rel,
-	    action->method);
-    fprintf(stderr, "\t\t\tHref: %s\n", action->href);
-  }
-  fprintf(stderr, "\tPublic Addresses:\n");
-  deltacloud_for_each(addr, instance->public_addresses)
-    fprintf(stderr, "\t\tAddress: %s\n", addr->address);
-  fprintf(stderr, "\tPrivate Addresses:\n");
-  deltacloud_for_each(addr, instance->private_addresses)
-    fprintf(stderr, "\t\tAddress: %s\n", addr->address);
+  print_action_list(instance->actions);
+  print_address_list("Public Addresses", instance->public_addresses);
+  print_address_list("Private Addresses", instance->private_addresses);
 }
 
 static void print_instance_list(struct deltacloud_instance *instances)
@@ -276,6 +320,8 @@ int main(int argc, char *argv[])
   struct deltacloud_key key;
   struct deltacloud_driver *drivers;
   struct deltacloud_driver driver;
+  struct deltacloud_loadbalancer *lbs;
+  struct deltacloud_loadbalancer lb;
   char *instid;
   struct deltacloud_create_parameter stackparams[2];
   struct deltacloud_create_parameter *heapparams[2];
@@ -514,6 +560,48 @@ int main(int argc, char *argv[])
   print_key(&key);
   deltacloud_key_destroy(&api, &key);
   deltacloud_free_key(&key);
+
+  fprintf(stderr, "------------------LOAD BALANCERS-------------------\n");
+  if (deltacloud_get_loadbalancers(&api, &lbs) < 0) {
+    fprintf(stderr, "Failed to get load balancers: %s\n",
+	    deltacloud_get_last_error_string());
+    goto cleanup;
+  }
+  print_loadbalancer_list(lbs);
+
+  if (lbs != NULL) {
+    if (deltacloud_get_loadbalancer_by_id(&api, "my-load-balancer", &lb) < 0) {
+      fprintf(stderr, "Failed to get load balancer by id: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_free_loadbalancer_list(&lbs);
+      goto cleanup;
+    }
+    print_loadbalancer(&lb);
+    deltacloud_free_loadbalancer(&lb);
+  }
+
+  deltacloud_free_loadbalancer_list(&lbs);
+
+  if (deltacloud_create_loadbalancer(&api, "lb2", "us-east-1a", "HTTP", 80,
+				     80, NULL, 0) < 0) {
+    fprintf(stderr, "Failed to create load balancer: %s\n",
+	    deltacloud_get_last_error_string());
+    goto cleanup;
+  }
+
+  if (deltacloud_get_loadbalancer_by_id(&api, "lb2", &lb) < 0) {
+    fprintf(stderr, "Failed to get load balancer by id: %s\n",
+	    deltacloud_get_last_error_string());
+    goto cleanup;
+  }
+
+  if (deltacloud_loadbalancer_destroy(&api, &lb) < 0) {
+    fprintf(stderr, "Failed to destroy loadbalancer: %s\n",
+	    deltacloud_get_last_error_string());
+    deltacloud_free_loadbalancer(&lb);
+    goto cleanup;
+  }
+  deltacloud_free_loadbalancer(&lb);
 
   fprintf(stderr, "--------------CREATE INSTANCE PARAMS--------\n");
   if (deltacloud_prepare_parameter(&stackparams[0], "name", "foo") < 0) {

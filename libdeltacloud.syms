@@ -49,4 +49,8 @@ LIBDELTACLOUD_7.0.0 {
 	deltacloud_instance_start;
 	deltacloud_instance_destroy;
 	deltacloud_key_destroy;
+	deltacloud_get_loadbalancers;
+	deltacloud_get_loadbalancer_by_id;
+	deltacloud_create_loadbalancer;
+	deltacloud_loadbalancer_destroy;
 } LIBDELTACLOUD_6.0.0;

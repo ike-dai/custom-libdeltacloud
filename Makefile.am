@@ -45,6 +45,8 @@ libdeltacloud_la_SOURCES =			\
   action.c					\
   include/libdeltacloud/address.h		\
   address.c					\
+  include/libdeltacloud/loadbalancer.h		\
+  loadbalancer.c				\
   libdeltacloud.syms
 
 rpm: clean dist
