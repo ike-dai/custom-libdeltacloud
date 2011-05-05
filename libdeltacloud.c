@@ -347,6 +347,32 @@ static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 
 #define valid_arg(x) ((x == NULL) ? invalid_argument_error(#x " cannot be NULL"), 0 : 1)
 
+static int internal_destroy(const char *href, const char *user,
+			    const char *password)
+{
+  char *data = NULL;
+  int ret = -1;
+
+  /* in deltacloud the destroy action is a DELETE method, so we need
+   * to use a different implementation
+   */
+  data = delete_url(href, user, password);
+  if (data == NULL)
+    /* delete_url sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_DELETE_URL_ERROR);
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(data);
+  return ret;
+}
+
 int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 			  char *password)
 {
@@ -2199,30 +2225,10 @@ int deltacloud_instance_start(struct deltacloud_api *api,
 int deltacloud_instance_destroy(struct deltacloud_api *api,
 				struct deltacloud_instance *instance)
 {
-  char *data = NULL;
-  int ret = -1;
-
   if (!valid_arg(api) || !valid_arg(instance))
     return -1;
 
-  /* in deltacloud the destroy action is a DELETE method, so we need
-   * to use a different implementation
-   */
-  data = delete_url(instance->href, api->user, api->password);
-  if (data == NULL)
-    /* delete_url sets its own errors, so don't overwrite it here */
-    goto cleanup;
-
-  if (is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_DELETE_URL_ERROR);
-    goto cleanup;
-  }
-
-  ret = 0;
-
- cleanup:
-  SAFE_FREE(data);
-  return ret;
+  return internal_destroy(instance->href, api->user, api->password);
 }
 
 void deltacloud_free(struct deltacloud_api *api)
