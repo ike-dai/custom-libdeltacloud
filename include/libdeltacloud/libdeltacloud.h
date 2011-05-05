@@ -73,6 +73,9 @@ int deltacloud_get_images(struct deltacloud_api *api,
 			  struct deltacloud_image **images);
 int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
 			       struct deltacloud_image *image);
+int deltacloud_create_image(struct deltacloud_api *api, const char *instance_id,
+			    struct deltacloud_create_parameter *params,
+			    int params_length);
 
 int deltacloud_get_instance_states(struct deltacloud_api *api,
 				   struct deltacloud_instance_state **instance_states);

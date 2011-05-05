@@ -18,6 +18,7 @@ LIBDELTACLOUD_6.0.0 {
 } LIBDELTACLOUD_5.0.0;
 LIBDELTACLOUD_7.0.0 {
     global:
+	deltacloud_create_image;
 	deltacloud_create_instance;
 	deltacloud_create_key;
 	deltacloud_free;

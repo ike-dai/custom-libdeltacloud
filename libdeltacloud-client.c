@@ -360,6 +360,12 @@ int main(int argc, char *argv[])
 
   deltacloud_free_image_list(&images);
 
+  if (deltacloud_create_image(&api, "i-b8be86d7", NULL, 0) < 0) {
+    fprintf(stderr, "Failed to create image from instance: %s\n",
+	    deltacloud_get_last_error_string());
+    goto cleanup;
+  }
+
   fprintf(stderr, "--------------REALMS-------------------------\n");
   if (deltacloud_get_realms(&api, &realms) < 0) {
     fprintf(stderr, "Failed to get_realms: %s\n",

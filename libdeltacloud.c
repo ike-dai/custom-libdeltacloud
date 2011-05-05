@@ -1154,6 +1154,72 @@ int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
   return internal_get_by_id(api, id, "images", parse_one_image, image);
 }
 
+int deltacloud_create_image(struct deltacloud_api *api, const char *instance_id,
+			    struct deltacloud_create_parameter *params,
+			    int params_length)
+{
+  struct deltacloud_link *thislink;
+  size_t param_string_length;
+  FILE *paramfp;
+  int ret = -1;
+  char *data = NULL;
+  char *param_string = NULL;
+  char *safevalue = NULL;
+
+  if (!valid_arg(api) || !valid_arg(instance_id))
+    return -1;
+
+  deltacloud_for_each(thislink, api->links) {
+    if (STREQ(thislink->rel, "images"))
+      break;
+  }
+  if (thislink == NULL) {
+    link_error("images");
+    return -1;
+  }
+
+  paramfp = open_memstream(&param_string, &param_string_length);
+  if (paramfp == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  /* since the parameters come from the user, we must not trust them and
+   * URL escape them before use
+   */
+
+  safevalue = curl_escape(instance_id, 0);
+  if (safevalue == NULL) {
+      oom_error();
+      goto cleanup;
+  }
+  fprintf(paramfp, "instance_id=%s", safevalue);
+  SAFE_FREE(safevalue);
+
+  fclose(paramfp);
+  paramfp = NULL;
+
+  if (post_url(thislink->href, api->user, api->password, param_string,
+	       &data, NULL) != 0)
+    /* post_url sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  if (data != NULL && is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  if (paramfp != NULL)
+    fclose(paramfp);
+  SAFE_FREE(param_string);
+  SAFE_FREE(data);
+
+  return ret;
+}
+
 static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				    void **data)
 {
