@@ -277,15 +277,46 @@ static int parse_feature_xml(xmlNodePtr featurenode,
   return 0;
 }
 
-static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
+static int parse_link_xml(xmlNodePtr linknode, struct deltacloud_link **links)
 {
-  struct deltacloud_api **api = (struct deltacloud_api **)data;
   struct deltacloud_link thislink;
-  xmlNodePtr linknode;
   int ret = -1;
   int listret;
 
   memset(&thislink, 0, sizeof(struct deltacloud_link));
+
+  while (linknode != NULL) {
+    if (linknode->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)linknode->name, "link")) {
+
+      thislink.href = (char *)xmlGetProp(linknode, BAD_CAST "href");
+      thislink.rel = (char *)xmlGetProp(linknode, BAD_CAST "rel");
+      if (parse_feature_xml(linknode->children, &(thislink.features)) < 0) {
+	/* parse_feature_xml already set the error */
+	free_link(&thislink);
+	goto cleanup;
+      }
+
+      listret = add_to_link_list(links, &thislink);
+      free_link(&thislink);
+      if (listret < 0) {
+	oom_error();
+	goto cleanup;
+      }
+    }
+    linknode = linknode->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  return ret;
+}
+
+static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
+{
+  struct deltacloud_api **api = (struct deltacloud_api **)data;
+  int ret = -1;
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
@@ -293,28 +324,8 @@ static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
       (*api)->driver = (char *)xmlGetProp(cur, BAD_CAST "driver");
       (*api)->version = (char *)xmlGetProp(cur, BAD_CAST "version");
 
-      linknode = cur->children;
-      while (linknode != NULL) {
-	if (linknode->type == XML_ELEMENT_NODE &&
-	    STREQ((const char *)linknode->name, "link")) {
-
-	  thislink.href = (char *)xmlGetProp(linknode, BAD_CAST "href");
-	  thislink.rel = (char *)xmlGetProp(linknode, BAD_CAST "rel");
-	  if (parse_feature_xml(linknode->children, &(thislink.features)) < 0) {
-	    /* parse_feature_xml already set the error */
-	    free_link(&thislink);
-	    goto cleanup;
-	  }
-
-	  listret = add_to_link_list(&((*api)->links), &thislink);
-	  free_link(&thislink);
-	  if (listret < 0) {
-	    oom_error();
-	    goto cleanup;
-	  }
-	}
-	linknode = linknode->next;
-      }
+      if (parse_link_xml(cur->children, &((*api)->links)) < 0)
+	goto cleanup;
     }
 
     cur = cur->next;
