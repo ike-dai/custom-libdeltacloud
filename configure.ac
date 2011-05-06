@@ -97,4 +97,5 @@ AC_SUBST([LIBCURL_LIBS])
 
 AC_CHECK_DECL(CURLOPT_USERNAME, [AC_DEFINE(CURL_HAVE_USERNAME, [], [Description])], ,[#include <curl/curl.h>])
 
-AC_OUTPUT(Makefile include/libdeltacloud/Makefile libdeltacloud.pc)
+AC_OUTPUT(Makefile include/Makefile include/libdeltacloud/Makefile
+	  libdeltacloud.pc)

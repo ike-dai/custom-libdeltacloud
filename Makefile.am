@@ -1,7 +1,7 @@
 # Process this file with automake to produce Makefile.in
 
 EXTRA_DIST = libdeltacloud.spec
-SUBDIRS = include/libdeltacloud
+SUBDIRS = include
 
 AM_CPPFLAGS = $(LIBXML_CFLAGS) $(LIBCURL_CFLAGS) -Wall -Iinclude/libdeltacloud -fno-strict-aliasing -Werror
 libdeltacloud_la_LDFLAGS = $(LIBXML_LIBS) $(LIBCURL_LIBS) -lpthread \
