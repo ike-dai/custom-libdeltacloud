@@ -25,6 +25,8 @@
 extern "C" {
 #endif
 
+#include <curl/curl.h>
+
 int do_get_post_url(const char *url, const char *user, const char *password,
 		    int post, char *data, char **returndata,
 		    char **returnheader);

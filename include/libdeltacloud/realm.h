@@ -35,9 +35,11 @@ struct deltacloud_realm {
   struct deltacloud_realm *next;
 };
 
-int add_to_realm_list(struct deltacloud_realm **realms,
-		      struct deltacloud_realm *realm);
-int copy_realm(struct deltacloud_realm *dst, struct deltacloud_realm *src);
+#define deltacloud_supports_realms(api) deltacloud_has_link(api, "realms")
+int deltacloud_get_realms(struct deltacloud_api *api,
+			  struct deltacloud_realm **realms);
+int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
+			       struct deltacloud_realm *realm);
 void deltacloud_free_realm(struct deltacloud_realm *realm);
 void deltacloud_free_realm_list(struct deltacloud_realm **realms);
 

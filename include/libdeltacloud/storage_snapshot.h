@@ -36,10 +36,12 @@ struct deltacloud_storage_snapshot {
   struct deltacloud_storage_snapshot *next;
 };
 
-int add_to_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots,
-				 struct deltacloud_storage_snapshot *snapshot);
-int copy_storage_snapshot(struct deltacloud_storage_snapshot *dst,
-			  struct deltacloud_storage_snapshot *src);
+#define deltacloud_supports_storage_snapshots(api) deltacloud_has_link(api, "storage_snapshots")
+int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
+				     struct deltacloud_storage_snapshot **storage_snapshots);
+int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
+					  const char *id,
+					  struct deltacloud_storage_snapshot *storage_snapshot);
 void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot);
 void deltacloud_free_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots);
 

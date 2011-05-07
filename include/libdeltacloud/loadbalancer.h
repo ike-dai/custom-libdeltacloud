@@ -59,20 +59,20 @@ struct deltacloud_loadbalancer {
   struct deltacloud_loadbalancer *next;
 };
 
-void free_lb_instance(struct deltacloud_loadbalancer_instance *instance);
-int add_to_lb_instance_list(struct deltacloud_loadbalancer_instance **instances,
-			    struct deltacloud_loadbalancer_instance *instance);
-void free_lb_instance_list(struct deltacloud_loadbalancer_instance **instances);
+#define deltacloud_supports_loadbalancers(api) deltacloud_has_link(api, "load_balancers")
+int deltacloud_get_loadbalancers(struct deltacloud_api *api,
+				 struct deltacloud_loadbalancer **balancers);
+int deltacloud_get_loadbalancer_by_id(struct deltacloud_api *api,
+				      const char *id,
+				      struct deltacloud_loadbalancer *balancer);
+int deltacloud_create_loadbalancer(struct deltacloud_api *api, const char *name,
+				   const char *realm_id, const char *protocol,
+				   int balancer_port, int instance_port,
+				   struct deltacloud_create_parameter *params,
+				   int params_length);
+int deltacloud_loadbalancer_destroy(struct deltacloud_api *api,
+				    struct deltacloud_loadbalancer *balancer);
 
-void free_listener(struct deltacloud_loadbalancer_listener *listener);
-int add_to_listener_list(struct deltacloud_loadbalancer_listener **listeners,
-			 struct deltacloud_loadbalancer_listener *listener);
-void free_listener_list(struct deltacloud_loadbalancer_listener **listeners);
-
-int add_to_loadbalancer_list(struct deltacloud_loadbalancer **lbs,
-			     struct deltacloud_loadbalancer *lb);
-int copy_loadbalancer(struct deltacloud_loadbalancer *dst,
-		      struct deltacloud_loadbalancer *src);
 void deltacloud_free_loadbalancer(struct deltacloud_loadbalancer *lb);
 void deltacloud_free_loadbalancer_list(struct deltacloud_loadbalancer **lbs);
 

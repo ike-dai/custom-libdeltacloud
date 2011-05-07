@@ -33,9 +33,7 @@ struct deltacloud_action {
   struct deltacloud_action *next;
 };
 
-void free_action(struct deltacloud_action *action);
-int add_to_action_list(struct deltacloud_action **actions,
-		       struct deltacloud_action *action);
+int parse_actions_xml(xmlNodePtr root, struct deltacloud_action **actions);
 int copy_action_list(struct deltacloud_action **dst,
 		     struct deltacloud_action **src);
 void free_action_list(struct deltacloud_action **actions);

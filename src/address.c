@@ -24,13 +24,59 @@
 #include "common.h"
 #include "address.h"
 
-void free_address(struct deltacloud_address *addr)
+int parse_addresses_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
+			struct deltacloud_address **addresses)
+{
+  struct deltacloud_address *thisaddr;
+  char *address;
+  xmlNodePtr oldnode, cur;
+  int ret = -1;
+
+  *addresses = NULL;
+
+  oldnode = ctxt->node;
+
+  ctxt->node = root;
+  cur = root->children;
+  while (cur != NULL) {
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "address")) {
+
+      address = getXPathString("string(./address)", ctxt);
+      if (address != NULL) {
+	thisaddr = calloc(1, sizeof(struct deltacloud_address));
+	if (thisaddr == NULL) {
+	  oom_error();
+	  goto cleanup;
+	}
+
+	thisaddr->address = address;
+
+	/* add_to_list can't fail */
+	add_to_list(addresses, struct deltacloud_address, thisaddr);
+      }
+      /* address is allowed to be NULL, so skip it here */
+    }
+    cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  ctxt->node = oldnode;
+  if (ret < 0)
+    free_address_list(addresses);
+
+  return ret;
+}
+
+static void free_address(struct deltacloud_address *addr)
 {
   SAFE_FREE(addr->address);
 }
 
-int add_to_address_list(struct deltacloud_address **addresses,
-			struct deltacloud_address *address)
+static int add_to_address_list(struct deltacloud_address **addresses,
+			       struct deltacloud_address *address)
 {
   struct deltacloud_address *oneaddress;
 

@@ -22,16 +22,16 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "common.h"
-#include "hardware_profile.h"
+#include "libdeltacloud.h"
 
-void free_range(struct deltacloud_property_range *onerange)
+static void free_range(struct deltacloud_property_range *onerange)
 {
   SAFE_FREE(onerange->first);
   SAFE_FREE(onerange->last);
 }
 
-int add_to_range_list(struct deltacloud_property_range **ranges,
-		      struct deltacloud_property_range *range)
+static int add_to_range_list(struct deltacloud_property_range **ranges,
+			     struct deltacloud_property_range *range)
 {
   struct deltacloud_property_range *onerange;
 
@@ -54,6 +54,11 @@ int add_to_range_list(struct deltacloud_property_range **ranges,
   return -1;
 }
 
+static void free_range_list(struct deltacloud_property_range **ranges)
+{
+  free_list(ranges, struct deltacloud_property_range, free_range);
+}
+
 static int copy_range_list(struct deltacloud_property_range **dst,
 			   struct deltacloud_property_range **src)
 {
@@ -61,18 +66,13 @@ static int copy_range_list(struct deltacloud_property_range **dst,
 	    free_range_list);
 }
 
-void free_range_list(struct deltacloud_property_range **ranges)
-{
-  free_list(ranges, struct deltacloud_property_range, free_range);
-}
-
-void free_enum(struct deltacloud_property_enum *oneenum)
+static void free_enum(struct deltacloud_property_enum *oneenum)
 {
   SAFE_FREE(oneenum->value);
 }
 
-int add_to_enum_list(struct deltacloud_property_enum **enums,
-		     struct deltacloud_property_enum *inenum)
+static int add_to_enum_list(struct deltacloud_property_enum **enums,
+			    struct deltacloud_property_enum *inenum)
 {
   struct deltacloud_property_enum *oneenum;
 
@@ -93,6 +93,11 @@ int add_to_enum_list(struct deltacloud_property_enum **enums,
   return -1;
 }
 
+static void free_enum_list(struct deltacloud_property_enum **enums)
+{
+  free_list(enums, struct deltacloud_property_enum, free_enum);
+}
+
 static int copy_enum_list(struct deltacloud_property_enum **dst,
 			  struct deltacloud_property_enum **src)
 {
@@ -100,12 +105,7 @@ static int copy_enum_list(struct deltacloud_property_enum **dst,
 	    free_enum_list);
 }
 
-void free_enum_list(struct deltacloud_property_enum **enums)
-{
-  free_list(enums, struct deltacloud_property_enum, free_enum);
-}
-
-void free_param(struct deltacloud_property_param *param)
+static void free_param(struct deltacloud_property_param *param)
 {
   SAFE_FREE(param->href);
   SAFE_FREE(param->method);
@@ -113,7 +113,7 @@ void free_param(struct deltacloud_property_param *param)
   SAFE_FREE(param->operation);
 }
 
-int add_to_param_list(struct deltacloud_property_param **params,
+static int add_to_param_list(struct deltacloud_property_param **params,
 		      struct deltacloud_property_param *param)
 {
   struct deltacloud_property_param *oneparam;
@@ -141,6 +141,11 @@ int add_to_param_list(struct deltacloud_property_param **params,
   return -1;
 }
 
+static void free_param_list(struct deltacloud_property_param **params)
+{
+  free_list(params, struct deltacloud_property_param, free_param);
+}
+
 static int copy_param_list(struct deltacloud_property_param **dst,
 			   struct deltacloud_property_param **src)
 {
@@ -148,12 +153,7 @@ static int copy_param_list(struct deltacloud_property_param **dst,
 	    free_param_list);
 }
 
-void free_param_list(struct deltacloud_property_param **params)
-{
-  free_list(params, struct deltacloud_property_param, free_param);
-}
-
-void free_prop(struct deltacloud_property *prop)
+static void free_prop(struct deltacloud_property *prop)
 {
   SAFE_FREE(prop->kind);
   SAFE_FREE(prop->name);
@@ -164,13 +164,13 @@ void free_prop(struct deltacloud_property *prop)
   free_range_list(&prop->ranges);
 }
 
-void free_property_list(struct deltacloud_property **props)
+static void free_property_list(struct deltacloud_property **props)
 {
   free_list(props, struct deltacloud_property, free_prop);
 }
 
-int add_to_property_list(struct deltacloud_property **props,
-			 struct deltacloud_property *prop)
+static int add_to_property_list(struct deltacloud_property **props,
+				struct deltacloud_property *prop)
 {
   struct deltacloud_property *oneprop;
 
@@ -235,26 +235,213 @@ int copy_hardware_profile(struct deltacloud_hardware_profile *dst,
   return -1;
 }
 
-int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
-				 struct deltacloud_hardware_profile *profile)
+static int parse_hwp_params_enums_ranges(xmlNodePtr property,
+					 struct deltacloud_property *prop)
 {
-  struct deltacloud_hardware_profile *oneprofile;
+  struct deltacloud_property_param *thisparam;
+  struct deltacloud_property_enum *thisenum;
+  struct deltacloud_property_range *thisrange;
+  xmlNodePtr enum_cur;
+  int ret = -1;
 
-  oneprofile = calloc(1, sizeof(struct deltacloud_hardware_profile));
-  if (oneprofile == NULL)
-    return -1;
+  while (property != NULL) {
+    if (property->type == XML_ELEMENT_NODE) {
+      if (STREQ((const char *)property->name, "param")) {
 
-  if (copy_hardware_profile(oneprofile, profile) < 0)
-    goto error;
+	thisparam = calloc(1, sizeof(struct deltacloud_property_param));
+	if (thisparam == NULL) {
+	  oom_error();
+	  goto cleanup;
+	}
 
-  add_to_list(profiles, struct deltacloud_hardware_profile, oneprofile);
+	thisparam->href = (char *)xmlGetProp(property, BAD_CAST "href");
+	thisparam->method = (char *)xmlGetProp(property, BAD_CAST "method");
+	thisparam->name = (char *)xmlGetProp(property, BAD_CAST "name");
+	thisparam->operation = (char *)xmlGetProp(property,
+						  BAD_CAST "operation");
 
-  return 0;
+	/* add_to_list can't fail */
+	add_to_list(&prop->params, struct deltacloud_property_param, thisparam);
+      }
+      else if(STREQ((const char *)property->name, "enum")) {
+	enum_cur = property->children;
+	while (enum_cur != NULL) {
+	  if (enum_cur->type == XML_ELEMENT_NODE &&
+	      STREQ((const char *)enum_cur->name, "entry")) {
 
- error:
-  deltacloud_free_hardware_profile(oneprofile);
-  SAFE_FREE(oneprofile);
-  return -1;
+	    thisenum = calloc(1, sizeof(struct deltacloud_property_enum));
+	    if (thisenum == NULL) {
+	      oom_error();
+	      goto cleanup;
+	    }
+
+	    thisenum->value = (char *)xmlGetProp(enum_cur, BAD_CAST "value");
+
+	    /* add_to_list can't fail */
+	    add_to_list(&prop->enums, struct deltacloud_property_enum,
+			thisenum);
+	  }
+
+	  enum_cur = enum_cur->next;
+	}
+      }
+      else if (STREQ((const char *)property->name, "range")) {
+	thisrange = calloc(1, sizeof(struct deltacloud_property_range));
+	if (thisrange == NULL) {
+	  oom_error();
+	  goto cleanup;
+	}
+	thisrange->first = (char *)xmlGetProp(property, BAD_CAST "first");
+	thisrange->last = (char *)xmlGetProp(property, BAD_CAST "last");
+
+	/* add_to_list can't fail */
+	add_to_list(&prop->ranges, struct deltacloud_property_range, thisrange);
+      }
+    }
+    property = property->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  if (ret < 0) {
+    free_param_list(&prop->params);
+    free_enum_list(&prop->enums);
+    free_range_list(&prop->ranges);
+  }
+
+  return ret;
+}
+
+static int parse_hardware_profile_properties(xmlNodePtr hwp,
+					     struct deltacloud_property **props)
+{
+  xmlNodePtr profile_cur;
+  struct deltacloud_property thisprop;
+  int listret;
+  int ret = -1;
+
+  memset(&thisprop, 0, sizeof(struct deltacloud_property));
+
+  profile_cur = hwp->children;
+
+  while (profile_cur != NULL) {
+    if (profile_cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)profile_cur->name, "property")) {
+      thisprop.kind = (char *)xmlGetProp(profile_cur, BAD_CAST "kind");
+      thisprop.name = (char *)xmlGetProp(profile_cur, BAD_CAST "name");
+      thisprop.unit = (char *)xmlGetProp(profile_cur, BAD_CAST "unit");
+      thisprop.value = (char *)xmlGetProp(profile_cur, BAD_CAST "value");
+
+      if (parse_hwp_params_enums_ranges(profile_cur->children, &thisprop) < 0) {
+	/* parse_hwp_params_enums_ranges already set the error */
+	free_prop(&thisprop);
+	goto cleanup;
+      }
+
+      listret = add_to_property_list(props, &thisprop);
+      free_prop(&thisprop);
+      if (listret < 0) {
+	oom_error();
+	goto cleanup;
+      }
+    }
+
+    profile_cur = profile_cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  if (ret < 0)
+    free_property_list(props);
+  return ret;
+}
+
+int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			       void **data)
+{
+  struct deltacloud_hardware_profile **profiles = (struct deltacloud_hardware_profile **)data;
+  struct deltacloud_hardware_profile *thishwp;
+  xmlNodePtr oldnode;
+  int ret = -1;
+
+  oldnode = ctxt->node;
+
+  while (cur != NULL) {
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "hardware_profile")) {
+
+      ctxt->node = cur;
+
+      thishwp = calloc(1, sizeof(struct deltacloud_hardware_profile));
+      if (thishwp == NULL) {
+	oom_error();
+	goto cleanup;
+      }
+
+      thishwp->href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thishwp->id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      thishwp->name = getXPathString("string(./name)", ctxt);
+
+      if (parse_hardware_profile_properties(cur, &(thishwp->properties)) < 0) {
+	/* parse_hardware_profile_properties already set the error */
+	deltacloud_free_hardware_profile(thishwp);
+	goto cleanup;
+      }
+
+      add_to_list(profiles, struct deltacloud_hardware_profile, thishwp);
+    }
+
+    cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  ctxt->node = oldnode;
+  if (ret < 0)
+    deltacloud_free_hardware_profile_list(profiles);
+
+  return ret;
+}
+
+static int parse_one_hwp(const char *data, void *output)
+{
+  int ret = -1;
+  struct deltacloud_hardware_profile *newprofile = (struct deltacloud_hardware_profile *)output;
+  struct deltacloud_hardware_profile *tmpprofile = NULL;
+
+  if (parse_xml(data, "hardware_profile", (void **)&tmpprofile,
+		parse_hardware_profile_xml, 0) < 0)
+    goto cleanup;
+
+  if (copy_hardware_profile(newprofile, tmpprofile) < 0) {
+    oom_error();
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  deltacloud_free_hardware_profile_list(&tmpprofile);
+
+  return ret;
+}
+
+int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
+				     struct deltacloud_hardware_profile **profiles)
+{
+  return internal_get(api, "hardware_profiles", "hardware_profiles",
+		      parse_hardware_profile_xml, (void **)profiles);
+}
+
+int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
+					  const char *id,
+					  struct deltacloud_hardware_profile *profile)
+{
+  return internal_get_by_id(api, id, "hardware_profiles", parse_one_hwp,
+			    profile);
 }
 
 void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profile)

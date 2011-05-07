@@ -21,8 +21,8 @@
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
-#include <curl/curl.h>
 #include "libdeltacloud.h"
+#include "curl_action.h"
 #include "common.h"
 
 static void set_curl_error(int errcode, const char *header, CURLcode res)

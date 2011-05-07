@@ -24,7 +24,7 @@
 #include "common.h"
 #include "storage_volume.h"
 
-void free_capacity(struct deltacloud_storage_volume_capacity *curr)
+static void free_capacity(struct deltacloud_storage_volume_capacity *curr)
 {
   SAFE_FREE(curr->unit);
   SAFE_FREE(curr->size);
@@ -47,7 +47,7 @@ static int copy_capacity(struct deltacloud_storage_volume_capacity *dst,
   return -1;
 }
 
-void free_mount(struct deltacloud_storage_volume_mount *curr)
+static void free_mount(struct deltacloud_storage_volume_mount *curr)
 {
   SAFE_FREE(curr->instance_href);
   SAFE_FREE(curr->instance_id);
@@ -73,8 +73,8 @@ static int copy_mount(struct deltacloud_storage_volume_mount *dst,
   return -1;
 }
 
-int copy_storage_volume(struct deltacloud_storage_volume *dst,
-			struct deltacloud_storage_volume *src)
+static int copy_storage_volume(struct deltacloud_storage_volume *dst,
+			       struct deltacloud_storage_volume *src)
 {
   /* with a NULL src, we just return success.  A NULL dst is an error */
   if (src == NULL)
@@ -110,27 +110,99 @@ int copy_storage_volume(struct deltacloud_storage_volume *dst,
   return -1;
 }
 
-int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
-			       struct deltacloud_storage_volume *volume)
+static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				    void **data)
 {
-  struct deltacloud_storage_volume *onestorage_volume;
+  struct deltacloud_storage_volume **storage_volumes = (struct deltacloud_storage_volume **)data;
+  struct deltacloud_storage_volume *thisvolume;
+  xmlNodePtr oldnode;
+  int ret = -1;
 
-  onestorage_volume = calloc(1, sizeof(struct deltacloud_storage_volume));
-  if (onestorage_volume == NULL)
-    return -1;
+  oldnode = ctxt->node;
 
-  if (copy_storage_volume(onestorage_volume, volume) < 0)
-    goto error;
+  while (cur != NULL) {
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "storage_volume")) {
 
-  add_to_list(storage_volumes, struct deltacloud_storage_volume,
-	      onestorage_volume);
+      ctxt->node = cur;
 
-  return 0;
+      thisvolume = calloc(1, sizeof(struct deltacloud_storage_volume));
+      if (thisvolume == NULL) {
+	oom_error();
+	goto cleanup;
+      }
 
- error:
-  deltacloud_free_storage_volume(onestorage_volume);
-  SAFE_FREE(onestorage_volume);
-  return -1;
+      thisvolume->href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thisvolume->id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      thisvolume->created = getXPathString("string(./created)", ctxt);
+      thisvolume->state = getXPathString("string(./state)", ctxt);
+      thisvolume->capacity.unit = getXPathString("string(./capacity/@unit)",
+						 ctxt);
+      thisvolume->capacity.size = getXPathString("string(./capacity)", ctxt);
+      thisvolume->device = getXPathString("string(./device)", ctxt);
+      thisvolume->instance_href = getXPathString("string(./instance/@href)",
+						 ctxt);
+      thisvolume->realm_id = getXPathString("string(./realm_id)", ctxt);
+      thisvolume->mount.instance_href = getXPathString("string(./mount/instance/@href)",
+						       ctxt);
+      thisvolume->mount.instance_id = getXPathString("string(./mount/instance/@id)",
+						     ctxt);
+      thisvolume->mount.device_name = getXPathString("string(./mount/device/@name)",
+						     ctxt);
+
+      /* add_to_list can't fail */
+      add_to_list(storage_volumes, struct deltacloud_storage_volume,
+		  thisvolume);
+    }
+    cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  ctxt->node = oldnode;
+  if (ret < 0)
+    deltacloud_free_storage_volume_list(storage_volumes);
+
+  return ret;
+}
+
+static int parse_one_storage_volume(const char *data, void *output)
+{
+  int ret = -1;
+  struct deltacloud_storage_volume *newvolume = (struct deltacloud_storage_volume *)output;
+  struct deltacloud_storage_volume *tmpvolume = NULL;
+
+  if (parse_xml(data, "storage_volume", (void **)&tmpvolume,
+		parse_storage_volume_xml, 0) < 0)
+    goto cleanup;
+
+  if (copy_storage_volume(newvolume, tmpvolume) < 0) {
+    oom_error();
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  deltacloud_free_storage_volume_list(&tmpvolume);
+
+  return ret;
+}
+
+int deltacloud_get_storage_volumes(struct deltacloud_api *api,
+				   struct deltacloud_storage_volume **storage_volumes)
+{
+  return internal_get(api, "storage_volumes", "storage_volumes",
+		      parse_storage_volume_xml, (void **)storage_volumes);
+}
+
+int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
+					const char *id,
+					struct deltacloud_storage_volume *storage_volume)
+{
+  return internal_get_by_id(api, id, "storage_volumes",
+			    parse_one_storage_volume, storage_volume);
 }
 
 void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_volume)

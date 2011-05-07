@@ -22,21 +22,52 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "common.h"
-#include "key.h"
+#include "libdeltacloud.h"
 
-void deltacloud_free_key(struct deltacloud_key *key)
+static int parse_key_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 {
-  if (key == NULL)
-    return;
+  struct deltacloud_key **keys = (struct deltacloud_key **)data;
+  struct deltacloud_key *thiskey;
+  int ret = -1;
+  xmlNodePtr oldnode;
 
-  SAFE_FREE(key->href);
-  SAFE_FREE(key->id);
-  SAFE_FREE(key->type);
-  SAFE_FREE(key->state);
-  SAFE_FREE(key->fingerprint);
+  oldnode = ctxt->node;
+
+  while (cur != NULL) {
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "key")) {
+
+      ctxt->node = cur;
+
+      thiskey = calloc(1, sizeof(struct deltacloud_key));
+      if (thiskey == NULL) {
+	oom_error();
+	goto cleanup;
+      }
+
+      thiskey->href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thiskey->id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      thiskey->type = (char *)xmlGetProp(cur, BAD_CAST "type");
+      thiskey->state = getXPathString("string(./state)", ctxt);
+      thiskey->fingerprint = getXPathString("string(./fingerprint)", ctxt);
+
+      /* add_to_list can't fail */
+      add_to_list(keys, struct deltacloud_key, thiskey);
+    }
+    cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  ctxt->node = oldnode;
+  if (ret < 0)
+    deltacloud_free_key_list(keys);
+
+  return ret;
 }
 
-int copy_key(struct deltacloud_key *dst, struct deltacloud_key *src)
+static int copy_key(struct deltacloud_key *dst, struct deltacloud_key *src)
 {
   /* with a NULL src, we just return success.  A NULL dst is an error */
   if (src == NULL)
@@ -64,26 +95,99 @@ int copy_key(struct deltacloud_key *dst, struct deltacloud_key *src)
   return -1;
 }
 
-int add_to_key_list(struct deltacloud_key **keys,
-		    struct deltacloud_key *key)
+static int parse_one_key(const char *data, void *output)
 {
-  struct deltacloud_key *onekey;
+  int ret = -1;
+  struct deltacloud_key *newkey = (struct deltacloud_key *)output;
+  struct deltacloud_key *tmpkey = NULL;
 
-  onekey = calloc(1, sizeof(struct deltacloud_key));
-  if (onekey == NULL)
+  if (parse_xml(data, "key", (void **)&tmpkey, parse_key_xml, 0) < 0)
+    goto cleanup;
+
+  if (copy_key(newkey, tmpkey) < 0) {
+    oom_error();
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  deltacloud_free_key_list(&tmpkey);
+
+  return ret;
+}
+
+int deltacloud_get_keys(struct deltacloud_api *api,
+			struct deltacloud_key **keys)
+{
+  return internal_get(api, "keys", "keys", parse_key_xml, (void **)keys);
+}
+
+int deltacloud_create_key(struct deltacloud_api *api, const char *name,
+			  struct deltacloud_create_parameter *params,
+			  int params_length)
+{
+  struct deltacloud_create_parameter *internal_params;
+  int ret = -1;
+  int pos;
+
+  if (!valid_arg(api) || !valid_arg(name))
     return -1;
 
-  if (copy_key(onekey, key) < 0)
-    goto error;
+  internal_params = calloc(params_length + 1,
+			   sizeof(struct deltacloud_create_parameter));
+  if (internal_params == NULL) {
+    oom_error();
+    return -1;
+  }
 
-  add_to_list(keys, struct deltacloud_key, onekey);
+  pos = copy_parameters(internal_params, params, params_length);
+  if (pos < 0)
+    /* copy_parameters already set the error */
+    goto cleanup;
 
-  return 0;
+  if (deltacloud_prepare_parameter(&internal_params[pos++], "name", name) < 0)
+    /* deltacloud_create_parameter already set the error */
+    goto cleanup;
 
- error:
-  deltacloud_free_key(onekey);
-  SAFE_FREE(onekey);
-  return -1;
+  if (internal_create(api, "keys", internal_params, pos, NULL) < 0)
+    /* internal_create already set the error */
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  free_parameters(internal_params, pos);
+  SAFE_FREE(internal_params);
+
+  return ret;
+}
+
+int deltacloud_key_destroy(struct deltacloud_api *api,
+			   struct deltacloud_key *key)
+{
+  if (!valid_arg(api) || !valid_arg(key))
+    return -1;
+
+  return internal_destroy(key->href, api->user, api->password);
+}
+
+int deltacloud_get_key_by_id(struct deltacloud_api *api, const char *id,
+			     struct deltacloud_key *key)
+{
+  return internal_get_by_id(api, id, "keys", parse_one_key, key);
+}
+
+void deltacloud_free_key(struct deltacloud_key *key)
+{
+  if (key == NULL)
+    return;
+
+  SAFE_FREE(key->href);
+  SAFE_FREE(key->id);
+  SAFE_FREE(key->type);
+  SAFE_FREE(key->state);
+  SAFE_FREE(key->fingerprint);
 }
 
 void deltacloud_free_key_list(struct deltacloud_key **keys)

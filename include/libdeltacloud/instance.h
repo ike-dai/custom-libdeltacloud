@@ -48,10 +48,22 @@ struct deltacloud_instance {
   struct deltacloud_instance *next;
 };
 
-int add_to_instance_list(struct deltacloud_instance **instances,
-			 struct deltacloud_instance *instance);
-int copy_instance(struct deltacloud_instance *dst,
-		  struct deltacloud_instance *src);
+#define deltacloud_supports_instances(api) deltacloud_has_link(api, "instances")
+int deltacloud_get_instances(struct deltacloud_api *api,
+			     struct deltacloud_instance **instances);
+int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
+				  struct deltacloud_instance *instance);
+int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
+			       struct deltacloud_create_parameter *params,
+			       int params_length, char **instance_id);
+int deltacloud_instance_stop(struct deltacloud_api *api,
+			     struct deltacloud_instance *instance);
+int deltacloud_instance_reboot(struct deltacloud_api *api,
+			       struct deltacloud_instance *instance);
+int deltacloud_instance_start(struct deltacloud_api *api,
+			      struct deltacloud_instance *instance);
+int deltacloud_instance_destroy(struct deltacloud_api *api,
+				struct deltacloud_instance *instance);
 void deltacloud_free_instance(struct deltacloud_instance *instance);
 void deltacloud_free_instance_list(struct deltacloud_instance **instances);
 

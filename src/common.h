@@ -25,6 +25,42 @@
 extern "C" {
 #endif
 
+#include "libdeltacloud.h"
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
+
+void free_parameters(struct deltacloud_create_parameter *params,
+		     int params_length);
+int copy_parameters(struct deltacloud_create_parameter *dst,
+		    struct deltacloud_create_parameter *src,
+		    int params_length);
+int internal_create(struct deltacloud_api *api, const char *link,
+		    struct deltacloud_create_parameter *params,
+		    int params_length, char **headers);
+int internal_get(struct deltacloud_api *api, const char *relname,
+		 const char *rootname,
+		 int (*xml_cb)(xmlNodePtr, xmlXPathContextPtr, void **),
+		 void **output);
+int internal_get_by_id(struct deltacloud_api *api, const char *id,
+		       const char *name,
+		       int (*parse_cb)(const char *, void *),
+		       void *output);
+int internal_destroy(const char *href, const char *user, const char *password);
+
+int is_error_xml(const char *xml);
+void oom_error(void);
+void set_xml_error(const char *xml, int type);
+void link_error(const char *name);
+void invalid_argument_error(const char *details);
+
+char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt);
+
+int parse_xml(const char *xml_string, const char *name, void **data,
+	      int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			void **data), int multiple);
+
+#define valid_arg(x) ((x == NULL) ? invalid_argument_error(#x " cannot be NULL"), 0 : 1)
+
 #define STREQ(a,b) (strcmp(a,b) == 0)
 #define STRNEQ(a,b) (strcmp(a,b) != 0)
 #define STRPREFIX(a,b) (strncmp(a,b,strlen(b)) == 0)

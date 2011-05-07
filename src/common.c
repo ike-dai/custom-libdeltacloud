@@ -27,6 +27,444 @@
 #include <pthread.h>
 #include "libdeltacloud.h"
 #include "common.h"
+#include "curl_action.h"
+
+int internal_destroy(const char *href, const char *user, const char *password)
+{
+  char *data = NULL;
+  int ret = -1;
+
+  /* in deltacloud the destroy action is a DELETE method, so we need
+   * to use a different implementation
+   */
+  data = delete_url(href, user, password);
+  if (data == NULL)
+    /* delete_url sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_DELETE_URL_ERROR);
+    goto cleanup;
+  }
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(data);
+
+  return ret;
+}
+
+void free_parameters(struct deltacloud_create_parameter *params,
+		     int params_length)
+{
+  int i;
+
+  for (i = 0; i < params_length; i++)
+    deltacloud_free_parameter_value(&params[i]);
+}
+
+int copy_parameters(struct deltacloud_create_parameter *dst,
+		    struct deltacloud_create_parameter *src,
+		    int params_length)
+{
+  int i;
+
+  for (i = 0; i < params_length; i++) {
+    if (deltacloud_prepare_parameter(&dst[i], src[i].name, src[i].value) < 0)
+      /* this isn't entirely orthogonal, since this function can allocate
+       * memory that it doesn't free.  We just depend on the higher layers
+       * to free the whole thing as necessary
+       */
+      /* deltacloud_prepare_parameter already set the error */
+      return -1;
+  }
+
+  return i;
+}
+
+static int add_safe_value(FILE *fp, const char *name, const char *value)
+{
+  char *safevalue;
+
+  safevalue = curl_escape(value, 0);
+  if (safevalue == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  /* if we are not at the beginning of the stream, we need to append a & */
+  if (ftell(fp) != 0)
+    fprintf(fp, "&");
+
+  fprintf(fp, "%s=%s", name, safevalue);
+
+  SAFE_FREE(safevalue);
+
+  return 0;
+}
+
+int internal_create(struct deltacloud_api *api, const char *link,
+		    struct deltacloud_create_parameter *params,
+		    int params_length, char **headers)
+{
+  struct deltacloud_link *thislink;
+  size_t param_string_length;
+  FILE *paramfp;
+  int ret = -1;
+  char *data = NULL;
+  char *param_string = NULL;
+  int i;
+
+  deltacloud_for_each(thislink, api->links) {
+    if (STREQ(thislink->rel, link))
+      break;
+  }
+  if (thislink == NULL) {
+    link_error(link);
+    return -1;
+  }
+
+  paramfp = open_memstream(&param_string, &param_string_length);
+  if (paramfp == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  /* since the parameters come from the user, we must not trust them and
+   * URL escape them before use
+   */
+
+  for (i = 0; i < params_length; i++) {
+    if (params[i].value != NULL) {
+      if (add_safe_value(paramfp, params[i].name, params[i].value) < 0)
+	/* add_safe_value already set the error */
+	goto cleanup;
+    }
+  }
+
+  fclose(paramfp);
+  paramfp = NULL;
+
+  if (post_url(thislink->href, api->user, api->password, param_string,
+	       &data, headers) != 0)
+    /* post_url sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  if (data != NULL && is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  if (paramfp != NULL)
+    fclose(paramfp);
+  SAFE_FREE(param_string);
+  SAFE_FREE(data);
+
+  return ret;
+}
+
+static int parse_error_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
+{
+  char **msg = (char **)data;
+
+  *msg = getXPathString("string(/error/message)", ctxt);
+
+  if (*msg == NULL)
+    *msg = strdup("Unknown error");
+
+  return 0;
+}
+
+void invalid_argument_error(const char *details)
+{
+  set_error(DELTACLOUD_INVALID_ARGUMENT_ERROR, details);
+}
+
+void set_xml_error(const char *xml, int type)
+{
+  char *errmsg = NULL;
+
+  if (parse_xml(xml, "error", (void **)&errmsg, parse_error_xml, 1) < 0)
+    errmsg = strdup("Unknown error");
+
+  set_error(type, errmsg);
+
+  SAFE_FREE(errmsg);
+}
+
+int is_error_xml(const char *xml)
+{
+  return STRPREFIX(xml, "<error");
+}
+
+void link_error(const char *name)
+{
+  char *tmp;
+  int alloc_fail = 0;
+
+  if (asprintf(&tmp, "Failed to find the link for '%s'", name) < 0) {
+    tmp = "Failed to find the link";
+    alloc_fail = 1;
+  }
+
+  set_error(DELTACLOUD_URL_DOES_NOT_EXIST_ERROR, tmp);
+  if (!alloc_fail)
+    SAFE_FREE(tmp);
+}
+
+static void data_error(const char *name)
+{
+  char *tmp;
+  int alloc_fail = 0;
+
+  if (asprintf(&tmp, "Expected %s data, received nothing", name) < 0) {
+    tmp = "Expected data, received nothing";
+    alloc_fail = 1;
+  }
+
+  set_error(DELTACLOUD_GET_URL_ERROR, tmp);
+  if (!alloc_fail)
+    SAFE_FREE(tmp);
+}
+
+/*
+ * An internal function for fetching all of the elements of a particular
+ * type.  Note that although relname and rootname is the same for almost
+ * all types, there are a couple of them that don't conform to this pattern.
+ */
+int internal_get(struct deltacloud_api *api, const char *relname,
+		 const char *rootname,
+		 int (*xml_cb)(xmlNodePtr, xmlXPathContextPtr, void **),
+		 void **output)
+{
+  struct deltacloud_link *thislink = NULL;
+  char *data = NULL;
+  int ret = -1;
+
+  /* we only check api and output here, as those are the only parameters from
+   * the user
+   */
+  if (!valid_arg(api) || !valid_arg(output))
+    return -1;
+
+  deltacloud_for_each(thislink, api->links) {
+    if (STREQ(thislink->rel, relname))
+      break;
+  }
+  if (thislink == NULL) {
+    link_error(relname);
+    return -1;
+  }
+
+  if (get_url(thislink->href, api->user, api->password, &data) != 0)
+    /* get_url sets its own errors, so don't overwrite it here */
+    return -1;
+
+  if (data == NULL) {
+    /* if we made it here, it means that the transfer was successful (ret
+     * was 0), but the data that we expected wasn't returned.  This is probably
+     * a deltacloud server bug, so just set an error and bail out
+     */
+    data_error(relname);
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
+  *output = NULL;
+  if (parse_xml(data, rootname, output, xml_cb, 1) < 0)
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(data);
+
+  return ret;
+}
+
+int internal_get_by_id(struct deltacloud_api *api, const char *id,
+		       const char *name,
+		       int (*parse_cb)(const char *, void *),
+		       void *output)
+{
+  char *url = NULL;
+  char *data = NULL;
+  char *safeid;
+  int ret = -1;
+
+  /* we only check api, id, and output here, as those are the only parameters
+   * from the user
+   */
+  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(output))
+    return -1;
+
+  safeid = curl_escape(id, 0);
+  if (safeid == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  if (asprintf(&url, "%s/%s/%s", api->url, name, safeid) < 0) {
+    oom_error();
+    goto cleanup;
+  }
+
+  if (get_url(url, api->user, api->password, &data) != 0)
+    /* get_url sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  if (data == NULL) {
+    /* if we made it here, it means that the transfer was successful (ret
+     * was 0), but the data that we expected wasn't returned.  This is probably
+     * a deltacloud server bug, so just set an error and bail out
+     */
+    data_error(name);
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
+  if (parse_cb(data, output) < 0)
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(data);
+  SAFE_FREE(url);
+  curl_free(safeid);
+
+  return ret;
+}
+
+char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
+{
+  xmlXPathObjectPtr obj;
+  xmlNodePtr relnode;
+  char *ret;
+
+  if ((ctxt == NULL) || (xpath == NULL))
+    return NULL;
+
+  relnode = ctxt->node;
+  obj = xmlXPathEval(BAD_CAST xpath, ctxt);
+  ctxt->node = relnode;
+  if ((obj == NULL) || (obj->type != XPATH_STRING) ||
+      (obj->stringval == NULL) || (obj->stringval[0] == 0)) {
+    xmlXPathFreeObject(obj);
+    return NULL;
+  }
+  ret = strdup((char *) obj->stringval);
+  xmlXPathFreeObject(obj);
+
+  return ret;
+}
+
+void oom_error(void)
+{
+  set_error(DELTACLOUD_OOM_ERROR, "Failed to allocate memory");
+}
+
+static void xml_error(const char *name, const char *type, const char *details)
+{
+  char *tmp;
+  int alloc_fail = 0;
+
+  if (asprintf(&tmp, "%s for %s: %s", type, name, details) < 0) {
+    tmp = "Failed parsing XML";
+    alloc_fail = 1;
+  }
+
+  set_error(DELTACLOUD_XML_ERROR, tmp);
+  if (!alloc_fail)
+    SAFE_FREE(tmp);
+}
+
+int parse_xml(const char *xml_string, const char *name, void **data,
+	      int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			void **data), int multiple)
+{
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  xmlXPathContextPtr ctxt = NULL;
+  int ret = -1;
+  int rc;
+  xmlErrorPtr last;
+  char *msg;
+
+  xml = xmlReadDoc(BAD_CAST xml_string, name, NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    last = xmlGetLastError();
+    if (last != NULL)
+      msg = last->message;
+    else
+      msg = "unknown error";
+    xml_error(name, "Failed to parse XML", msg);
+    return -1;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    last = xmlGetLastError();
+    if (last != NULL)
+      msg = last->message;
+    else
+      msg = "unknown error";
+    xml_error(name, "Failed to get the root element", msg);
+    goto cleanup;
+  }
+
+  if (STRNEQ((const char *)root->name, name)) {
+    xml_error(name, "Failed to get expected root element", (char *)root->name);
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    last = xmlGetLastError();
+    if (last != NULL)
+      msg = last->message;
+    else
+      msg = "unknown error";
+    xml_error(name, "Failed to initialize XPath context", msg);
+    goto cleanup;
+  }
+
+  /* if "multiple" is true, then the XML looks something like:
+   * <instances> <instance> ... </instance> </instances>"
+   * if "multiple" is false, then the XML looks something like:
+   * <instance> ... </instance>
+   */
+  if (multiple)
+    rc = cb(root->children, ctxt, data);
+  else
+    rc = cb(root, ctxt, data);
+
+  if (rc < 0)
+    /* the callbacks are expected to have set their own error */
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  if (ctxt != NULL)
+    xmlXPathFreeContext(ctxt);
+  xmlFreeDoc(xml);
+
+  return ret;
+}
 
 pthread_key_t deltacloud_last_error;
 

@@ -22,17 +22,53 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "common.h"
-#include "action.h"
+#include "libdeltacloud.h"
 
-void free_action(struct deltacloud_action *action)
+int parse_actions_xml(xmlNodePtr root, struct deltacloud_action **actions)
+{
+  struct deltacloud_action *thisaction;
+  xmlNodePtr cur;
+  int ret = -1;
+
+  cur = root->children;
+  while (cur != NULL) {
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "link")) {
+
+      thisaction = calloc(1, sizeof(struct deltacloud_action));
+      if (thisaction == NULL) {
+	oom_error();
+	goto cleanup;
+      }
+
+      thisaction->href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thisaction->rel = (char *)xmlGetProp(cur, BAD_CAST "rel");
+      thisaction->method = (char *)xmlGetProp(cur, BAD_CAST "method");
+
+      /* add_to_list can't fail */
+      add_to_list(actions, struct deltacloud_action, thisaction);
+    }
+    cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  if (ret < 0)
+    free_action_list(actions);
+
+  return ret;
+}
+
+static void free_action(struct deltacloud_action *action)
 {
   SAFE_FREE(action->rel);
   SAFE_FREE(action->href);
   SAFE_FREE(action->method);
 }
 
-int add_to_action_list(struct deltacloud_action **actions,
-		       struct deltacloud_action *action)
+static int add_to_action_list(struct deltacloud_action **actions,
+			      struct deltacloud_action *action)
 {
   struct deltacloud_action *oneaction;
 

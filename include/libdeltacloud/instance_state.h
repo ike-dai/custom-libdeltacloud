@@ -40,15 +40,12 @@ struct deltacloud_instance_state {
   struct deltacloud_instance_state *next;
 };
 
-void free_transition(struct deltacloud_instance_state_transition *transition);
-int add_to_transition_list(struct deltacloud_instance_state_transition **transitions,
-			   struct deltacloud_instance_state_transition *transition);
-void free_transition_list(struct deltacloud_instance_state_transition **transitions);
-
-int add_to_instance_state_list(struct deltacloud_instance_state **instance_states,
-			       struct deltacloud_instance_state *state);
-int copy_instance_state(struct deltacloud_instance_state *dst,
-			struct deltacloud_instance_state *src);
+#define deltacloud_supports_instance_states(api) deltacloud_has_link(api, "instance_states")
+int deltacloud_get_instance_states(struct deltacloud_api *api,
+				   struct deltacloud_instance_state **instance_states);
+int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
+					  const char *name,
+					  struct deltacloud_instance_state *instance_state);
 void deltacloud_free_instance_state(struct deltacloud_instance_state *instance_state);
 void deltacloud_free_instance_state_list(struct deltacloud_instance_state **instance_states);
 

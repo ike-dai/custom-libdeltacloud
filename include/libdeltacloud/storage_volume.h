@@ -50,12 +50,12 @@ struct deltacloud_storage_volume {
   struct deltacloud_storage_volume *next;
 };
 
-void free_capacity(struct deltacloud_storage_volume_capacity *curr);
-void free_mount(struct deltacloud_storage_volume_mount *curr);
-int add_to_storage_volume_list(struct deltacloud_storage_volume **storage_volumes,
-			       struct deltacloud_storage_volume *volume);
-int copy_storage_volume(struct deltacloud_storage_volume *dst,
-			struct deltacloud_storage_volume *src);
+#define deltacloud_supports_storage_volumes(api) deltacloud_has_link(api, "storage_volumes")
+int deltacloud_get_storage_volumes(struct deltacloud_api *api,
+				   struct deltacloud_storage_volume **storage_volumes);
+int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
+					const char *id,
+					struct deltacloud_storage_volume *storage_volume);
 void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_volume);
 void deltacloud_free_storage_volume_list(struct deltacloud_storage_volume **storage_volumes);
 

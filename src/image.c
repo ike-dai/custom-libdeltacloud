@@ -22,16 +22,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "image.h"
+#include "libdeltacloud.h"
 
-int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src)
+static int copy_image(struct deltacloud_image *dst,
+		      struct deltacloud_image *src)
 {
-  /* with a NULL src, we just return success.  A NULL dst is an error */
-  if (src == NULL)
-    return 0;
-  if (dst == NULL)
-    return -1;
-
   memset(dst, 0, sizeof(struct deltacloud_image));
 
   if (strdup_or_null(&dst->href, src->href) < 0)
@@ -56,26 +51,125 @@ int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src)
   return -1;
 }
 
-int add_to_image_list(struct deltacloud_image **images,
-		      struct deltacloud_image *image)
+static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			   void **data)
 {
-  struct deltacloud_image *oneimage;
+  struct deltacloud_image **images = (struct deltacloud_image **)data;
+  struct deltacloud_image *thisimage;
+  xmlNodePtr oldnode;
+  int ret = -1;
 
-  oneimage = calloc(1, sizeof(struct deltacloud_image));
-  if (oneimage == NULL)
+  oldnode = ctxt->node;
+
+  while (cur != NULL) {
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "image")) {
+
+      ctxt->node = cur;
+
+      thisimage = calloc(1, sizeof(struct deltacloud_image));
+      if (thisimage == NULL) {
+	oom_error();
+	goto cleanup;
+      }
+
+      thisimage->href = (char *)xmlGetProp(cur, BAD_CAST "href");
+      thisimage->id = (char *)xmlGetProp(cur, BAD_CAST "id");
+      thisimage->description = getXPathString("string(./description)", ctxt);
+      thisimage->architecture = getXPathString("string(./architecture)", ctxt);
+      thisimage->owner_id = getXPathString("string(./owner_id)", ctxt);
+      thisimage->name = getXPathString("string(./name)", ctxt);
+      thisimage->state = getXPathString("string(./state)", ctxt);
+
+      /* add_to_list can't fail */
+      add_to_list(images, struct deltacloud_image, thisimage);
+    }
+    cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  ctxt->node = oldnode;
+  if (ret < 0)
+    deltacloud_free_image_list(images);
+
+  return ret;
+}
+
+static int parse_one_image(const char *data, void *output)
+{
+  int ret = -1;
+  struct deltacloud_image *newimage = (struct deltacloud_image *)output;
+  struct deltacloud_image *tmpimage = NULL;
+
+  if (parse_xml(data, "image", (void **)&tmpimage, parse_image_xml, 0) < 0)
+    goto cleanup;
+
+  if (copy_image(newimage, tmpimage) < 0) {
+    oom_error();
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  deltacloud_free_image_list(&tmpimage);
+
+  return ret;
+}
+
+int deltacloud_get_images(struct deltacloud_api *api,
+			  struct deltacloud_image **images)
+{
+  return internal_get(api, "images", "images", parse_image_xml,
+		      (void **)images);
+}
+
+int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
+			       struct deltacloud_image *image)
+{
+  return internal_get_by_id(api, id, "images", parse_one_image, image);
+}
+
+int deltacloud_create_image(struct deltacloud_api *api, const char *instance_id,
+			    struct deltacloud_create_parameter *params,
+			    int params_length)
+{
+  struct deltacloud_create_parameter *internal_params;
+  int ret;
+  int pos;
+
+  if (!valid_arg(api) || !valid_arg(instance_id))
     return -1;
 
-  if (copy_image(oneimage, image) < 0)
-    goto error;
+  internal_params = calloc(params_length + 1,
+			   sizeof(struct deltacloud_create_parameter));
+  if (internal_params == NULL) {
+    oom_error();
+    return -1;
+  }
 
-  add_to_list(images, struct deltacloud_image, oneimage);
+  pos = copy_parameters(internal_params, params, params_length);
+  if (pos < 0)
+    /* copy_parameters already set the error */
+    goto cleanup;
 
-  return 0;
+  if (deltacloud_prepare_parameter(&internal_params[pos++], "instance_id",
+				   instance_id) < 0)
+    /* deltacloud_prepare_parameter already set the error */
+    goto cleanup;
 
- error:
-  deltacloud_free_image(oneimage);
-  SAFE_FREE(oneimage);
-  return -1;
+  if (internal_create(api, "images", internal_params, pos, NULL) < 0)
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  free_parameters(internal_params, pos);
+  SAFE_FREE(internal_params);
+
+  return ret;
 }
 
 void deltacloud_free_image(struct deltacloud_image *image)

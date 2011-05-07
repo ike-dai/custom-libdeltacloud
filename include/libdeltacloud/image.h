@@ -37,9 +37,14 @@ struct deltacloud_image {
   struct deltacloud_image *next;
 };
 
-int add_to_image_list(struct deltacloud_image **images,
-		      struct deltacloud_image *image);
-int copy_image(struct deltacloud_image *dst, struct deltacloud_image *src);
+#define deltacloud_supports_images(api) deltacloud_has_link(api, "images")
+int deltacloud_get_images(struct deltacloud_api *api,
+			  struct deltacloud_image **images);
+int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
+			       struct deltacloud_image *image);
+int deltacloud_create_image(struct deltacloud_api *api, const char *instance_id,
+			    struct deltacloud_create_parameter *params,
+			    int params_length);
 void deltacloud_free_image(struct deltacloud_image *image);
 void deltacloud_free_image_list(struct deltacloud_image **images);
 

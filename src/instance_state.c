@@ -18,62 +18,69 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "instance_state.h"
+#include "libdeltacloud.h"
 
-void free_transition(struct deltacloud_instance_state_transition *transition)
+static void find_by_name_error(const char *name, const char *type)
+{
+  char *tmp;
+  int alloc_fail = 0;
+
+  if (asprintf(&tmp, "Failed to find '%s' in '%s' list", name, type) < 0) {
+    tmp = "Failed to find the link";
+    alloc_fail = 1;
+  }
+
+  set_error(DELTACLOUD_NAME_NOT_FOUND_ERROR, tmp);
+  if (!alloc_fail)
+    SAFE_FREE(tmp);
+}
+
+static void free_transition(struct deltacloud_instance_state_transition *transition)
 {
   SAFE_FREE(transition->action);
   SAFE_FREE(transition->to);
   SAFE_FREE(transition->auto_bool);
 }
 
-int add_to_transition_list(struct deltacloud_instance_state_transition **transitions,
-			   struct deltacloud_instance_state_transition *transition)
+static int copy_transition(struct deltacloud_instance_state_transition **dst,
+			   struct deltacloud_instance_state_transition *src)
 {
-  struct deltacloud_instance_state_transition *onetransition;
+  memset(dst, 0, sizeof(struct deltacloud_instance_state_transition));
 
-  onetransition = calloc(1,
-			 sizeof(struct deltacloud_instance_state_transition));
-  if (onetransition == NULL)
-    return -1;
-
-  if (strdup_or_null(&onetransition->action, transition->action) < 0)
+  if (strdup_or_null(&(*dst)->action, src->action) < 0)
     goto error;
-  if (strdup_or_null(&onetransition->to, transition->to) < 0)
+  if (strdup_or_null(&(*dst)->to, src->to) < 0)
     goto error;
-  if (strdup_or_null(&onetransition->auto_bool, transition->auto_bool) < 0)
+  if (strdup_or_null(&(*dst)->auto_bool, src->auto_bool) < 0)
     goto error;
-
-  add_to_list(transitions, struct deltacloud_instance_state_transition,
-	      onetransition);
 
   return 0;
 
  error:
-  free_transition(onetransition);
-  SAFE_FREE(onetransition);
+  free_transition(*dst);
   return -1;
+}
+
+static void free_transition_list(struct deltacloud_instance_state_transition **transitions)
+{
+  free_list(transitions, struct deltacloud_instance_state_transition,
+	    free_transition);
 }
 
 static int copy_transition_list(struct deltacloud_instance_state_transition **dst,
 				struct deltacloud_instance_state_transition **src)
 {
   copy_list(dst, src, struct deltacloud_instance_state_transition,
-	    add_to_transition_list, free_transition_list);
+	    copy_transition, free_transition_list);
 }
 
-void free_transition_list(struct deltacloud_instance_state_transition **transitions)
-{
-  free_list(transitions, struct deltacloud_instance_state_transition,
-	    free_transition);
-}
-
-int copy_instance_state(struct deltacloud_instance_state *dst,
-			struct deltacloud_instance_state *src)
+static int copy_instance_state(struct deltacloud_instance_state *dst,
+			       struct deltacloud_instance_state *src)
 {
   /* with a NULL src, we just return success.  A NULL dst is an error */
   if (src == NULL)
@@ -95,27 +102,115 @@ int copy_instance_state(struct deltacloud_instance_state *dst,
   return -1;
 }
 
-int add_to_instance_state_list(struct deltacloud_instance_state **instance_states,
-			       struct deltacloud_instance_state *state)
+static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				    void **data)
 {
-  struct deltacloud_instance_state *oneinstance_state;
+  struct deltacloud_instance_state **instance_states = (struct deltacloud_instance_state **)data;
+  struct deltacloud_instance_state *thisstate;
+  struct deltacloud_instance_state_transition *thistrans;
+  xmlNodePtr state_cur;
+  int ret = -1;
 
-  oneinstance_state = calloc(1, sizeof(struct deltacloud_instance_state));
-  if (oneinstance_state == NULL)
+  memset(&thistrans, 0, sizeof(struct deltacloud_instance_state_transition));
+
+  while (cur != NULL) {
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "state")) {
+
+      thisstate = calloc(1, sizeof(struct deltacloud_instance_state));
+      if (thisstate == NULL) {
+	oom_error();
+	goto cleanup;
+      }
+
+      thisstate->name = (char *)xmlGetProp(cur, BAD_CAST "name");
+
+      state_cur = cur->children;
+      while (state_cur != NULL) {
+	if (state_cur->type == XML_ELEMENT_NODE &&
+	    STREQ((const char *)state_cur->name, "transition")) {
+
+	  thistrans = calloc(1,
+			     sizeof(struct deltacloud_instance_state_transition));
+	  if (thistrans == NULL) {
+	    oom_error();
+	    deltacloud_free_instance_state(thisstate);
+	    SAFE_FREE(thisstate);
+	    goto cleanup;
+	  }
+
+	  thistrans->action = (char *)xmlGetProp(state_cur, BAD_CAST "action");
+	  thistrans->to = (char *)xmlGetProp(state_cur, BAD_CAST "to");
+	  thistrans->auto_bool = (char *)xmlGetProp(state_cur, BAD_CAST "auto");
+
+	  /* add_to_list can't fail */
+	  add_to_list(&thisstate->transitions,
+		      struct deltacloud_instance_state_transition, thistrans);
+	}
+	state_cur = state_cur->next;
+      }
+
+      /* add_to_list can't fail */
+      add_to_list(instance_states, struct deltacloud_instance_state, thisstate);
+    }
+    cur = cur->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  if (ret < 0)
+    deltacloud_free_instance_state_list(instance_states);
+
+  return ret;
+}
+
+int deltacloud_get_instance_states(struct deltacloud_api *api,
+				   struct deltacloud_instance_state **instance_states)
+{
+  return internal_get(api, "instance_states", "states",
+		      parse_instance_state_xml, (void **)instance_states);
+}
+
+int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
+					  const char *name,
+					  struct deltacloud_instance_state *instance_state)
+{
+  struct deltacloud_instance_state *statelist = NULL;
+  struct deltacloud_instance_state *state;
+  int instance_ret;
+  int ret = -1;
+
+  /* despite the fact that 'name' is an input from the user, we don't
+   * need to escape it since we are never using it as a URL
+   */
+
+  if (!valid_arg(api) || !valid_arg(name) || !valid_arg(instance_state))
     return -1;
 
-  if (copy_instance_state(oneinstance_state, state) < 0)
-     goto error;
+  instance_ret = deltacloud_get_instance_states(api, &statelist);
+  if (instance_ret < 0)
+    return instance_ret;
 
-  add_to_list(instance_states, struct deltacloud_instance_state,
-	      oneinstance_state);
+  deltacloud_for_each(state, statelist) {
+    if (STREQ(state->name, name))
+      break;
+  }
+  if (state == NULL) {
+    find_by_name_error(name, "instance_state");
+    goto cleanup;
+  }
 
-  return 0;
+  if (copy_instance_state(instance_state, state) < 0) {
+    oom_error();
+    goto cleanup;
+  }
 
- error:
-  deltacloud_free_instance_state(oneinstance_state);
-  SAFE_FREE(oneinstance_state);
-  return -1;
+  ret = 0;
+
+ cleanup:
+  deltacloud_free_instance_state_list(&statelist);
+  return ret;
 }
 
 void deltacloud_free_instance_state(struct deltacloud_instance_state *instance_state)

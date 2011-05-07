@@ -35,11 +35,16 @@ struct deltacloud_key {
   struct deltacloud_key *next;
 };
 
-int add_to_key_list(struct deltacloud_key **keys,
-		    struct deltacloud_key *key);
-
-int copy_key(struct deltacloud_key *dst, struct deltacloud_key *src);
-
+#define deltacloud_supports_keys(api) deltacloud_has_link(api, "keys")
+int deltacloud_get_keys(struct deltacloud_api *api,
+			struct deltacloud_key **keys);
+int deltacloud_get_key_by_id(struct deltacloud_api *api, const char *id,
+			     struct deltacloud_key *key);
+int deltacloud_create_key(struct deltacloud_api *api, const char *name,
+			  struct deltacloud_create_parameter *params,
+			  int params_length);
+int deltacloud_key_destroy(struct deltacloud_api *api,
+			   struct deltacloud_key *key);
 void deltacloud_free_key(struct deltacloud_key *key);
 void deltacloud_free_key_list(struct deltacloud_key **keys);
 

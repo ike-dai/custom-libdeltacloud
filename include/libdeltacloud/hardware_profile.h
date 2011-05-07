@@ -25,6 +25,9 @@
 extern "C" {
 #endif
 
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
+
 struct deltacloud_property_enum {
   char *value;
 
@@ -72,31 +75,19 @@ struct deltacloud_hardware_profile {
   struct deltacloud_hardware_profile *next;
 };
 
-int add_to_range_list(struct deltacloud_property_range **ranges,
-		      struct deltacloud_property_range *range);
-void free_range(struct deltacloud_property_range *onerange);
-void free_range_list(struct deltacloud_property_range **ranges);
-
-int add_to_enum_list(struct deltacloud_property_enum **enums,
-		     struct deltacloud_property_enum *inenum);
-void free_enum(struct deltacloud_property_enum *oneenum);
-void free_enum_list(struct deltacloud_property_enum **enums);
-
-int add_to_param_list(struct deltacloud_property_param **params,
-		      struct deltacloud_property_param *param);
-void free_param(struct deltacloud_property_param *param);
-void free_param_list(struct deltacloud_property_param **params);
-
-int add_to_property_list(struct deltacloud_property **props,
-			 struct deltacloud_property *prop);
-void free_prop(struct deltacloud_property *prop);
-void free_property_list(struct deltacloud_property **props);
-
-void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profile);
-int add_to_hardware_profile_list(struct deltacloud_hardware_profile **profiles,
-				 struct deltacloud_hardware_profile *profile);
+/* these are exported for internal use only */
+int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			       void **data);
 int copy_hardware_profile(struct deltacloud_hardware_profile *dst,
 			  struct deltacloud_hardware_profile *src);
+
+#define deltacloud_supports_hardware_profiles(api) deltacloud_has_link(api, "hardware_profiles")
+int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
+				     struct deltacloud_hardware_profile **hardware_profiles);
+int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
+					  const char *id,
+					  struct deltacloud_hardware_profile *profile);
+void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profile);
 void deltacloud_free_hardware_profile_list(struct deltacloud_hardware_profile **profiles);
 
 #ifdef __cplusplus
