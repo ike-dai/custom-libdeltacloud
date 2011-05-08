@@ -714,6 +714,17 @@ void *realloc_sometimes_fail(void *ptr, size_t size)
     return NULL;
 }
 
+#undef calloc
+void *calloc_sometimes_fail(size_t nmemb, size_t size)
+{
+  seed_random();
+
+  if (rand() % FAILRATE)
+    return calloc(nmemb, size);
+  else
+    return NULL;
+}
+
 #undef curl_easy_init
 CURL *curl_easy_init_sometimes_fail(void)
 {

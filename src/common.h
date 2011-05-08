@@ -137,6 +137,9 @@ void *malloc_sometimes_fail(size_t size);
 #define realloc realloc_sometimes_fail
 void *realloc_sometimes_fail(void *ptr, size_t size);
 
+#define calloc calloc_sometimes_fail
+void *calloc_sometimes_fail(size_t nmemb, size_t size);
+
 /* some versions of gcc #define strdup to an internal function.  However,
  * we can work around this by undefining it ourselves, and getting a possibly
  * slower version.  Since this is for memory-leak debugging purposes, that
