@@ -163,6 +163,7 @@ static int parse_one_loadbalancer(xmlNodePtr cur, xmlXPathContextPtr ctxt,
     if (parse_actions_xml(actionset->nodesetval->nodeTab[0],
 			  &(thislb->actions)) < 0) {
       deltacloud_free_loadbalancer(thislb);
+      xmlXPathFreeObject(actionset);
       return -1;
     }
   }
@@ -174,6 +175,7 @@ static int parse_one_loadbalancer(xmlNodePtr cur, xmlXPathContextPtr ctxt,
     if (parse_addresses_xml(pubset->nodesetval->nodeTab[0], ctxt,
 			    &(thislb->public_addresses)) < 0) {
       deltacloud_free_loadbalancer(thislb);
+      xmlXPathFreeObject(pubset);
       return -1;
     }
   }
@@ -185,6 +187,7 @@ static int parse_one_loadbalancer(xmlNodePtr cur, xmlXPathContextPtr ctxt,
     if (parse_listener_xml(listenerset->nodesetval->nodeTab[0], ctxt,
 			   &(thislb->listeners)) < 0) {
       deltacloud_free_loadbalancer(thislb);
+      xmlXPathFreeObject(listenerset);
       return -1;
     }
   }
@@ -196,6 +199,7 @@ static int parse_one_loadbalancer(xmlNodePtr cur, xmlXPathContextPtr ctxt,
     if (parse_lb_instance_xml(instanceset->nodesetval->nodeTab[0], ctxt,
 			      &(thislb->instances)) < 0) {
       deltacloud_free_loadbalancer(thislb);
+      xmlXPathFreeObject(instanceset);
       return -1;
     }
   }

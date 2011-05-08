@@ -46,8 +46,12 @@ static int parse_one_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   hwpset = xmlXPathEval(BAD_CAST "./hardware_profile", ctxt);
   if (hwpset && hwpset->type == XPATH_NODESET && hwpset->nodesetval &&
       hwpset->nodesetval->nodeNr == 1) {
-    parse_one_hardware_profile(hwpset->nodesetval->nodeTab[0], ctxt,
-			       &thisinst->hwp);
+    if (parse_one_hardware_profile(hwpset->nodesetval->nodeTab[0], ctxt,
+				   &thisinst->hwp) < 0) {
+      deltacloud_free_instance(thisinst);
+      xmlXPathFreeObject(hwpset);
+      return -1;
+    }
   }
   xmlXPathFreeObject(hwpset);
 
@@ -57,6 +61,7 @@ static int parse_one_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
     if (parse_actions_xml(actionset->nodesetval->nodeTab[0],
 			  &(thisinst->actions)) < 0) {
       deltacloud_free_instance(thisinst);
+      xmlXPathFreeObject(actionset);
       return -1;
     }
   }
@@ -68,6 +73,7 @@ static int parse_one_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
     if (parse_addresses_xml(pubset->nodesetval->nodeTab[0], ctxt,
 			    &(thisinst->public_addresses)) < 0) {
       deltacloud_free_instance(thisinst);
+      xmlXPathFreeObject(pubset);
       return -1;
     }
   }
@@ -79,6 +85,7 @@ static int parse_one_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
     if (parse_addresses_xml(privset->nodesetval->nodeTab[0], ctxt,
 			    &(thisinst->private_addresses)) < 0) {
       deltacloud_free_instance(thisinst);
+      xmlXPathFreeObject(privset);
       return -1;
     }
   }

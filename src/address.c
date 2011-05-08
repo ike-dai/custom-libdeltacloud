@@ -46,6 +46,7 @@ int parse_addresses_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
       if (address != NULL) {
 	thisaddr = calloc(1, sizeof(struct deltacloud_address));
 	if (thisaddr == NULL) {
+	  SAFE_FREE(address);
 	  oom_error();
 	  goto cleanup;
 	}
