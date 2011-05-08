@@ -32,7 +32,6 @@ LIBDELTACLOUD_7.0.0 {
 	deltacloud_get_instance_by_id;
 	deltacloud_get_instance_by_name;
 	deltacloud_get_instance_states;
-	deltacloud_get_instance_state_by_name;
 	deltacloud_get_keys;
 	deltacloud_get_key_by_id;
 	deltacloud_get_last_error;

@@ -43,10 +43,6 @@ struct deltacloud_instance_state {
 #define deltacloud_supports_instance_states(api) deltacloud_has_link(api, "instance_states")
 int deltacloud_get_instance_states(struct deltacloud_api *api,
 				   struct deltacloud_instance_state **instance_states);
-int deltacloud_get_instance_state_by_name(struct deltacloud_api *api,
-					  const char *name,
-					  struct deltacloud_instance_state *instance_state);
-void deltacloud_free_instance_state(struct deltacloud_instance_state *instance_state);
 void deltacloud_free_instance_state_list(struct deltacloud_instance_state **instance_states);
 
 #ifdef __cplusplus

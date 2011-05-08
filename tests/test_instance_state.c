@@ -46,7 +46,6 @@ int main(int argc, char *argv[])
 {
   struct deltacloud_api api;
   struct deltacloud_instance_state *instance_states;
-  struct deltacloud_instance_state instance_state;
   int ret = 3;
 
   if (argc != 4) {
@@ -67,19 +66,6 @@ int main(int argc, char *argv[])
       goto cleanup;
     }
     print_instance_state_list(instance_states);
-
-    if (instance_states != NULL) {
-      /* here we use the first instance_state from the list above */
-      if (deltacloud_get_instance_state_by_name(&api, instance_states->name,
-						&instance_state) < 0) {
-	fprintf(stderr, "Failed to get instance_state: %s\n",
-		deltacloud_get_last_error_string());
-	deltacloud_free_instance_state_list(&instance_states);
-	goto cleanup;
-      }
-      print_instance_state(&instance_state);
-      deltacloud_free_instance_state(&instance_state);
-    }
 
     deltacloud_free_instance_state_list(&instance_states);
   }
