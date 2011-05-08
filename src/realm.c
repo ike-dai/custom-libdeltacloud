@@ -24,27 +24,20 @@
 #include "common.h"
 #include "libdeltacloud.h"
 
-static int copy_realm(struct deltacloud_realm *dst,
-		      struct deltacloud_realm *src)
+static int parse_one_realm(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			   void *output)
 {
-  memset(dst, 0, sizeof(struct deltacloud_realm));
+  struct deltacloud_realm *thisrealm = (struct deltacloud_realm *)output;
 
-  if (strdup_or_null(&dst->href, src->href) < 0)
-    goto error;
-  if (strdup_or_null(&dst->id, src->id) < 0)
-    goto error;
-  if (strdup_or_null(&dst->name, src->name) < 0)
-    goto error;
-  if (strdup_or_null(&dst->state, src->state) < 0)
-    goto error;
-  if (strdup_or_null(&dst->limit, src->limit) < 0)
-    goto error;
+  memset(thisrealm, 0, sizeof(struct deltacloud_realm));
+
+  thisrealm->href = (char *)xmlGetProp(cur, BAD_CAST "href");
+  thisrealm->id = (char *)xmlGetProp(cur, BAD_CAST "id");
+  thisrealm->name = getXPathString("string(./name)", ctxt);
+  thisrealm->state = getXPathString("string(./state)", ctxt);
+  thisrealm->limit = getXPathString("string(./limit)", ctxt);
 
   return 0;
-
- error:
-  deltacloud_free_realm(dst);
-  return -1;
 }
 
 static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
@@ -69,11 +62,11 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	goto cleanup;
       }
 
-      thisrealm->href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      thisrealm->id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      thisrealm->name = getXPathString("string(./name)", ctxt);
-      thisrealm->state = getXPathString("string(./state)", ctxt);
-      thisrealm->limit = getXPathString("string(./limit)", ctxt);
+      if (parse_one_realm(cur, ctxt, thisrealm) < 0) {
+	/* parse_one_realm is expected to have set its own error */
+	SAFE_FREE(thisrealm);
+	goto cleanup;
+      }
 
       /* add_to_list can't fail */
       add_to_list(realms, struct deltacloud_realm, thisrealm);
@@ -91,28 +84,6 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
-static int parse_one_realm(const char *data, void *output)
-{
-  int ret = -1;
-  struct deltacloud_realm *newrealm = (struct deltacloud_realm *)output;
-  struct deltacloud_realm *tmprealm = NULL;
-
-  if (parse_xml(data, "realm", (void **)&tmprealm, parse_realm_xml, 0) < 0)
-    goto cleanup;
-
-  if (copy_realm(newrealm, tmprealm) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  ret = 0;
-
- cleanup:
-  deltacloud_free_realm_list(&tmprealm);
-
-  return ret;
-}
-
 int deltacloud_get_realms(struct deltacloud_api *api,
 			  struct deltacloud_realm **realms)
 {
@@ -123,7 +94,7 @@ int deltacloud_get_realms(struct deltacloud_api *api,
 int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
 			       struct deltacloud_realm *realm)
 {
-  return internal_get_by_id(api, id, "realms", parse_one_realm, realm);
+  return internal_get_by_id(api, id, "realms", "realm", parse_one_realm, realm);
 }
 
 void deltacloud_free_realm(struct deltacloud_realm *realm)

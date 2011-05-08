@@ -29,6 +29,9 @@ extern "C" {
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 
+void xml_error(const char *name, const char *type, const char *details);
+void set_error_from_xml(const char *name, const char *usermsg);
+
 void free_parameters(struct deltacloud_create_parameter *params,
 		     int params_length);
 int copy_parameters(struct deltacloud_create_parameter *dst,
@@ -42,8 +45,9 @@ int internal_get(struct deltacloud_api *api, const char *relname,
 		 int (*xml_cb)(xmlNodePtr, xmlXPathContextPtr, void **),
 		 void **output);
 int internal_get_by_id(struct deltacloud_api *api, const char *id,
-		       const char *name,
-		       int (*parse_cb)(const char *, void *),
+		       const char *relname, const char *rootname,
+		       int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				 void *data),
 		       void *output);
 int internal_destroy(const char *href, const char *user, const char *password);
 

@@ -32,43 +32,10 @@ static void free_lb_instance(struct deltacloud_loadbalancer_instance *instance)
   free_link_list(&instance->links);
 }
 
-static int add_to_lb_instance_list(struct deltacloud_loadbalancer_instance **instances,
-				   struct deltacloud_loadbalancer_instance *instance)
-{
-  struct deltacloud_loadbalancer_instance *oneinst;
-
-  oneinst = calloc(1, sizeof(struct deltacloud_loadbalancer_instance));
-  if (oneinst == NULL)
-    return -1;
-
-  if (strdup_or_null(&oneinst->href, instance->href) < 0)
-    goto error;
-  if (strdup_or_null(&oneinst->id, instance->id) < 0)
-    goto error;
-  if (copy_link_list(&oneinst->links, &instance->links) < 0)
-    goto error;
-
-  add_to_list(instances, struct deltacloud_loadbalancer_instance, oneinst);
-
-  return 0;
-
- error:
-  free_lb_instance(oneinst);
-  SAFE_FREE(oneinst);
-  return -1;
-}
-
 static void free_lb_instance_list(struct deltacloud_loadbalancer_instance **instances)
 {
   free_list(instances, struct deltacloud_loadbalancer_instance,
 	    free_lb_instance);
-}
-
-static int copy_lb_instance_list(struct deltacloud_loadbalancer_instance **dst,
-				 struct deltacloud_loadbalancer_instance **src)
-{
-  copy_list(dst, src, struct deltacloud_loadbalancer_instance,
-	    add_to_lb_instance_list, free_lb_instance_list);
 }
 
 static void free_listener(struct deltacloud_loadbalancer_listener *listener)
@@ -78,80 +45,9 @@ static void free_listener(struct deltacloud_loadbalancer_listener *listener)
   SAFE_FREE(listener->instance_port);
 }
 
-static int add_to_listener_list(struct deltacloud_loadbalancer_listener **listeners,
-				struct deltacloud_loadbalancer_listener *listener)
-{
-  struct deltacloud_loadbalancer_listener *onelistener;
-
-  onelistener = calloc(1, sizeof(struct deltacloud_loadbalancer_listener));
-  if (onelistener == NULL)
-    return -1;
-
-  if (strdup_or_null(&onelistener->protocol, listener->protocol) < 0)
-    goto error;
-  if (strdup_or_null(&onelistener->load_balancer_port,
-		     listener->load_balancer_port) < 0)
-    goto error;
-  if (strdup_or_null(&onelistener->instance_port, listener->instance_port) < 0)
-    goto error;
-
-  add_to_list(listeners, struct deltacloud_loadbalancer_listener, onelistener);
-
-  return 0;
-
- error:
-  free_listener(onelistener);
-  SAFE_FREE(onelistener);
-  return -1;
-}
-
 static void free_listener_list(struct deltacloud_loadbalancer_listener **listeners)
 {
   free_list(listeners, struct deltacloud_loadbalancer_listener, free_listener);
-}
-
-static int copy_listener_list(struct deltacloud_loadbalancer_listener **dst,
-			      struct deltacloud_loadbalancer_listener **src)
-{
-  copy_list(dst, src, struct deltacloud_loadbalancer_listener,
-	    add_to_listener_list, free_listener_list);
-}
-
-int copy_loadbalancer(struct deltacloud_loadbalancer *dst,
-		      struct deltacloud_loadbalancer *src)
-{
-  /* with a NULL src, we just return success.  A NULL dst is an error */
-  if (src == NULL)
-    return 0;
-  if (dst == NULL)
-    return -1;
-
-  memset(dst, 0, sizeof(struct deltacloud_loadbalancer));
-
-  if (strdup_or_null(&dst->href, src->href) < 0)
-    goto error;
-  if (strdup_or_null(&dst->id, src->id) < 0)
-    goto error;
-  if (strdup_or_null(&dst->created_at, src->created_at) < 0)
-    goto error;
-  if (strdup_or_null(&dst->realm_href, src->realm_href) < 0)
-    goto error;
-  if (strdup_or_null(&dst->realm_id, src->realm_id) < 0)
-    goto error;
-  if (copy_action_list(&dst->actions, &src->actions) < 0)
-    goto error;
-  if (copy_address_list(&dst->public_addresses, &src->public_addresses) < 0)
-    goto error;
-  if (copy_listener_list(&dst->listeners, &src->listeners) < 0)
-    goto error;
-  if (copy_lb_instance_list(&dst->instances, &src->instances) < 0)
-    goto error;
-
-  return 0;
-
- error:
-  deltacloud_free_loadbalancer(dst);
-  return -1;
 }
 
 static int parse_listener_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
@@ -182,6 +78,8 @@ static int parse_listener_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
 							ctxt);
       thislistener->instance_port = getXPathString("string(./listener/instance_port)",
 						   ctxt);
+
+      /* add_to_list can't fail */
       add_to_list(listeners, struct deltacloud_loadbalancer_listener,
 		  thislistener);
     }
@@ -245,6 +143,67 @@ static int parse_lb_instance_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
   return ret;
 }
 
+static int parse_one_loadbalancer(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				  void *output)
+{
+  struct deltacloud_loadbalancer *thislb = (struct deltacloud_loadbalancer *)output;
+  xmlXPathObjectPtr actionset, pubset, listenerset, instanceset;
+
+  memset(thislb, 0, sizeof(struct deltacloud_loadbalancer));
+
+  thislb->href = (char *)xmlGetProp(cur, BAD_CAST "href");
+  thislb->id = (char *)xmlGetProp(cur, BAD_CAST "id");
+  thislb->created_at = getXPathString("string(./created_at)", ctxt);
+  thislb->realm_href = getXPathString("string(./realm/@href)", ctxt);
+  thislb->realm_id = getXPathString("string(./realm/@id)", ctxt);
+
+  actionset = xmlXPathEval(BAD_CAST "./actions", ctxt);
+  if (actionset && actionset->type == XPATH_NODESET &&
+      actionset->nodesetval && actionset->nodesetval->nodeNr == 1) {
+    if (parse_actions_xml(actionset->nodesetval->nodeTab[0],
+			  &(thislb->actions)) < 0) {
+      deltacloud_free_loadbalancer(thislb);
+      return -1;
+    }
+  }
+  xmlXPathFreeObject(actionset);
+
+  pubset = xmlXPathEval(BAD_CAST "./public_addresses", ctxt);
+  if (pubset && pubset->type == XPATH_NODESET && pubset->nodesetval &&
+      pubset->nodesetval->nodeNr == 1) {
+    if (parse_addresses_xml(pubset->nodesetval->nodeTab[0], ctxt,
+			    &(thislb->public_addresses)) < 0) {
+      deltacloud_free_loadbalancer(thislb);
+      return -1;
+    }
+  }
+  xmlXPathFreeObject(pubset);
+
+  listenerset = xmlXPathEval(BAD_CAST "./listeners", ctxt);
+  if (listenerset && listenerset->type == XPATH_NODESET &&
+      listenerset->nodesetval && listenerset->nodesetval->nodeNr == 1) {
+    if (parse_listener_xml(listenerset->nodesetval->nodeTab[0], ctxt,
+			   &(thislb->listeners)) < 0) {
+      deltacloud_free_loadbalancer(thislb);
+      return -1;
+    }
+  }
+  xmlXPathFreeObject(listenerset);
+
+  instanceset = xmlXPathEval(BAD_CAST "./instances", ctxt);
+  if (instanceset && instanceset->type == XPATH_NODESET &&
+      instanceset->nodesetval && instanceset->nodesetval->nodeNr == 1) {
+    if (parse_lb_instance_xml(instanceset->nodesetval->nodeTab[0], ctxt,
+			      &(thislb->instances)) < 0) {
+      deltacloud_free_loadbalancer(thislb);
+      return -1;
+    }
+  }
+  xmlXPathFreeObject(instanceset);
+
+  return 0;
+}
+
 static int parse_loadbalancer_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				  void **data)
 {
@@ -252,7 +211,6 @@ static int parse_loadbalancer_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   struct deltacloud_loadbalancer *thislb;
   int ret = -1;
   xmlNodePtr oldnode;
-  xmlXPathObjectPtr actionset, pubset, listenerset, instanceset;
 
   oldnode = ctxt->node;
 
@@ -268,59 +226,11 @@ static int parse_loadbalancer_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	goto cleanup;
       }
 
-      thislb->href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      thislb->id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      thislb->created_at = getXPathString("string(./created_at)", ctxt);
-      thislb->realm_href = getXPathString("string(./realm/@href)", ctxt);
-      thislb->realm_id = getXPathString("string(./realm/@id)", ctxt);
-
-      actionset = xmlXPathEval(BAD_CAST "./actions", ctxt);
-      if (actionset && actionset->type == XPATH_NODESET &&
-	  actionset->nodesetval && actionset->nodesetval->nodeNr == 1) {
-	if (parse_actions_xml(actionset->nodesetval->nodeTab[0],
-			      &(thislb->actions)) < 0) {
-	  deltacloud_free_loadbalancer(thislb);
-	  SAFE_FREE(thislb);
-	  goto cleanup;
-	}
+      if (parse_one_loadbalancer(cur, ctxt, thislb) < 0) {
+	/* parse_one_loadbalancer is expected to have set its own error */
+	SAFE_FREE(thislb);
+	goto cleanup;
       }
-      xmlXPathFreeObject(actionset);
-
-      pubset = xmlXPathEval(BAD_CAST "./public_addresses", ctxt);
-      if (pubset && pubset->type == XPATH_NODESET && pubset->nodesetval &&
-	  pubset->nodesetval->nodeNr == 1) {
-	if (parse_addresses_xml(pubset->nodesetval->nodeTab[0], ctxt,
-				&(thislb->public_addresses)) < 0) {
-	  deltacloud_free_loadbalancer(thislb);
-	  SAFE_FREE(thislb);
-	  goto cleanup;
-	}
-      }
-      xmlXPathFreeObject(pubset);
-
-      listenerset = xmlXPathEval(BAD_CAST "./listeners", ctxt);
-      if (listenerset && listenerset->type == XPATH_NODESET &&
-	  listenerset->nodesetval && listenerset->nodesetval->nodeNr == 1) {
-	if (parse_listener_xml(listenerset->nodesetval->nodeTab[0], ctxt,
-			       &(thislb->listeners)) < 0) {
-	  deltacloud_free_loadbalancer(thislb);
-	  SAFE_FREE(thislb);
-	  goto cleanup;
-	}
-      }
-      xmlXPathFreeObject(listenerset);
-
-      instanceset = xmlXPathEval(BAD_CAST "./instances", ctxt);
-      if (instanceset && instanceset->type == XPATH_NODESET &&
-	  instanceset->nodesetval && instanceset->nodesetval->nodeNr == 1) {
-	if (parse_lb_instance_xml(instanceset->nodesetval->nodeTab[0], ctxt,
-				  &(thislb->instances)) < 0) {
-	  deltacloud_free_loadbalancer(thislb);
-	  SAFE_FREE(thislb);
-	  goto cleanup;
-	}
-      }
-      xmlXPathFreeObject(instanceset);
 
       /* add_to_list can't fail */
       add_to_list(lbs, struct deltacloud_loadbalancer, thislb);
@@ -356,29 +266,6 @@ static int prepare_int_parameter(struct deltacloud_create_parameter *param,
   return 0;
 }
 
-static int parse_one_loadbalancer(const char *data, void *output)
-{
-  int ret = -1;
-  struct deltacloud_loadbalancer *newlb = (struct deltacloud_loadbalancer *)output;
-  struct deltacloud_loadbalancer *tmplb = NULL;
-
-  if (parse_xml(data, "load_balancer", (void **)&tmplb,
-		parse_loadbalancer_xml, 0) < 0)
-    goto cleanup;
-
-  if (copy_loadbalancer(newlb, tmplb) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  ret = 0;
-
- cleanup:
-  deltacloud_free_loadbalancer_list(&tmplb);
-
-  return ret;
-}
-
 int deltacloud_get_loadbalancers(struct deltacloud_api *api,
 				 struct deltacloud_loadbalancer **balancers)
 {
@@ -390,8 +277,8 @@ int deltacloud_get_loadbalancer_by_id(struct deltacloud_api *api,
 				      const char *id,
 				      struct deltacloud_loadbalancer *balancer)
 {
-  return internal_get_by_id(api, id, "load_balancers", parse_one_loadbalancer,
-			    balancer);
+  return internal_get_by_id(api, id, "load_balancers", "load_balancer",
+			    parse_one_loadbalancer, balancer);
 }
 
 int deltacloud_create_loadbalancer(struct deltacloud_api *api, const char *name,

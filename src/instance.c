@@ -25,49 +25,66 @@
 #include "libdeltacloud.h"
 #include "curl_action.h"
 
-static int copy_instance(struct deltacloud_instance *dst,
-			 struct deltacloud_instance *src)
+static int parse_one_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			      void *output)
 {
-  /* with a NULL src, we just return success.  A NULL dst is an error */
-  if (src == NULL)
-    return 0;
-  if (dst == NULL)
-    return -1;
+  struct deltacloud_instance *thisinst = (struct deltacloud_instance *)output;
+  xmlXPathObjectPtr hwpset, actionset, pubset, privset;
 
-  memset(dst, 0, sizeof(struct deltacloud_instance));
+  memset(thisinst, 0, sizeof(struct deltacloud_instance));
 
-  if (strdup_or_null(&dst->href, src->href) < 0)
-    goto error;
-  if (strdup_or_null(&dst->id, src->id) < 0)
-    goto error;
-  if (strdup_or_null(&dst->name, src->name) < 0)
-    goto error;
-  if (strdup_or_null(&dst->owner_id, src->owner_id) < 0)
-    goto error;
-  if (strdup_or_null(&dst->image_id, src->image_id) < 0)
-    goto error;
-  if (strdup_or_null(&dst->image_href, src->image_href) < 0)
-    goto error;
-  if (strdup_or_null(&dst->realm_id, src->realm_id) < 0)
-    goto error;
-  if (strdup_or_null(&dst->realm_href, src->realm_href) < 0)
-    goto error;
-  if (strdup_or_null(&dst->state, src->state) < 0)
-    goto error;
-  if (copy_hardware_profile(&dst->hwp, &src->hwp) < 0)
-    goto error;
-  if (copy_action_list(&dst->actions, &src->actions) < 0)
-    goto error;
-  if (copy_address_list(&dst->public_addresses, &src->public_addresses) < 0)
-    goto error;
-  if (copy_address_list(&dst->private_addresses, &src->private_addresses) < 0)
-    goto error;
+  thisinst->href = (char *)xmlGetProp(cur, BAD_CAST "href");
+  thisinst->id = (char *)xmlGetProp(cur, BAD_CAST "id");
+  thisinst->name = getXPathString("string(./name)", ctxt);
+  thisinst->owner_id = getXPathString("string(./owner_id)", ctxt);
+  thisinst->image_id = getXPathString("string(./image/@id)", ctxt);
+  thisinst->image_href = getXPathString("string(./image/@href)", ctxt);
+  thisinst->realm_id = getXPathString("string(./realm/@id)", ctxt);
+  thisinst->realm_href = getXPathString("string(./realm/@href)", ctxt);
+  thisinst->state = getXPathString("string(./state)", ctxt);
+
+  hwpset = xmlXPathEval(BAD_CAST "./hardware_profile", ctxt);
+  if (hwpset && hwpset->type == XPATH_NODESET && hwpset->nodesetval &&
+      hwpset->nodesetval->nodeNr == 1) {
+    parse_one_hardware_profile(hwpset->nodesetval->nodeTab[0], ctxt,
+			       &thisinst->hwp);
+  }
+  xmlXPathFreeObject(hwpset);
+
+  actionset = xmlXPathEval(BAD_CAST "./actions", ctxt);
+  if (actionset && actionset->type == XPATH_NODESET &&
+      actionset->nodesetval && actionset->nodesetval->nodeNr == 1) {
+    if (parse_actions_xml(actionset->nodesetval->nodeTab[0],
+			  &(thisinst->actions)) < 0) {
+      deltacloud_free_instance(thisinst);
+      return -1;
+    }
+  }
+  xmlXPathFreeObject(actionset);
+
+  pubset = xmlXPathEval(BAD_CAST "./public_addresses", ctxt);
+  if (pubset && pubset->type == XPATH_NODESET && pubset->nodesetval &&
+      pubset->nodesetval->nodeNr == 1) {
+    if (parse_addresses_xml(pubset->nodesetval->nodeTab[0], ctxt,
+			    &(thisinst->public_addresses)) < 0) {
+      deltacloud_free_instance(thisinst);
+      return -1;
+    }
+  }
+  xmlXPathFreeObject(pubset);
+
+  privset = xmlXPathEval(BAD_CAST "./private_addresses", ctxt);
+  if (privset && privset->type == XPATH_NODESET && privset->nodesetval &&
+      privset->nodesetval->nodeNr == 1) {
+    if (parse_addresses_xml(privset->nodesetval->nodeTab[0], ctxt,
+			    &(thisinst->private_addresses)) < 0) {
+      deltacloud_free_instance(thisinst);
+      return -1;
+    }
+  }
+  xmlXPathFreeObject(privset);
 
   return 0;
-
- error:
-  deltacloud_free_instance(dst);
-  return -1;
 }
 
 static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
@@ -75,9 +92,7 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 {
   struct deltacloud_instance **instances = (struct deltacloud_instance **)data;
   struct deltacloud_instance *thisinst;
-  struct deltacloud_hardware_profile *hwp = NULL;
   xmlNodePtr oldnode;
-  xmlXPathObjectPtr hwpset, actionset, pubset, privset;
   int ret = -1;
 
   oldnode = ctxt->node;
@@ -94,61 +109,11 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	goto cleanup;
       }
 
-      thisinst->href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      thisinst->id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      thisinst->name = getXPathString("string(./name)", ctxt);
-      thisinst->owner_id = getXPathString("string(./owner_id)", ctxt);
-      thisinst->image_id = getXPathString("string(./image/@id)", ctxt);
-      thisinst->image_href = getXPathString("string(./image/@href)", ctxt);
-      thisinst->realm_id = getXPathString("string(./realm/@id)", ctxt);
-      thisinst->realm_href = getXPathString("string(./realm/@href)", ctxt);
-      thisinst->state = getXPathString("string(./state)", ctxt);
-
-      hwpset = xmlXPathEval(BAD_CAST "./hardware_profile", ctxt);
-      if (hwpset && hwpset->type == XPATH_NODESET && hwpset->nodesetval &&
-	  hwpset->nodesetval->nodeNr == 1) {
-	parse_hardware_profile_xml(hwpset->nodesetval->nodeTab[0], ctxt,
-				   (void **)&hwp);
-	copy_hardware_profile(&(thisinst->hwp), hwp);
-	deltacloud_free_hardware_profile_list(&hwp);
+      if (parse_one_instance(cur, ctxt, thisinst) < 0) {
+	/* parse_one_instance is expected to have set its own error */
+	SAFE_FREE(thisinst);
+	goto cleanup;
       }
-      xmlXPathFreeObject(hwpset);
-
-      actionset = xmlXPathEval(BAD_CAST "./actions", ctxt);
-      if (actionset && actionset->type == XPATH_NODESET &&
-	  actionset->nodesetval && actionset->nodesetval->nodeNr == 1) {
-	if (parse_actions_xml(actionset->nodesetval->nodeTab[0],
-			      &(thisinst->actions)) < 0) {
-	  deltacloud_free_instance(thisinst);
-	  SAFE_FREE(thisinst);
-	  goto cleanup;
-	}
-      }
-      xmlXPathFreeObject(actionset);
-
-      pubset = xmlXPathEval(BAD_CAST "./public_addresses", ctxt);
-      if (pubset && pubset->type == XPATH_NODESET && pubset->nodesetval &&
-	  pubset->nodesetval->nodeNr == 1) {
-	if (parse_addresses_xml(pubset->nodesetval->nodeTab[0], ctxt,
-				&(thisinst->public_addresses)) < 0) {
-	  deltacloud_free_instance(thisinst);
-	  SAFE_FREE(thisinst);
-	  goto cleanup;
-	}
-      }
-      xmlXPathFreeObject(pubset);
-
-      privset = xmlXPathEval(BAD_CAST "./private_addresses", ctxt);
-      if (privset && privset->type == XPATH_NODESET && privset->nodesetval &&
-	  privset->nodesetval->nodeNr == 1) {
-	if (parse_addresses_xml(privset->nodesetval->nodeTab[0], ctxt,
-				&(thisinst->private_addresses)) < 0) {
-	  deltacloud_free_instance(thisinst);
-	  SAFE_FREE(thisinst);
-	  goto cleanup;
-	}
-      }
-      xmlXPathFreeObject(privset);
 
       /* add_to_list can't fail */
       add_to_list(instances, struct deltacloud_instance, thisinst);
@@ -162,29 +127,6 @@ static int parse_instance_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   if (ret < 0)
     deltacloud_free_instance_list(instances);
   ctxt->node = oldnode;
-
-  return ret;
-}
-
-static int parse_one_instance(const char *data, void *output)
-{
-  int ret = -1;
-  struct deltacloud_instance *newinstance = (struct deltacloud_instance *)output;
-  struct deltacloud_instance *tmpinstance = NULL;
-
-  if (parse_xml(data, "instance", (void **)&tmpinstance,
-		parse_instance_xml, 0) < 0)
-    goto cleanup;
-
-  if (copy_instance(newinstance, tmpinstance) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  ret = 0;
-
- cleanup:
-  deltacloud_free_instance_list(&tmpinstance);
 
   return ret;
 }
@@ -358,7 +300,8 @@ int deltacloud_get_instances(struct deltacloud_api *api,
 int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
 				  struct deltacloud_instance *instance)
 {
-  return internal_get_by_id(api, id, "instances", parse_one_instance, instance);
+  return internal_get_by_id(api, id, "instances", "instance",
+			    parse_one_instance, instance);
 }
 
 void deltacloud_free_instance(struct deltacloud_instance *instance)

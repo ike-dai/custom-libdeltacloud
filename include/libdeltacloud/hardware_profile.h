@@ -75,11 +75,9 @@ struct deltacloud_hardware_profile {
   struct deltacloud_hardware_profile *next;
 };
 
-/* these are exported for internal use only */
-int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
-			       void **data);
-int copy_hardware_profile(struct deltacloud_hardware_profile *dst,
-			  struct deltacloud_hardware_profile *src);
+/* this is exported for internal use only */
+int parse_one_hardware_profile(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			       void *output);
 
 #define deltacloud_supports_hardware_profiles(api) deltacloud_has_link(api, "hardware_profiles")
 int deltacloud_get_hardware_profiles(struct deltacloud_api *api,

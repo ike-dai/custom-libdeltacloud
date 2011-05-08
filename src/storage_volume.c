@@ -30,23 +30,6 @@ static void free_capacity(struct deltacloud_storage_volume_capacity *curr)
   SAFE_FREE(curr->size);
 }
 
-static int copy_capacity(struct deltacloud_storage_volume_capacity *dst,
-			 struct deltacloud_storage_volume_capacity *src)
-{
-  memset(dst, 0, sizeof(struct deltacloud_storage_volume_capacity));
-
-  if (strdup_or_null(&dst->unit, src->unit) < 0)
-    goto error;
-  if (strdup_or_null(&dst->size, src->size) < 0)
-    goto error;
-
-  return 0;
-
- error:
-  free_capacity(dst);
-  return -1;
-}
-
 static void free_mount(struct deltacloud_storage_volume_mount *curr)
 {
   SAFE_FREE(curr->instance_href);
@@ -54,60 +37,32 @@ static void free_mount(struct deltacloud_storage_volume_mount *curr)
   SAFE_FREE(curr->device_name);
 }
 
-static int copy_mount(struct deltacloud_storage_volume_mount *dst,
-		      struct deltacloud_storage_volume_mount *src)
+static int parse_one_storage_volume(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				    void *output)
 {
-  memset (dst, 0, sizeof(struct deltacloud_storage_volume_mount));
+  struct deltacloud_storage_volume *thisvolume = (struct deltacloud_storage_volume *)output;
 
-  if (strdup_or_null(&dst->instance_href, src->instance_href) < 0)
-    goto error;
-  if (strdup_or_null(&dst->instance_id, src->instance_id) < 0)
-    goto error;
-  if (strdup_or_null(&dst->device_name, src->device_name) < 0)
-    goto error;
+  memset(thisvolume, 0, sizeof(struct deltacloud_storage_volume));
+
+  thisvolume->href = (char *)xmlGetProp(cur, BAD_CAST "href");
+  thisvolume->id = (char *)xmlGetProp(cur, BAD_CAST "id");
+  thisvolume->created = getXPathString("string(./created)", ctxt);
+  thisvolume->state = getXPathString("string(./state)", ctxt);
+  thisvolume->capacity.unit = getXPathString("string(./capacity/@unit)",
+					     ctxt);
+  thisvolume->capacity.size = getXPathString("string(./capacity)", ctxt);
+  thisvolume->device = getXPathString("string(./device)", ctxt);
+  thisvolume->instance_href = getXPathString("string(./instance/@href)",
+					     ctxt);
+  thisvolume->realm_id = getXPathString("string(./realm_id)", ctxt);
+  thisvolume->mount.instance_href = getXPathString("string(./mount/instance/@href)",
+						   ctxt);
+  thisvolume->mount.instance_id = getXPathString("string(./mount/instance/@id)",
+						 ctxt);
+  thisvolume->mount.device_name = getXPathString("string(./mount/device/@name)",
+						 ctxt);
 
   return 0;
-
- error:
-  free_mount(dst);
-  return -1;
-}
-
-static int copy_storage_volume(struct deltacloud_storage_volume *dst,
-			       struct deltacloud_storage_volume *src)
-{
-  /* with a NULL src, we just return success.  A NULL dst is an error */
-  if (src == NULL)
-    return 0;
-  if (dst == NULL)
-    return -1;
-
-  memset(dst, 0, sizeof(struct deltacloud_storage_volume));
-
-  if (strdup_or_null(&dst->href, src->href) < 0)
-    goto error;
-  if (strdup_or_null(&dst->id, src->id) < 0)
-    goto error;
-  if (strdup_or_null(&dst->created, src->created) < 0)
-    goto error;
-  if (strdup_or_null(&dst->state, src->state) < 0)
-    goto error;
-  if (copy_capacity(&dst->capacity, &src->capacity) < 0)
-    goto error;
-  if (strdup_or_null(&dst->device, src->device) < 0)
-    goto error;
-  if (strdup_or_null(&dst->instance_href, src->instance_href) < 0)
-    goto error;
-  if (strdup_or_null(&dst->realm_id, src->realm_id) < 0)
-    goto error;
-  if (copy_mount(&dst->mount, &src->mount) < 0)
-    goto error;
-
-  return 0;
-
- error:
-  deltacloud_free_storage_volume(dst);
-  return -1;
 }
 
 static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
@@ -132,23 +87,11 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	goto cleanup;
       }
 
-      thisvolume->href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      thisvolume->id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      thisvolume->created = getXPathString("string(./created)", ctxt);
-      thisvolume->state = getXPathString("string(./state)", ctxt);
-      thisvolume->capacity.unit = getXPathString("string(./capacity/@unit)",
-						 ctxt);
-      thisvolume->capacity.size = getXPathString("string(./capacity)", ctxt);
-      thisvolume->device = getXPathString("string(./device)", ctxt);
-      thisvolume->instance_href = getXPathString("string(./instance/@href)",
-						 ctxt);
-      thisvolume->realm_id = getXPathString("string(./realm_id)", ctxt);
-      thisvolume->mount.instance_href = getXPathString("string(./mount/instance/@href)",
-						       ctxt);
-      thisvolume->mount.instance_id = getXPathString("string(./mount/instance/@id)",
-						     ctxt);
-      thisvolume->mount.device_name = getXPathString("string(./mount/device/@name)",
-						     ctxt);
+      if (parse_one_storage_volume(cur, ctxt, thisvolume) < 0) {
+	/* parse_one_storage_volume is expected to have set its own error */
+	SAFE_FREE(thisvolume);
+	goto cleanup;
+      }
 
       /* add_to_list can't fail */
       add_to_list(storage_volumes, struct deltacloud_storage_volume,
@@ -167,29 +110,6 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
-static int parse_one_storage_volume(const char *data, void *output)
-{
-  int ret = -1;
-  struct deltacloud_storage_volume *newvolume = (struct deltacloud_storage_volume *)output;
-  struct deltacloud_storage_volume *tmpvolume = NULL;
-
-  if (parse_xml(data, "storage_volume", (void **)&tmpvolume,
-		parse_storage_volume_xml, 0) < 0)
-    goto cleanup;
-
-  if (copy_storage_volume(newvolume, tmpvolume) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  ret = 0;
-
- cleanup:
-  deltacloud_free_storage_volume_list(&tmpvolume);
-
-  return ret;
-}
-
 int deltacloud_get_storage_volumes(struct deltacloud_api *api,
 				   struct deltacloud_storage_volume **storage_volumes)
 {
@@ -201,7 +121,7 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
 					const char *id,
 					struct deltacloud_storage_volume *storage_volume)
 {
-  return internal_get_by_id(api, id, "storage_volumes",
+  return internal_get_by_id(api, id, "storage_volumes", "storage_volume",
 			    parse_one_storage_volume, storage_volume);
 }
 

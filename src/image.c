@@ -24,31 +24,22 @@
 #include "common.h"
 #include "libdeltacloud.h"
 
-static int copy_image(struct deltacloud_image *dst,
-		      struct deltacloud_image *src)
+static int parse_one_image(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			   void *output)
 {
-  memset(dst, 0, sizeof(struct deltacloud_image));
+  struct deltacloud_image *thisimage = (struct deltacloud_image *)output;
 
-  if (strdup_or_null(&dst->href, src->href) < 0)
-    goto error;
-  if (strdup_or_null(&dst->id, src->id) < 0)
-    goto error;
-  if (strdup_or_null(&dst->description, src->description) < 0)
-    goto error;
-  if (strdup_or_null(&dst->architecture, src->architecture) < 0)
-    goto error;
-  if (strdup_or_null(&dst->owner_id, src->owner_id) < 0)
-    goto error;
-  if (strdup_or_null(&dst->name, src->name) < 0)
-    goto error;
-  if (strdup_or_null(&dst->state, src->state) < 0)
-    goto error;
+  memset(thisimage, 0, sizeof(struct deltacloud_image));
+
+  thisimage->href = (char *)xmlGetProp(cur, BAD_CAST "href");
+  thisimage->id = (char *)xmlGetProp(cur, BAD_CAST "id");
+  thisimage->description = getXPathString("string(./description)", ctxt);
+  thisimage->architecture = getXPathString("string(./architecture)", ctxt);
+  thisimage->owner_id = getXPathString("string(./owner_id)", ctxt);
+  thisimage->name = getXPathString("string(./name)", ctxt);
+  thisimage->state = getXPathString("string(./state)", ctxt);
 
   return 0;
-
- error:
-  deltacloud_free_image(dst);
-  return -1;
 }
 
 static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
@@ -73,13 +64,11 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 	goto cleanup;
       }
 
-      thisimage->href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      thisimage->id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      thisimage->description = getXPathString("string(./description)", ctxt);
-      thisimage->architecture = getXPathString("string(./architecture)", ctxt);
-      thisimage->owner_id = getXPathString("string(./owner_id)", ctxt);
-      thisimage->name = getXPathString("string(./name)", ctxt);
-      thisimage->state = getXPathString("string(./state)", ctxt);
+      if (parse_one_image(cur, ctxt, thisimage) < 0) {
+	/* parse_one_image is expected to have set its own error */
+	SAFE_FREE(thisimage);
+	goto cleanup;
+      }
 
       /* add_to_list can't fail */
       add_to_list(images, struct deltacloud_image, thisimage);
@@ -97,28 +86,6 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
-static int parse_one_image(const char *data, void *output)
-{
-  int ret = -1;
-  struct deltacloud_image *newimage = (struct deltacloud_image *)output;
-  struct deltacloud_image *tmpimage = NULL;
-
-  if (parse_xml(data, "image", (void **)&tmpimage, parse_image_xml, 0) < 0)
-    goto cleanup;
-
-  if (copy_image(newimage, tmpimage) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  ret = 0;
-
- cleanup:
-  deltacloud_free_image_list(&tmpimage);
-
-  return ret;
-}
-
 int deltacloud_get_images(struct deltacloud_api *api,
 			  struct deltacloud_image **images)
 {
@@ -129,7 +96,7 @@ int deltacloud_get_images(struct deltacloud_api *api,
 int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
 			       struct deltacloud_image *image)
 {
-  return internal_get_by_id(api, id, "images", parse_one_image, image);
+  return internal_get_by_id(api, id, "images", "image", parse_one_image, image);
 }
 
 int deltacloud_create_image(struct deltacloud_api *api, const char *instance_id,

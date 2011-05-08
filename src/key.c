@@ -24,6 +24,22 @@
 #include "common.h"
 #include "libdeltacloud.h"
 
+static int parse_one_key(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			 void *output)
+{
+  struct deltacloud_key *thiskey = (struct deltacloud_key *)output;
+
+  memset(thiskey, 0, sizeof(struct deltacloud_key));
+
+  thiskey->href = (char *)xmlGetProp(cur, BAD_CAST "href");
+  thiskey->id = (char *)xmlGetProp(cur, BAD_CAST "id");
+  thiskey->type = (char *)xmlGetProp(cur, BAD_CAST "type");
+  thiskey->state = getXPathString("string(./state)", ctxt);
+  thiskey->fingerprint = getXPathString("string(./fingerprint)", ctxt);
+
+  return 0;
+}
+
 static int parse_key_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 {
   struct deltacloud_key **keys = (struct deltacloud_key **)data;
@@ -45,11 +61,11 @@ static int parse_key_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 	goto cleanup;
       }
 
-      thiskey->href = (char *)xmlGetProp(cur, BAD_CAST "href");
-      thiskey->id = (char *)xmlGetProp(cur, BAD_CAST "id");
-      thiskey->type = (char *)xmlGetProp(cur, BAD_CAST "type");
-      thiskey->state = getXPathString("string(./state)", ctxt);
-      thiskey->fingerprint = getXPathString("string(./fingerprint)", ctxt);
+      if (parse_one_key(cur, ctxt, thiskey) < 0) {
+	/* parse_one_key is expected to have set its own error */
+	SAFE_FREE(thiskey);
+	goto cleanup;
+      }
 
       /* add_to_list can't fail */
       add_to_list(keys, struct deltacloud_key, thiskey);
@@ -63,56 +79,6 @@ static int parse_key_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
   ctxt->node = oldnode;
   if (ret < 0)
     deltacloud_free_key_list(keys);
-
-  return ret;
-}
-
-static int copy_key(struct deltacloud_key *dst, struct deltacloud_key *src)
-{
-  /* with a NULL src, we just return success.  A NULL dst is an error */
-  if (src == NULL)
-    return 0;
-  if (dst == NULL)
-    return -1;
-
-  memset(dst, 0, sizeof(struct deltacloud_key));
-
-  if (strdup_or_null(&dst->href, src->href) < 0)
-    goto error;
-  if (strdup_or_null(&dst->id, src->id) < 0)
-    goto error;
-  if (strdup_or_null(&dst->type, src->type) < 0)
-    goto error;
-  if (strdup_or_null(&dst->state, src->state) < 0)
-    goto error;
-  if (strdup_or_null(&dst->fingerprint, src->fingerprint) < 0)
-    goto error;
-
-  return 0;
-
- error:
-  deltacloud_free_key(dst);
-  return -1;
-}
-
-static int parse_one_key(const char *data, void *output)
-{
-  int ret = -1;
-  struct deltacloud_key *newkey = (struct deltacloud_key *)output;
-  struct deltacloud_key *tmpkey = NULL;
-
-  if (parse_xml(data, "key", (void **)&tmpkey, parse_key_xml, 0) < 0)
-    goto cleanup;
-
-  if (copy_key(newkey, tmpkey) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  ret = 0;
-
- cleanup:
-  deltacloud_free_key_list(&tmpkey);
 
   return ret;
 }
@@ -175,7 +141,7 @@ int deltacloud_key_destroy(struct deltacloud_api *api,
 int deltacloud_get_key_by_id(struct deltacloud_api *api, const char *id,
 			     struct deltacloud_key *key)
 {
-  return internal_get_by_id(api, id, "keys", parse_one_key, key);
+  return internal_get_by_id(api, id, "keys", "key", parse_one_key, key);
 }
 
 void deltacloud_free_key(struct deltacloud_key *key)

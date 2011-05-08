@@ -289,9 +289,61 @@ int internal_get(struct deltacloud_api *api, const char *relname,
   return ret;
 }
 
+static int parse_xml_single(const char *xml_string, const char *name,
+			    int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				      void *data),
+			    void *output)
+{
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  xmlXPathContextPtr ctxt = NULL;
+  int ret = -1;
+
+  xml = xmlReadDoc(BAD_CAST xml_string, name, NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    set_error_from_xml(name, "Failed to parse XML");
+    return -1;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    set_error_from_xml(name, "Failed to get the root element");
+    goto cleanup;
+  }
+
+  if (STRNEQ((const char *)root->name, name)) {
+    xml_error(name, "Failed to get expected root element", (char *)root->name);
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    set_error_from_xml(name, "Failed to initialize XPath context");
+    goto cleanup;
+  }
+
+  ctxt->node = root;
+
+  if (cb(root, ctxt, output) < 0)
+    /* the callbacks are expected to have set their own error */
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  if (ctxt != NULL)
+    xmlXPathFreeContext(ctxt);
+  xmlFreeDoc(xml);
+
+  return ret;
+}
+
 int internal_get_by_id(struct deltacloud_api *api, const char *id,
-		       const char *name,
-		       int (*parse_cb)(const char *, void *),
+		       const char *relname, const char *rootname,
+		       int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				 void *data),
 		       void *output)
 {
   char *url = NULL;
@@ -311,7 +363,7 @@ int internal_get_by_id(struct deltacloud_api *api, const char *id,
     return -1;
   }
 
-  if (asprintf(&url, "%s/%s/%s", api->url, name, safeid) < 0) {
+  if (asprintf(&url, "%s/%s/%s", api->url, relname, safeid) < 0) {
     oom_error();
     goto cleanup;
   }
@@ -325,7 +377,7 @@ int internal_get_by_id(struct deltacloud_api *api, const char *id,
      * was 0), but the data that we expected wasn't returned.  This is probably
      * a deltacloud server bug, so just set an error and bail out
      */
-    data_error(name);
+    data_error(relname);
     goto cleanup;
   }
 
@@ -334,7 +386,7 @@ int internal_get_by_id(struct deltacloud_api *api, const char *id,
     goto cleanup;
   }
 
-  if (parse_cb(data, output) < 0)
+  if (parse_xml_single(data, rootname, cb, output) < 0)
     goto cleanup;
 
   ret = 0;
@@ -375,7 +427,7 @@ void oom_error(void)
   set_error(DELTACLOUD_OOM_ERROR, "Failed to allocate memory");
 }
 
-static void xml_error(const char *name, const char *type, const char *details)
+void xml_error(const char *name, const char *type, const char *details)
 {
   char *tmp;
   int alloc_fail = 0;
