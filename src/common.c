@@ -166,6 +166,30 @@ int internal_create(struct deltacloud_api *api, const char *link,
   return ret;
 }
 
+static void strip_trailing_whitespace(char *msg)
+{
+  int i;
+
+  for (i = strlen(msg) - 1; i >= 0; i--) {
+    if (msg[i] != ' ' && msg[i] != '\t' && msg[i] != '\n')
+      break;
+
+    msg[i] = '\0';
+  }
+}
+
+static void strip_leading_whitespace(char *msg)
+{
+  char *p;
+
+  p = msg;
+  while (*p == ' ' || *p == '\t' || *p == '\n')
+    p++;
+
+  /* use strlen(p) + 1 to make sure to copy the \0 */
+  memmove(msg, p, strlen(p) + 1);
+}
+
 static int parse_error_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 {
   char **msg = (char **)data;
@@ -174,6 +198,13 @@ static int parse_error_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 
   if (*msg == NULL)
     *msg = strdup("Unknown error");
+  else {
+    /* the value we get back may have leading and trailing whitespace, so strip
+     * it here
+     */
+    strip_trailing_whitespace(*msg);
+    strip_leading_whitespace(*msg);
+  }
 
   return 0;
 }
