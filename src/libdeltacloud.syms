@@ -6,12 +6,15 @@
 # currently defined to the newest version.
 
 LIBDELTACLOUD_4.0.0 {
+    global:
+	deltacloud_get_last_error;
+	deltacloud_get_last_error_string;
 };
 LIBDELTACLOUD_5.0.0 {
 } LIBDELTACLOUD_4.0.0;
 LIBDELTACLOUD_6.0.0 {
     global:
-	deltacloud_create_parameter;
+	deltacloud_allocate_parameter;
 	deltacloud_free_parameter_value;
 	deltacloud_free_parameter;
 	deltacloud_prepare_parameter;
@@ -21,8 +24,27 @@ LIBDELTACLOUD_7.0.0 {
 	deltacloud_create_image;
 	deltacloud_create_instance;
 	deltacloud_create_key;
+	deltacloud_create_loadbalancer;
 	deltacloud_free;
-	deltacloud_get_drivers;
+	deltacloud_free_driver;
+	deltacloud_free_driver_list;
+	deltacloud_free_hardware_profile;
+	deltacloud_free_hardware_profile_list;
+	deltacloud_free_image;
+	deltacloud_free_image_list;
+	deltacloud_free_instance;
+	deltacloud_free_instance_list;
+	deltacloud_free_instance_state_list;
+	deltacloud_free_key;
+	deltacloud_free_key_list;
+	deltacloud_free_loadbalancer;
+	deltacloud_free_loadbalancer_list;
+	deltacloud_free_realm;
+	deltacloud_free_realm_list;
+	deltacloud_free_storage_snapshot;
+	deltacloud_free_storage_snapshot_list;
+	deltacloud_free_storage_volume;
+	deltacloud_free_storage_volume_list;
 	deltacloud_get_driver_by_id;
 	deltacloud_get_hardware_profiles;
 	deltacloud_get_hardware_profile_by_id;
@@ -30,26 +52,23 @@ LIBDELTACLOUD_7.0.0 {
 	deltacloud_get_image_by_id;
 	deltacloud_get_instances;
 	deltacloud_get_instance_by_id;
-	deltacloud_get_instance_by_name;
 	deltacloud_get_instance_states;
 	deltacloud_get_keys;
 	deltacloud_get_key_by_id;
-	deltacloud_get_last_error;
-	deltacloud_get_last_error_string;
+	deltacloud_get_loadbalancers;
+	deltacloud_get_loadbalancer_by_id;
 	deltacloud_get_realms;
 	deltacloud_get_realm_by_id;
-	deltacloud_get_storage_volumes;
-	deltacloud_get_storage_volume_by_id;
 	deltacloud_get_storage_snapshots;
 	deltacloud_get_storage_snapshot_by_id;
+	deltacloud_get_storage_volumes;
+	deltacloud_get_storage_volume_by_id;
+	deltacloud_has_link;
 	deltacloud_initialize;
 	deltacloud_instance_stop;
 	deltacloud_instance_reboot;
 	deltacloud_instance_start;
 	deltacloud_instance_destroy;
 	deltacloud_key_destroy;
-	deltacloud_get_loadbalancers;
-	deltacloud_get_loadbalancer_by_id;
-	deltacloud_create_loadbalancer;
 	deltacloud_loadbalancer_destroy;
 } LIBDELTACLOUD_6.0.0;

@@ -72,7 +72,6 @@ int deltacloud_create_loadbalancer(struct deltacloud_api *api, const char *name,
 				   int params_length);
 int deltacloud_loadbalancer_destroy(struct deltacloud_api *api,
 				    struct deltacloud_loadbalancer *balancer);
-
 void deltacloud_free_loadbalancer(struct deltacloud_loadbalancer *lb);
 void deltacloud_free_loadbalancer_list(struct deltacloud_loadbalancer **lbs);
 

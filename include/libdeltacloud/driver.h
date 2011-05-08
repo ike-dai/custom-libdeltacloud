@@ -45,7 +45,6 @@ int deltacloud_get_drivers(struct deltacloud_api *api,
 			   struct deltacloud_driver **drivers);
 int deltacloud_get_driver_by_id(struct deltacloud_api *api, const char *id,
 				struct deltacloud_driver *driver);
-
 void deltacloud_free_driver(struct deltacloud_driver *driver);
 void deltacloud_free_driver_list(struct deltacloud_driver **drivers);
 
