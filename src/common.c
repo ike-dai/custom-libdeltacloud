@@ -29,6 +29,103 @@
 #include "common.h"
 #include "curl_action.h"
 
+/****************** ERROR REPORTING FUNCTIONS ********************************/
+pthread_key_t deltacloud_last_error;
+
+void invalid_argument_error(const char *details)
+{
+  set_error(DELTACLOUD_INVALID_ARGUMENT_ERROR, details);
+}
+
+static int parse_error_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data);
+void set_xml_error(const char *xml, int type)
+{
+  char *errmsg = NULL;
+
+  if (parse_xml(xml, "error", (void **)&errmsg, parse_error_xml, 1) < 0)
+    errmsg = strdup("Unknown error");
+
+  set_error(type, errmsg);
+
+  SAFE_FREE(errmsg);
+}
+
+void link_error(const char *name)
+{
+  char *tmp;
+  int alloc_fail = 0;
+
+  if (asprintf(&tmp, "Failed to find the link for '%s'", name) < 0) {
+    tmp = "Failed to find the link";
+    alloc_fail = 1;
+  }
+
+  set_error(DELTACLOUD_URL_DOES_NOT_EXIST_ERROR, tmp);
+  if (!alloc_fail)
+    SAFE_FREE(tmp);
+}
+
+static void data_error(const char *name)
+{
+  char *tmp;
+  int alloc_fail = 0;
+
+  if (asprintf(&tmp, "Expected %s data, received nothing", name) < 0) {
+    tmp = "Expected data, received nothing";
+    alloc_fail = 1;
+  }
+
+  set_error(DELTACLOUD_GET_URL_ERROR, tmp);
+  if (!alloc_fail)
+    SAFE_FREE(tmp);
+}
+
+void oom_error(void)
+{
+  set_error(DELTACLOUD_OOM_ERROR, "Failed to allocate memory");
+}
+
+static void xml_error(const char *name, const char *type, const char *details)
+{
+  char *tmp;
+  int alloc_fail = 0;
+
+  if (asprintf(&tmp, "%s for %s: %s", type, name, details) < 0) {
+    tmp = "Failed parsing XML";
+    alloc_fail = 1;
+  }
+
+  set_error(DELTACLOUD_XML_ERROR, tmp);
+  if (!alloc_fail)
+    SAFE_FREE(tmp);
+}
+
+void set_error(int errnum, const char *details)
+{
+  struct deltacloud_error *err;
+  struct deltacloud_error *last;
+
+  err = (struct deltacloud_error *)malloc(sizeof(struct deltacloud_error));
+  if (err == NULL) {
+    /* if we failed to allocate memory here, there's not a lot we can do */
+    dcloudprintf("Failed to allocate memory in an error path; error information will be unreliable!\n");
+    return;
+  }
+  memset(err, 0, sizeof(struct deltacloud_error));
+
+  err->error_num = errnum;
+  err->details = strdup(details);
+
+  dcloudprintf("%s\n", err->details);
+
+  last = pthread_getspecific(deltacloud_last_error);
+  if (last != NULL)
+    deltacloud_error_free_data(last);
+
+  pthread_setspecific(deltacloud_last_error, err);
+}
+
+/********************** IMPLEMENTATIONS OF COMMON FUNCTIONS *****************/
 int internal_destroy(const char *href, const char *user, const char *password)
 {
   char *data = NULL;
@@ -52,34 +149,6 @@ int internal_destroy(const char *href, const char *user, const char *password)
   SAFE_FREE(data);
 
   return ret;
-}
-
-void free_parameters(struct deltacloud_create_parameter *params,
-		     int params_length)
-{
-  int i;
-
-  for (i = 0; i < params_length; i++)
-    deltacloud_free_parameter_value(&params[i]);
-}
-
-int copy_parameters(struct deltacloud_create_parameter *dst,
-		    struct deltacloud_create_parameter *src,
-		    int params_length)
-{
-  int i;
-
-  for (i = 0; i < params_length; i++) {
-    if (deltacloud_prepare_parameter(&dst[i], src[i].name, src[i].value) < 0)
-      /* this isn't entirely orthogonal, since this function can allocate
-       * memory that it doesn't free.  We just depend on the higher layers
-       * to free the whole thing as necessary
-       */
-      /* deltacloud_prepare_parameter already set the error */
-      return -1;
-  }
-
-  return i;
 }
 
 static int add_safe_value(FILE *fp, const char *name, const char *value)
@@ -166,101 +235,6 @@ int internal_create(struct deltacloud_api *api, const char *link,
   return ret;
 }
 
-static void strip_trailing_whitespace(char *msg)
-{
-  int i;
-
-  for (i = strlen(msg) - 1; i >= 0; i--) {
-    if (msg[i] != ' ' && msg[i] != '\t' && msg[i] != '\n')
-      break;
-
-    msg[i] = '\0';
-  }
-}
-
-static void strip_leading_whitespace(char *msg)
-{
-  char *p;
-
-  p = msg;
-  while (*p == ' ' || *p == '\t' || *p == '\n')
-    p++;
-
-  /* use strlen(p) + 1 to make sure to copy the \0 */
-  memmove(msg, p, strlen(p) + 1);
-}
-
-static int parse_error_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
-{
-  char **msg = (char **)data;
-
-  *msg = getXPathString("string(/error/message)", ctxt);
-
-  if (*msg == NULL)
-    *msg = strdup("Unknown error");
-  else {
-    /* the value we get back may have leading and trailing whitespace, so strip
-     * it here
-     */
-    strip_trailing_whitespace(*msg);
-    strip_leading_whitespace(*msg);
-  }
-
-  return 0;
-}
-
-void invalid_argument_error(const char *details)
-{
-  set_error(DELTACLOUD_INVALID_ARGUMENT_ERROR, details);
-}
-
-void set_xml_error(const char *xml, int type)
-{
-  char *errmsg = NULL;
-
-  if (parse_xml(xml, "error", (void **)&errmsg, parse_error_xml, 1) < 0)
-    errmsg = strdup("Unknown error");
-
-  set_error(type, errmsg);
-
-  SAFE_FREE(errmsg);
-}
-
-int is_error_xml(const char *xml)
-{
-  return STRPREFIX(xml, "<error");
-}
-
-void link_error(const char *name)
-{
-  char *tmp;
-  int alloc_fail = 0;
-
-  if (asprintf(&tmp, "Failed to find the link for '%s'", name) < 0) {
-    tmp = "Failed to find the link";
-    alloc_fail = 1;
-  }
-
-  set_error(DELTACLOUD_URL_DOES_NOT_EXIST_ERROR, tmp);
-  if (!alloc_fail)
-    SAFE_FREE(tmp);
-}
-
-static void data_error(const char *name)
-{
-  char *tmp;
-  int alloc_fail = 0;
-
-  if (asprintf(&tmp, "Expected %s data, received nothing", name) < 0) {
-    tmp = "Expected data, received nothing";
-    alloc_fail = 1;
-  }
-
-  set_error(DELTACLOUD_GET_URL_ERROR, tmp);
-  if (!alloc_fail)
-    SAFE_FREE(tmp);
-}
-
 /*
  * An internal function for fetching all of the elements of a particular
  * type.  Note that although relname and rootname is the same for almost
@@ -323,54 +297,7 @@ int internal_get(struct deltacloud_api *api, const char *relname,
 static int parse_xml_single(const char *xml_string, const char *name,
 			    int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				      void *data),
-			    void *output)
-{
-  xmlDocPtr xml;
-  xmlNodePtr root;
-  xmlXPathContextPtr ctxt = NULL;
-  int ret = -1;
-
-  xml = xmlReadDoc(BAD_CAST xml_string, name, NULL,
-		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
-		   XML_PARSE_NOWARNING);
-  if (!xml) {
-    set_error_from_xml(name, "Failed to parse XML");
-    return -1;
-  }
-
-  root = xmlDocGetRootElement(xml);
-  if (root == NULL) {
-    set_error_from_xml(name, "Failed to get the root element");
-    goto cleanup;
-  }
-
-  if (STRNEQ((const char *)root->name, name)) {
-    xml_error(name, "Failed to get expected root element", (char *)root->name);
-    goto cleanup;
-  }
-
-  ctxt = xmlXPathNewContext(xml);
-  if (ctxt == NULL) {
-    set_error_from_xml(name, "Failed to initialize XPath context");
-    goto cleanup;
-  }
-
-  ctxt->node = root;
-
-  if (cb(root, ctxt, output) < 0)
-    /* the callbacks are expected to have set their own error */
-    goto cleanup;
-
-  ret = 0;
-
- cleanup:
-  if (ctxt != NULL)
-    xmlXPathFreeContext(ctxt);
-  xmlFreeDoc(xml);
-
-  return ret;
-}
-
+			    void *output);
 int internal_get_by_id(struct deltacloud_api *api, const char *id,
 		       const char *relname, const char *rootname,
 		       int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
@@ -430,6 +357,119 @@ int internal_get_by_id(struct deltacloud_api *api, const char *id,
   return ret;
 }
 
+/************************** XML PARSING FUNCTIONS ****************************/
+static void strip_trailing_whitespace(char *msg)
+{
+  int i;
+
+  for (i = strlen(msg) - 1; i >= 0; i--) {
+    if (msg[i] != ' ' && msg[i] != '\t' && msg[i] != '\n')
+      break;
+
+    msg[i] = '\0';
+  }
+}
+
+static void strip_leading_whitespace(char *msg)
+{
+  char *p;
+
+  p = msg;
+  while (*p == ' ' || *p == '\t' || *p == '\n')
+    p++;
+
+  /* use strlen(p) + 1 to make sure to copy the \0 */
+  memmove(msg, p, strlen(p) + 1);
+}
+
+static int parse_error_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
+{
+  char **msg = (char **)data;
+
+  *msg = getXPathString("string(/error/message)", ctxt);
+
+  if (*msg == NULL)
+    *msg = strdup("Unknown error");
+  else {
+    /* the value we get back may have leading and trailing whitespace, so strip
+     * it here
+     */
+    strip_trailing_whitespace(*msg);
+    strip_leading_whitespace(*msg);
+  }
+
+  return 0;
+}
+
+int is_error_xml(const char *xml)
+{
+  return STRPREFIX(xml, "<error");
+}
+
+static void set_error_from_xml(const char *name, const char *usermsg)
+{
+  xmlErrorPtr last;
+  char *msg;
+
+  last = xmlGetLastError();
+  if (last != NULL)
+    msg = last->message;
+  else
+    msg = "unknown error";
+  xml_error(name, usermsg, msg);
+}
+
+static int parse_xml_single(const char *xml_string, const char *name,
+			    int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				      void *data),
+			    void *output)
+{
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  xmlXPathContextPtr ctxt = NULL;
+  int ret = -1;
+
+  xml = xmlReadDoc(BAD_CAST xml_string, name, NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    set_error_from_xml(name, "Failed to parse XML");
+    return -1;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    set_error_from_xml(name, "Failed to get the root element");
+    goto cleanup;
+  }
+
+  if (STRNEQ((const char *)root->name, name)) {
+    xml_error(name, "Failed to get expected root element", (char *)root->name);
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    set_error_from_xml(name, "Failed to initialize XPath context");
+    goto cleanup;
+  }
+
+  ctxt->node = root;
+
+  if (cb(root, ctxt, output) < 0)
+    /* the callbacks are expected to have set their own error */
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  if (ctxt != NULL)
+    xmlXPathFreeContext(ctxt);
+  xmlFreeDoc(xml);
+
+  return ret;
+}
+
 char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
 {
   xmlXPathObjectPtr obj;
@@ -451,39 +491,6 @@ char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
   xmlXPathFreeObject(obj);
 
   return ret;
-}
-
-void oom_error(void)
-{
-  set_error(DELTACLOUD_OOM_ERROR, "Failed to allocate memory");
-}
-
-void xml_error(const char *name, const char *type, const char *details)
-{
-  char *tmp;
-  int alloc_fail = 0;
-
-  if (asprintf(&tmp, "%s for %s: %s", type, name, details) < 0) {
-    tmp = "Failed parsing XML";
-    alloc_fail = 1;
-  }
-
-  set_error(DELTACLOUD_XML_ERROR, tmp);
-  if (!alloc_fail)
-    SAFE_FREE(tmp);
-}
-
-void set_error_from_xml(const char *name, const char *usermsg)
-{
-  xmlErrorPtr last;
-  char *msg;
-
-  last = xmlGetLastError();
-  if (last != NULL)
-    msg = last->message;
-  else
-    msg = "unknown error";
-  xml_error(name, usermsg, msg);
 }
 
 int parse_xml(const char *xml_string, const char *name, void **data,
@@ -545,7 +552,34 @@ int parse_xml(const char *xml_string, const char *name, void **data,
   return ret;
 }
 
-pthread_key_t deltacloud_last_error;
+/************************ MISCELLANEOUS FUNCTIONS ***************************/
+void free_parameters(struct deltacloud_create_parameter *params,
+		     int params_length)
+{
+  int i;
+
+  for (i = 0; i < params_length; i++)
+    deltacloud_free_parameter_value(&params[i]);
+}
+
+int copy_parameters(struct deltacloud_create_parameter *dst,
+		    struct deltacloud_create_parameter *src,
+		    int params_length)
+{
+  int i;
+
+  for (i = 0; i < params_length; i++) {
+    if (deltacloud_prepare_parameter(&dst[i], src[i].name, src[i].value) < 0)
+      /* this isn't entirely orthogonal, since this function can allocate
+       * memory that it doesn't free.  We just depend on the higher layers
+       * to free the whole thing as necessary
+       */
+      /* deltacloud_prepare_parameter already set the error */
+      return -1;
+  }
+
+  return i;
+}
 
 void free_and_null(void *ptrptr)
 {
@@ -588,31 +622,6 @@ void deltacloud_error_free_data(void *data)
 
   SAFE_FREE(err->details);
   SAFE_FREE(err);
-}
-
-void set_error(int errnum, const char *details)
-{
-  struct deltacloud_error *err;
-  struct deltacloud_error *last;
-
-  err = (struct deltacloud_error *)malloc(sizeof(struct deltacloud_error));
-  if (err == NULL) {
-    /* if we failed to allocate memory here, there's not a lot we can do */
-    dcloudprintf("Failed to allocate memory in an error path; error information will be unreliable!\n");
-    return;
-  }
-  memset(err, 0, sizeof(struct deltacloud_error));
-
-  err->error_num = errnum;
-  err->details = strdup(details);
-
-  dcloudprintf("%s\n", err->details);
-
-  last = pthread_getspecific(deltacloud_last_error);
-  if (last != NULL)
-    deltacloud_error_free_data(last);
-
-  pthread_setspecific(deltacloud_last_error, err);
 }
 
 #ifdef DEBUG

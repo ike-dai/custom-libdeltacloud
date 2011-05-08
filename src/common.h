@@ -29,9 +29,6 @@ extern "C" {
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 
-void xml_error(const char *name, const char *type, const char *details);
-void set_error_from_xml(const char *name, const char *usermsg);
-
 void free_parameters(struct deltacloud_create_parameter *params,
 		     int params_length);
 int copy_parameters(struct deltacloud_create_parameter *dst,
