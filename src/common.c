@@ -390,39 +390,40 @@ static void xml_error(const char *name, const char *type, const char *details)
     SAFE_FREE(tmp);
 }
 
+void set_error_from_xml(const char *name, const char *usermsg)
+{
+  xmlErrorPtr last;
+  char *msg;
+
+  last = xmlGetLastError();
+  if (last != NULL)
+    msg = last->message;
+  else
+    msg = "unknown error";
+  xml_error(name, usermsg, msg);
+}
+
 int parse_xml(const char *xml_string, const char *name, void **data,
-	      int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
-			void **data), int multiple)
+	      int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data),
+	      int multiple)
 {
   xmlDocPtr xml;
   xmlNodePtr root;
   xmlXPathContextPtr ctxt = NULL;
   int ret = -1;
   int rc;
-  xmlErrorPtr last;
-  char *msg;
 
   xml = xmlReadDoc(BAD_CAST xml_string, name, NULL,
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
 		   XML_PARSE_NOWARNING);
   if (!xml) {
-    last = xmlGetLastError();
-    if (last != NULL)
-      msg = last->message;
-    else
-      msg = "unknown error";
-    xml_error(name, "Failed to parse XML", msg);
+    set_error_from_xml(name, "Failed to parse XML");
     return -1;
   }
 
   root = xmlDocGetRootElement(xml);
   if (root == NULL) {
-    last = xmlGetLastError();
-    if (last != NULL)
-      msg = last->message;
-    else
-      msg = "unknown error";
-    xml_error(name, "Failed to get the root element", msg);
+    set_error_from_xml(name, "Failed to get the root element");
     goto cleanup;
   }
 
@@ -433,12 +434,7 @@ int parse_xml(const char *xml_string, const char *name, void **data,
 
   ctxt = xmlXPathNewContext(xml);
   if (ctxt == NULL) {
-    last = xmlGetLastError();
-    if (last != NULL)
-      msg = last->message;
-    else
-      msg = "unknown error";
-    xml_error(name, "Failed to initialize XPath context", msg);
+    set_error_from_xml(name, "Failed to initialize XPath context");
     goto cleanup;
   }
 
