@@ -33,8 +33,6 @@ struct deltacloud_address {
 
 int parse_addresses_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
 			struct deltacloud_address **addresses);
-int copy_address_list(struct deltacloud_address **dst,
-		      struct deltacloud_address **src);
 void free_address_list(struct deltacloud_address **addresses);
 
 #ifdef __cplusplus

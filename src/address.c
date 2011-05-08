@@ -75,35 +75,6 @@ static void free_address(struct deltacloud_address *addr)
   SAFE_FREE(addr->address);
 }
 
-static int add_to_address_list(struct deltacloud_address **addresses,
-			       struct deltacloud_address *address)
-{
-  struct deltacloud_address *oneaddress;
-
-  oneaddress = calloc(1, sizeof(struct deltacloud_address));
-  if (oneaddress == NULL)
-    return -1;
-
-  if (strdup_or_null(&oneaddress->address, address->address) < 0)
-    goto error;
-
-  add_to_list(addresses, struct deltacloud_address, oneaddress);
-
-  return 0;
-
- error:
-  free_address(oneaddress);
-  SAFE_FREE(oneaddress);
-  return -1;
-}
-
-int copy_address_list(struct deltacloud_address **dst,
-		      struct deltacloud_address **src)
-{
-  copy_list(dst, src, struct deltacloud_address, add_to_address_list,
-	    free_address_list);
-}
-
 void free_address_list(struct deltacloud_address **addresses)
 {
   free_list(addresses, struct deltacloud_address, free_address);
