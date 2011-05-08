@@ -67,39 +67,6 @@ static void free_action(struct deltacloud_action *action)
   SAFE_FREE(action->method);
 }
 
-static int add_to_action_list(struct deltacloud_action **actions,
-			      struct deltacloud_action *action)
-{
-  struct deltacloud_action *oneaction;
-
-  oneaction = calloc(1, sizeof(struct deltacloud_action));
-  if (oneaction == NULL)
-    return -1;
-
-  if (strdup_or_null(&oneaction->rel, action->rel) < 0)
-    goto error;
-  if (strdup_or_null(&oneaction->href, action->href) < 0)
-    goto error;
-  if (strdup_or_null(&oneaction->method, action->method) < 0)
-    goto error;
-
-  add_to_list(actions, struct deltacloud_action, oneaction);
-
-  return 0;
-
- error:
-  free_action(oneaction);
-  SAFE_FREE(oneaction);
-  return -1;
-}
-
-int copy_action_list(struct deltacloud_action **dst,
-		     struct deltacloud_action **src)
-{
-  copy_list(dst, src, struct deltacloud_action, add_to_action_list,
-	    free_action_list);
-}
-
 void free_action_list(struct deltacloud_action **actions)
 {
   free_list(actions, struct deltacloud_action, free_action);

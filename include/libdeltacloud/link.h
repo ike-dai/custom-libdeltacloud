@@ -25,6 +25,9 @@
 extern "C" {
 #endif
 
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
+
 struct deltacloud_feature {
   char *name;
 
@@ -39,13 +42,8 @@ struct deltacloud_link {
   struct deltacloud_link *next;
 };
 
-int add_to_feature_list(struct deltacloud_feature **features,
-			struct deltacloud_feature *feature);
-void free_feature(struct deltacloud_feature *feature);
-void free_feature_list(struct deltacloud_feature **features);
-
-int add_to_link_list(struct deltacloud_link **links,
-		     struct deltacloud_link *link);
+/* for internal use only */
+int parse_link_xml(xmlNodePtr linknode, struct deltacloud_link **links);
 void free_link(struct deltacloud_link *link);
 void free_link_list(struct deltacloud_link **links);
 

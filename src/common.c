@@ -587,21 +587,6 @@ void free_and_null(void *ptrptr)
   *(void**)ptrptr = NULL;
 }
 
-int strdup_or_null(char **out, const char *in)
-{
-  if (in == NULL) {
-    *out = NULL;
-    return 0;
-  }
-
-  *out = strdup(in);
-
-  if (*out == NULL)
-    return -1;
-
-  return 0;
-}
-
 void dcloudprintf(const char *fmt, ...)
 {
   va_list va_args;

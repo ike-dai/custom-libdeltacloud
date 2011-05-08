@@ -22,40 +22,36 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "link.h"
+#include "libdeltacloud.h"
 
 void free_feature(struct deltacloud_feature *feature)
 {
   SAFE_FREE(feature->name);
 }
 
-int add_to_feature_list(struct deltacloud_feature **features,
-			struct deltacloud_feature *feature)
+static int parse_feature_xml(xmlNodePtr featurenode,
+			     struct deltacloud_feature **features)
 {
-  struct deltacloud_feature *onefeature;
+  struct deltacloud_feature *thisfeature;
 
-  onefeature = calloc(1, sizeof(struct deltacloud_feature));
-  if (onefeature == NULL)
-    return -1;
+  while (featurenode != NULL) {
+    if (featurenode->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)featurenode->name, "feature")) {
 
-  if (strdup_or_null(&onefeature->name, feature->name) < 0)
-    goto error;
+      thisfeature = calloc(1, sizeof(struct deltacloud_feature));
+      if (thisfeature == NULL) {
+	oom_error();
+	return -1;
+      }
 
-  add_to_list(features, struct deltacloud_feature, onefeature);
+      thisfeature->name = (char *)xmlGetProp(featurenode, BAD_CAST "name");
+
+      add_to_list(features, struct deltacloud_feature, thisfeature);
+    }
+    featurenode = featurenode->next;
+  }
 
   return 0;
-
- error:
-  free_feature(onefeature);
-  SAFE_FREE(onefeature);
-  return -1;
-}
-
-static int copy_feature_list(struct deltacloud_feature **dst,
-		      struct deltacloud_feature **src)
-{
-  copy_list(dst, src, struct deltacloud_feature, add_to_feature_list,
-	    free_feature_list);
 }
 
 void free_feature_list(struct deltacloud_feature **features)
@@ -63,37 +59,47 @@ void free_feature_list(struct deltacloud_feature **features)
   free_list(features, struct deltacloud_feature, free_feature);
 }
 
+int parse_link_xml(xmlNodePtr linknode, struct deltacloud_link **links)
+{
+  struct deltacloud_link *thislink;
+  int ret = -1;
+
+  while (linknode != NULL) {
+    if (linknode->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)linknode->name, "link")) {
+
+      thislink = calloc(1, sizeof(struct deltacloud_link));
+      if (thislink == NULL) {
+	oom_error();
+	goto cleanup;
+      }
+
+      thislink->href = (char *)xmlGetProp(linknode, BAD_CAST "href");
+      thislink->rel = (char *)xmlGetProp(linknode, BAD_CAST "rel");
+      if (parse_feature_xml(linknode->children, &(thislink->features)) < 0) {
+	/* parse_feature_xml already set the error */
+	free_link(thislink);
+	SAFE_FREE(thislink);
+	goto cleanup;
+      }
+
+      /* add_to_list can't fail */
+      add_to_list(links, struct deltacloud_link, thislink);
+    }
+    linknode = linknode->next;
+  }
+
+  ret = 0;
+
+ cleanup:
+  return ret;
+}
+
 void free_link(struct deltacloud_link *link)
 {
   SAFE_FREE(link->href);
   SAFE_FREE(link->rel);
   free_feature_list(&link->features);
-}
-
-int add_to_link_list(struct deltacloud_link **links,
-		     struct deltacloud_link *link)
-{
-  struct deltacloud_link *onelink;
-
-  onelink = calloc(1, sizeof(struct deltacloud_link));
-  if (onelink == NULL)
-    return -1;
-
-  if (strdup_or_null(&onelink->href, link->href) < 0)
-    goto error;
-  if (strdup_or_null(&onelink->rel, link->rel) < 0)
-    goto error;
-  if (copy_feature_list(&onelink->features, &link->features) < 0)
-    goto error;
-
-  add_to_list(links, struct deltacloud_link, onelink);
-
-  return 0;
-
- error:
-  free_link(onelink);
-  SAFE_FREE(onelink);
-  return -1;
 }
 
 void free_link_list(struct deltacloud_link **links)

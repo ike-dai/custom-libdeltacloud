@@ -52,68 +52,6 @@ const char *deltacloud_get_last_error_string(void)
 }
 
 /********************** XML PARSING *********************************/
-static int parse_feature_xml(xmlNodePtr featurenode,
-			     struct deltacloud_feature **features)
-{
-  struct deltacloud_feature thisfeature;
-  int listret;
-
-  memset(&thisfeature, 0, sizeof(struct deltacloud_feature));
-
-  while (featurenode != NULL) {
-    if (featurenode->type == XML_ELEMENT_NODE &&
-	STREQ((const char *)featurenode->name, "feature")) {
-      thisfeature.name = (char *)xmlGetProp(featurenode, BAD_CAST "name");
-      listret = add_to_feature_list(features, &thisfeature);
-      free_feature(&thisfeature);
-      if (listret < 0) {
-	free_feature_list(features);
-	oom_error();
-	return -1;
-      }
-    }
-    featurenode = featurenode->next;
-  }
-
-  return 0;
-}
-
-int parse_link_xml(xmlNodePtr linknode, struct deltacloud_link **links)
-{
-  struct deltacloud_link thislink;
-  int ret = -1;
-  int listret;
-
-  memset(&thislink, 0, sizeof(struct deltacloud_link));
-
-  while (linknode != NULL) {
-    if (linknode->type == XML_ELEMENT_NODE &&
-	STREQ((const char *)linknode->name, "link")) {
-
-      thislink.href = (char *)xmlGetProp(linknode, BAD_CAST "href");
-      thislink.rel = (char *)xmlGetProp(linknode, BAD_CAST "rel");
-      if (parse_feature_xml(linknode->children, &(thislink.features)) < 0) {
-	/* parse_feature_xml already set the error */
-	free_link(&thislink);
-	goto cleanup;
-      }
-
-      listret = add_to_link_list(links, &thislink);
-      free_link(&thislink);
-      if (listret < 0) {
-	oom_error();
-	goto cleanup;
-      }
-    }
-    linknode = linknode->next;
-  }
-
-  ret = 0;
-
- cleanup:
-  return ret;
-}
-
 static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 {
   struct deltacloud_api **api = (struct deltacloud_api **)data;

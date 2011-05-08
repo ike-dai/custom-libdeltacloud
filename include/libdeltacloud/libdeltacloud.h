@@ -60,9 +60,6 @@ struct deltacloud_create_parameter {
 int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 			  char *password);
 
-/* for internal use only */
-int parse_link_xml(xmlNodePtr linknode, struct deltacloud_link **links);
-
 int deltacloud_prepare_parameter(struct deltacloud_create_parameter *param,
 				 const char *name, const char *value);
 struct deltacloud_create_parameter *deltacloud_allocate_parameter(const char *name,
