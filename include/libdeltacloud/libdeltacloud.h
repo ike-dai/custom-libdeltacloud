@@ -32,6 +32,8 @@ struct deltacloud_api {
   char *driver;
   char *version;
 
+  int initialized;
+
   struct deltacloud_link *links;
 };
 

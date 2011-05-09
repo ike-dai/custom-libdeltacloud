@@ -97,7 +97,7 @@ int deltacloud_create_key(struct deltacloud_api *api, const char *name,
   int ret = -1;
   int pos;
 
-  if (!valid_arg(api) || !valid_arg(name))
+  if (!valid_api(api) || !valid_arg(name))
     return -1;
 
   internal_params = calloc(params_length + 1,
@@ -132,7 +132,7 @@ int deltacloud_create_key(struct deltacloud_api *api, const char *name,
 int deltacloud_key_destroy(struct deltacloud_api *api,
 			   struct deltacloud_key *key)
 {
-  if (!valid_arg(api) || !valid_arg(key))
+  if (!valid_api(api) || !valid_arg(key))
     return -1;
 
   return internal_destroy(key->href, api->user, api->password);

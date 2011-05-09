@@ -107,7 +107,7 @@ int deltacloud_create_image(struct deltacloud_api *api, const char *instance_id,
   int ret;
   int pos;
 
-  if (!valid_arg(api) || !valid_arg(instance_id))
+  if (!valid_api(api) || !valid_arg(instance_id))
     return -1;
 
   internal_params = calloc(params_length + 1,

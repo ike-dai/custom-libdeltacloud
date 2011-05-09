@@ -252,7 +252,7 @@ int internal_get(struct deltacloud_api *api, const char *relname,
   /* we only check api and output here, as those are the only parameters from
    * the user
    */
-  if (!valid_arg(api) || !valid_arg(output))
+  if (!valid_api(api) || !valid_arg(output))
     return -1;
 
   deltacloud_for_each(thislink, api->links) {
@@ -312,7 +312,7 @@ int internal_get_by_id(struct deltacloud_api *api, const char *id,
   /* we only check api, id, and output here, as those are the only parameters
    * from the user
    */
-  if (!valid_arg(api) || !valid_arg(id) || !valid_arg(output))
+  if (!valid_api(api) || !valid_arg(id) || !valid_arg(output))
     return -1;
 
   safeid = curl_escape(id, 0);
@@ -609,6 +609,20 @@ void deltacloud_error_free_data(void *data)
   SAFE_FREE(err);
 }
 
+int valid_api(struct deltacloud_api *api)
+{
+  if (!valid_arg(api))
+    return 0;
+
+  if (api->initialized != 0xfeedbeef) {
+    invalid_argument_error("API is not properly initialized");
+    return 0;
+  }
+
+  return 1;
+}
+
+/****************************** DEBUG FUNCTIONS *****************************/
 #ifdef DEBUG
 
 #ifndef FAILRATE

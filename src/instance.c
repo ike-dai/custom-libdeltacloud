@@ -181,7 +181,7 @@ static int instance_action(struct deltacloud_api *api,
   char *data = NULL;
   int ret = -1;
 
-  if (!valid_arg(api) || !valid_arg(instance))
+  if (!valid_api(api) || !valid_arg(instance))
     return -1;
 
   /* action_name can't possibly be NULL since it is not part of the
@@ -223,7 +223,7 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   int pos;
   char *headers = NULL;
 
-  if (!valid_arg(api) || !valid_arg(image_id))
+  if (!valid_api(api) || !valid_arg(image_id))
     return -1;
 
   internal_params = calloc(params_length + 1,
@@ -291,7 +291,7 @@ int deltacloud_instance_start(struct deltacloud_api *api,
 int deltacloud_instance_destroy(struct deltacloud_api *api,
 				struct deltacloud_instance *instance)
 {
-  if (!valid_arg(api) || !valid_arg(instance))
+  if (!valid_api(api) || !valid_arg(instance))
     return -1;
 
   return internal_destroy(instance->href, api->user, api->password);

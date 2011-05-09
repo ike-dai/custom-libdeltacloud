@@ -295,7 +295,7 @@ int deltacloud_create_loadbalancer(struct deltacloud_api *api, const char *name,
   int ret = -1;
   int pos;
 
-  if (!valid_arg(api) || !valid_arg(name) || !valid_arg(realm_id)
+  if (!valid_api(api) || !valid_arg(name) || !valid_arg(realm_id)
       || !valid_arg(protocol))
     return -1;
   if (balancer_port < 0 || balancer_port > 65536) {
@@ -347,7 +347,7 @@ int deltacloud_create_loadbalancer(struct deltacloud_api *api, const char *name,
 int deltacloud_loadbalancer_destroy(struct deltacloud_api *api,
 				    struct deltacloud_loadbalancer *balancer)
 {
-  if (!valid_arg(api) || !valid_arg(balancer))
+  if (!valid_api(api) || !valid_arg(balancer))
     return -1;
 
   return internal_destroy(balancer->href, api->user, api->password);

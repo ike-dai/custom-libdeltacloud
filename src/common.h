@@ -62,6 +62,8 @@ int parse_xml(const char *xml_string, const char *name, void **data,
 
 #define valid_arg(x) ((x == NULL) ? invalid_argument_error(#x " cannot be NULL"), 0 : 1)
 
+int valid_api(struct deltacloud_api *api);
+
 #define STREQ(a,b) (strcmp(a,b) == 0)
 #define STRNEQ(a,b) (strcmp(a,b) != 0)
 #define STRPREFIX(a,b) (strncmp(a,b,strlen(b)) == 0)

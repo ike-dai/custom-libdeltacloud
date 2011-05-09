@@ -141,6 +141,8 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
   if (parse_xml(data, "api", (void **)&api, parse_api_xml, 0) < 0)
     goto cleanup;
 
+  api->initialized = 0xfeedbeef;
+
   ret = 0;
 
  cleanup:
@@ -205,6 +207,9 @@ int deltacloud_has_link(struct deltacloud_api *api, const char *name)
 {
   struct deltacloud_link *link;
 
+  if (!valid_api(api) || !valid_arg(name))
+    return -1;
+
   deltacloud_for_each(link, api->links) {
     if (strcmp(link->rel, name) == 0)
       return 1;
@@ -215,7 +220,7 @@ int deltacloud_has_link(struct deltacloud_api *api, const char *name)
 
 void deltacloud_free(struct deltacloud_api *api)
 {
-  if (api == NULL)
+  if (!valid_api(api))
     return;
 
   free_link_list(&api->links);
