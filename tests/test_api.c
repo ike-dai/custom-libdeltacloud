@@ -35,10 +35,37 @@ static void print_api(struct deltacloud_api *api)
 int main(int argc, char *argv[])
 {
   struct deltacloud_api api;
+  struct deltacloud_api zeroapi;
+  int ret = 3;
 
   if (argc != 4) {
     fprintf(stderr, "Usage: %s <url> <user> <password>\n", argv[0]);
     return 1;
+  }
+
+  if (deltacloud_initialize(NULL, argv[1], argv[2], argv[3]) == 0) {
+    fprintf(stderr, "Expected deltacloud_initialize to fail with NULL api, but succeeded\n");
+    return 2;
+  }
+
+  if (deltacloud_initialize(&api, NULL, argv[2], argv[3]) == 0) {
+    fprintf(stderr, "Expected deltacloud_initialize to fail with NULL url, but succeeded\n");
+    return 2;
+  }
+
+  if (deltacloud_initialize(&api, argv[1], NULL, argv[3]) == 0) {
+    fprintf(stderr, "Expected deltacloud_initialize to fail with NULL user, but succeeded\n");
+    return 2;
+  }
+
+  if (deltacloud_initialize(&api, argv[1], argv[2], NULL) == 0) {
+    fprintf(stderr, "Expected deltacloud_initialize to fail with NULL password, but succeeded\n");
+    return 2;
+  }
+
+  if (deltacloud_initialize(&api, "http://localhost:80", argv[2], argv[3]) == 0) {
+    fprintf(stderr, "Expected deltacloud_initialize to fail with bogus URL, but succeeded\n");
+    return 2;
   }
 
   if (deltacloud_initialize(&api, argv[1], argv[2], argv[3]) < 0) {
@@ -48,7 +75,29 @@ int main(int argc, char *argv[])
   }
   print_api(&api);
 
+  /* now test out deltacloud_has_link */
+  if (deltacloud_has_link(NULL, "instances") >= 0) {
+    fprintf(stderr, "Expected deltacloud_has_link to fail with NULL api, but succeeded\n");
+    goto cleanup;
+  }
+
+  /* now test out deltacloud_has_link */
+  if (deltacloud_has_link(&api, NULL) >= 0) {
+    fprintf(stderr, "Expected deltacloud_has_link to fail with NULL name, but succeeded\n");
+    goto cleanup;
+  }
+
+  memset(&zeroapi, 0, sizeof(struct deltacloud_api));
+  if (deltacloud_has_link(&zeroapi, NULL) >= 0) {
+    fprintf(stderr, "Expected deltacloud_has_link to fail with zeroed api, but succeeded\n");
+    deltacloud_free(&zeroapi);
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
   deltacloud_free(&api);
 
-  return 0;
+  return ret;
 }
