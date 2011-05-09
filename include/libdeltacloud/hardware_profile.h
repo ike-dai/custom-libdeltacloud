@@ -25,9 +25,6 @@
 extern "C" {
 #endif
 
-#include <libxml/parser.h>
-#include <libxml/xpath.h>
-
 struct deltacloud_property_enum {
   char *value;
 
@@ -74,10 +71,6 @@ struct deltacloud_hardware_profile {
 
   struct deltacloud_hardware_profile *next;
 };
-
-/* this is exported for internal use only */
-int parse_one_hardware_profile(xmlNodePtr cur, xmlXPathContextPtr ctxt,
-			       void *output);
 
 #define deltacloud_supports_hardware_profiles(api) deltacloud_has_link(api, "hardware_profiles")
 int deltacloud_get_hardware_profiles(struct deltacloud_api *api,

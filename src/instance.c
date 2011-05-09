@@ -25,6 +25,16 @@
 #include "instance.h"
 #include "curl_action.h"
 
+/* instead of putting these in a header we replicate it here so the header
+ * files don't need to include libxml2 headers.  This saves client programs
+ * from having to have -I/path/to/libxml2/headers in their build paths.
+ */
+int parse_addresses_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
+			struct deltacloud_address **addresses);
+int parse_actions_xml(xmlNodePtr root, struct deltacloud_action **actions);
+int parse_one_hardware_profile(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			       void *output);
+
 static int parse_one_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			      void *output)
 {

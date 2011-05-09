@@ -25,6 +25,15 @@
 #include "common.h"
 #include "loadbalancer.h"
 
+/* instead of putting these in a header we replicate it here so the header
+ * files don't need to include libxml2 headers.  This saves client programs
+ * from having to have -I/path/to/libxml2/headers in their build paths.
+ */
+int parse_addresses_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
+			struct deltacloud_address **addresses);
+int parse_actions_xml(xmlNodePtr root, struct deltacloud_action **actions);
+int parse_link_xml(xmlNodePtr linknode, struct deltacloud_link **links);
+
 static void free_lb_instance(struct deltacloud_loadbalancer_instance *instance)
 {
   SAFE_FREE(instance->href);

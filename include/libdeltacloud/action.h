@@ -33,7 +33,6 @@ struct deltacloud_action {
   struct deltacloud_action *next;
 };
 
-int parse_actions_xml(xmlNodePtr root, struct deltacloud_action **actions);
 void free_action_list(struct deltacloud_action **actions);
 
 #ifdef __cplusplus

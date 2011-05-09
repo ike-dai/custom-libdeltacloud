@@ -50,6 +50,12 @@ const char *deltacloud_get_last_error_string(void)
   return NULL;
 }
 
+/* instead of putting this in a header we replicate it here so the header
+ * files don't need to include libxml2 headers.  This saves client programs
+ * from having to have -I/path/to/libxml2/headers in their build paths.
+ */
+int parse_link_xml(xmlNodePtr linknode, struct deltacloud_link **links);
+
 static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void *data)
 {
   struct deltacloud_api *api = (struct deltacloud_api *)data;
