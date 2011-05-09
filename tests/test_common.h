@@ -3,6 +3,8 @@
 
 #include "libdeltacloud.h"
 
+int wait_for_instance_boot(struct deltacloud_api *api, const char *instid,
+			   struct deltacloud_instance *instance);
 void print_link_list(struct deltacloud_link *links);
 void print_hwp(struct deltacloud_hardware_profile *hwp);
 void print_address_list(const char *header,

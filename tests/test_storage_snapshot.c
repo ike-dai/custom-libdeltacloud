@@ -45,6 +45,7 @@ static void print_storage_snapshot_list(struct deltacloud_storage_snapshot *snap
 int main(int argc, char *argv[])
 {
   struct deltacloud_api api;
+  struct deltacloud_api zeroapi;
   struct deltacloud_storage_snapshot *storage_snapshots;
   struct deltacloud_storage_snapshot storage_snapshot;
   int ret = 3;
@@ -60,7 +61,37 @@ int main(int argc, char *argv[])
     return 2;
   }
 
+  memset(&zeroapi, 0, sizeof(struct deltacloud_api));
+
+  /* test out deltacloud_supports_storage_snapshots */
+  if (deltacloud_supports_storage_snapshots(NULL) >= 0) {
+    fprintf(stderr, "Expected deltacloud_supports_storage_snapshots to fail with NULL api, but succeeded\n");
+    goto cleanup;
+  }
+
+  if (deltacloud_supports_storage_snapshots(&zeroapi) >= 0) {
+    fprintf(stderr, "Expected deltacloud_supports_storage_snapshots to fail with uninitialized api, but succeeded\n");
+    goto cleanup;
+  }
+
   if (deltacloud_supports_storage_snapshots(&api)) {
+
+    /* test out deltacloud_get_storage_snapshots */
+    if (deltacloud_get_storage_snapshots(NULL, &storage_snapshots) >= 0) {
+      fprintf(stderr, "Expected deltacloud_supports_storage_snapshots to fail with NULL api, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_get_storage_snapshots(&api, NULL) >= 0) {
+      fprintf(stderr, "Expected deltacloud_get_storage_snapshots to fail with NULL storage_snapshots, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_get_storage_snapshots(&zeroapi, &storage_snapshots) >= 0) {
+      fprintf(stderr, "Expected deltacloud_get_storage_snapshots to fail with unintialized api, but succeeded\n");
+      goto cleanup;
+    }
+
     if (deltacloud_get_storage_snapshots(&api, &storage_snapshots) < 0) {
       fprintf(stderr, "Failed to get_storage_snapshots: %s\n",
 	      deltacloud_get_last_error_string());
@@ -69,6 +100,38 @@ int main(int argc, char *argv[])
     print_storage_snapshot_list(storage_snapshots);
 
     if (storage_snapshots != NULL) {
+
+      /* test out deltacloud_get_storage_snapshot_by_id */
+      if (deltacloud_get_storage_snapshot_by_id(NULL, storage_snapshots->id,
+						&storage_snapshot) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_storage_snapshot_by_id to fail with NULL api, but succeeded\n");
+	goto cleanup;
+      }
+
+      if (deltacloud_get_storage_snapshot_by_id(&api, NULL,
+						&storage_snapshot) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_storage_snapshot_by_id to fail with NULL id, but succeeded\n");
+	goto cleanup;
+      }
+
+      if (deltacloud_get_storage_snapshot_by_id(&api, storage_snapshots->id,
+						NULL) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_storage_snapshot_by_id to fail with NULL storage_snapshot, but succeeded\n");
+	goto cleanup;
+      }
+
+      if (deltacloud_get_storage_snapshot_by_id(&api, "bogus_id",
+						&storage_snapshot) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_storage_snapshot_by_id to fail with bogus id, but succeeded\n");
+	goto cleanup;
+      }
+
+      if (deltacloud_get_storage_snapshot_by_id(&zeroapi, storage_snapshots->id,
+						&storage_snapshot) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_storage_snapshot_by_id to fail with unintialized api, but succeeded\n");
+	goto cleanup;
+      }
+
       /* here we use the first storage snapshot from the list above */
       if (deltacloud_get_storage_snapshot_by_id(&api, storage_snapshots->id,
 						&storage_snapshot) < 0) {

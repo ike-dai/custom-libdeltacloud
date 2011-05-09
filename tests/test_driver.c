@@ -51,7 +51,8 @@ static void print_driver_list(struct deltacloud_driver *drivers)
 int main(int argc, char *argv[])
 {
   struct deltacloud_api api;
-  struct deltacloud_driver *drivers;
+  struct deltacloud_api zeroapi;
+  struct deltacloud_driver *drivers = NULL;
   struct deltacloud_driver driver;
   int ret = 3;
 
@@ -60,26 +61,40 @@ int main(int argc, char *argv[])
     return 1;
   }
 
+  memset(&zeroapi, 0, sizeof(struct deltacloud_api));
+
   if (deltacloud_initialize(&api, argv[1], argv[2], argv[3]) < 0) {
     fprintf(stderr, "Failed to find links for the API: %s\n",
 	    deltacloud_get_last_error_string());
     return 2;
   }
 
-  /* now test out deltacloud_supports_drivers */
+  /* test out deltacloud_supports_drivers */
   if (deltacloud_supports_drivers(NULL) >= 0) {
-    fprintf(stderr, "Expected deltacloud_supports_driver to fail with NULL api, but succeeded\n");
+    fprintf(stderr, "Expected deltacloud_supports_drivers to fail with NULL api, but succeeded\n");
+    goto cleanup;
+  }
+
+  if (deltacloud_supports_drivers(&zeroapi) >= 0) {
+    fprintf(stderr, "Expected deltacloud_supports_drivers to fail with uninitialized api, but succeeded\n");
     goto cleanup;
   }
 
   if (deltacloud_supports_drivers(&api)) {
+
+    /* test out deltacloud_get_drivers */
     if (deltacloud_get_drivers(NULL, &drivers) >= 0) {
-      fprintf(stderr, "Expected deltacloud_get_drivers to fail with NULL api, but succeeded\n");
+      fprintf(stderr, "Expected deltacloud_supports_drivers to fail with NULL api, but succeeded\n");
       goto cleanup;
     }
 
     if (deltacloud_get_drivers(&api, NULL) >= 0) {
       fprintf(stderr, "Expected deltacloud_get_drivers to fail with NULL drivers, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_get_drivers(&zeroapi, &drivers) >= 0) {
+      fprintf(stderr, "Expected deltacloud_get_drivers to fail with unintialized api, but succeeded\n");
       goto cleanup;
     }
 
@@ -91,6 +106,8 @@ int main(int argc, char *argv[])
     print_driver_list(drivers);
 
     if (drivers != NULL) {
+
+      /* test out deltacloud_get_driver_by_id */
       if (deltacloud_get_driver_by_id(NULL, drivers->id, &driver) >= 0) {
 	fprintf(stderr, "Expected deltacloud_get_driver_by_id to fail with NULL api, but succeeded\n");
 	goto cleanup;
@@ -106,18 +123,25 @@ int main(int argc, char *argv[])
 	goto cleanup;
       }
 
+      if (deltacloud_get_driver_by_id(&api, "bogus_id", &driver) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_driver_by_id to fail with bogus id, but succeeded\n");
+	goto cleanup;
+      }
+
+      if (deltacloud_get_driver_by_id(&zeroapi, drivers->id, &driver) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_driver_by_id to fail with unintialized api, but succeeded\n");
+	goto cleanup;
+      }
+
       /* here we use the first driver from the list above */
       if (deltacloud_get_driver_by_id(&api, drivers->id, &driver) < 0) {
 	fprintf(stderr, "Failed to get driver: %s\n",
 		deltacloud_get_last_error_string());
-	deltacloud_free_driver_list(&drivers);
 	goto cleanup;
       }
       print_driver(&driver);
       deltacloud_free_driver(&driver);
     }
-
-    deltacloud_free_driver_list(&drivers);
   }
   else
     fprintf(stderr, "Drivers are not supported\n");
@@ -125,6 +149,8 @@ int main(int argc, char *argv[])
   ret = 0;
 
  cleanup:
+  deltacloud_free_driver_list(&drivers);
+
   deltacloud_free(&api);
 
   return ret;

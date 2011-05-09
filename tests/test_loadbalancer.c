@@ -61,8 +61,10 @@ static void print_loadbalancer_list(struct deltacloud_loadbalancer *lbs)
 int main(int argc, char *argv[])
 {
   struct deltacloud_api api;
-  struct deltacloud_loadbalancer *lbs;
+  struct deltacloud_api zeroapi;
+  struct deltacloud_loadbalancer *lbs = NULL;
   struct deltacloud_loadbalancer lb;
+  struct deltacloud_realm *realms = NULL;
   int ret = 3;
 
   if (argc != 4) {
@@ -70,13 +72,43 @@ int main(int argc, char *argv[])
     return 1;
   }
 
+  memset(&zeroapi, 0, sizeof(struct deltacloud_api));
+
   if (deltacloud_initialize(&api, argv[1], argv[2], argv[3]) < 0) {
     fprintf(stderr, "Failed to find links for the API: %s\n",
 	    deltacloud_get_last_error_string());
     return 2;
   }
 
+  /* test out deltacloud_supports_loadbalancers */
+  if (deltacloud_supports_loadbalancers(NULL) >= 0) {
+    fprintf(stderr, "Expected deltacloud_supports_loadbalancers to fail with NULL api, but succeeded\n");
+    goto cleanup;
+  }
+
+  if (deltacloud_supports_loadbalancers(&zeroapi) >= 0) {
+    fprintf(stderr, "Expected deltacloud_supports_loadbalancers to fail with uninitialized api, but succeeded\n");
+    goto cleanup;
+  }
+
   if (deltacloud_supports_loadbalancers(&api)) {
+
+    /* test out deltacloud_get_loadbalancers */
+    if (deltacloud_get_loadbalancers(NULL, &lbs) >= 0) {
+      fprintf(stderr, "Expected deltacloud_supports_loadbalancers to fail with NULL api, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_get_loadbalancers(&api, NULL) >= 0) {
+      fprintf(stderr, "Expected deltacloud_get_loadbalancers to fail with NULL loadbalancers, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_get_loadbalancers(&zeroapi, &lbs) >= 0) {
+      fprintf(stderr, "Expected deltacloud_get_loadbalancers to fail with unintialized api, but succeeded\n");
+      goto cleanup;
+    }
+
     if (deltacloud_get_loadbalancers(&api, &lbs) < 0) {
       fprintf(stderr, "Failed to get load balancers: %s\n",
 	      deltacloud_get_last_error_string());
@@ -85,19 +117,110 @@ int main(int argc, char *argv[])
     print_loadbalancer_list(lbs);
 
     if (lbs != NULL) {
+
+      /* test out deltacloud_get_loadbalancer_by_id */
+      if (deltacloud_get_loadbalancer_by_id(NULL, lbs->id, &lb) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_loadbalancer_by_id to fail with NULL api, but succeeded\n");
+	goto cleanup;
+      }
+
+      if (deltacloud_get_loadbalancer_by_id(&api, NULL, &lb) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_loadbalancer_by_id to fail with NULL id, but succeeded\n");
+	goto cleanup;
+      }
+
+      if (deltacloud_get_loadbalancer_by_id(&api, lbs->id, NULL) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_loadbalancer_by_id to fail with NULL key, but succeeded\n");
+	goto cleanup;
+      }
+
+      if (deltacloud_get_loadbalancer_by_id(&api, "bogus_id", &lb) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_loadbalancer_by_id to fail with bogus id, but succeeded\n");
+	goto cleanup;
+      }
+
+      if (deltacloud_get_loadbalancer_by_id(&zeroapi, lbs->id, &lb) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_loadbalancer_by_id to fail with unintialized api, but succeeded\n");
+	goto cleanup;
+      }
+
       if (deltacloud_get_loadbalancer_by_id(&api, lbs->id, &lb) < 0) {
 	fprintf(stderr, "Failed to get load balancer by id: %s\n",
 		deltacloud_get_last_error_string());
-	deltacloud_free_loadbalancer_list(&lbs);
 	goto cleanup;
       }
       print_loadbalancer(&lb);
       deltacloud_free_loadbalancer(&lb);
     }
 
-    deltacloud_free_loadbalancer_list(&lbs);
+    /* we need to get a realm to create a loadbalancer in */
+    if (deltacloud_get_realms(&api, &realms) < 0) {
+      fprintf(stderr, "Failed to get realms: %s\n",
+	      deltacloud_get_last_error_string());
+      goto cleanup;
+    }
 
-    if (deltacloud_create_loadbalancer(&api, "lb2", "us-east-1a", "HTTP", 80,
+    if (deltacloud_create_loadbalancer(NULL, "lb2", realms->id, "HTTP", 80,
+				       80, NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_create_loadbalancer to fail with NULL api, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_create_loadbalancer(&api, NULL, realms->id, "HTTP", 80,
+				       80, NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_create_loadbalancer to fail with NULL name, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_create_loadbalancer(&zeroapi, "lb2", realms->id, "HTTP",
+				       80, 80, NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_create_loadbalancer to fail with uninitialized api, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_create_loadbalancer(&zeroapi, "lb2", NULL, "HTTP",
+				       80, 80, NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_create_loadbalancer to fail with NULL realm, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_create_loadbalancer(&zeroapi, "lb2", "bogus_realm", "HTTP",
+				       80, 80, NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_create_loadbalancer to fail with bogus realm, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_create_loadbalancer(&zeroapi, "lb2", realms->id, NULL,
+				       80, 80, NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_create_loadbalancer to fail with NULL protocol, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_create_loadbalancer(&zeroapi, "lb2", realms->id, "bogus",
+				       80, 80, NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_create_loadbalancer to fail with bogus protocol, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_create_loadbalancer(&zeroapi, "lb2", realms->id, "HTTP",
+				       -1, 80, NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_create_loadbalancer to fail with bogus balancer_port, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_create_loadbalancer(&zeroapi, "lb2", realms->id, "HTTP",
+				       80, -1, NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_create_loadbalancer to fail with bogus instance_port, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_create_loadbalancer(&zeroapi, "lb2", realms->id, "HTTP",
+				       80, 80, NULL, -1) >= 0) {
+      fprintf(stderr, "Expected deltacloud_create_loadbalancer to fail with negative params_length, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_create_loadbalancer(&api, "lb2", realms->id, "HTTP", 80,
 				       80, NULL, 0) < 0) {
       fprintf(stderr, "Failed to create load balancer: %s\n",
 	      deltacloud_get_last_error_string());
@@ -124,6 +247,9 @@ int main(int argc, char *argv[])
   ret = 0;
 
  cleanup:
+  deltacloud_free_realm_list(&realms);
+  deltacloud_free_loadbalancer_list(&lbs);
+
   deltacloud_free(&api);
 
   return ret;

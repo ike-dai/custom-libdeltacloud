@@ -45,6 +45,7 @@ static void print_instance_state_list(struct deltacloud_instance_state *states)
 int main(int argc, char *argv[])
 {
   struct deltacloud_api api;
+  struct deltacloud_api zeroapi;
   struct deltacloud_instance_state *instance_states;
   int ret = 3;
 
@@ -53,13 +54,43 @@ int main(int argc, char *argv[])
     return 1;
   }
 
+  memset(&zeroapi, 0, sizeof(struct deltacloud_api));
+
   if (deltacloud_initialize(&api, argv[1], argv[2], argv[3]) < 0) {
     fprintf(stderr, "Failed to find links for the API: %s\n",
 	    deltacloud_get_last_error_string());
     return 2;
   }
 
+  /* test out deltacloud_supports_instance_states */
+  if (deltacloud_supports_instance_states(NULL) >= 0) {
+    fprintf(stderr, "Expected deltacloud_supports_instance_states to fail with NULL api, but succeeded\n");
+    goto cleanup;
+  }
+
+  if (deltacloud_supports_instance_states(&zeroapi) >= 0) {
+    fprintf(stderr, "Expected deltacloud_supports_instance_states to fail with uninitialized api, but succeeded\n");
+    goto cleanup;
+  }
+
   if (deltacloud_supports_instance_states(&api)) {
+
+    /* test out deltacloud_get_instance_states */
+    if (deltacloud_get_instance_states(NULL, &instance_states) >= 0) {
+      fprintf(stderr, "Expected deltacloud_supports_instance_states to fail with NULL api, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_get_instance_states(&api, NULL) >= 0) {
+      fprintf(stderr, "Expected deltacloud_get_instance_states to fail with NULL instance_states, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_get_instance_states(&zeroapi, &instance_states) >= 0) {
+      fprintf(stderr, "Expected deltacloud_get_instance_states to fail with unintialized api, but succeeded\n");
+      goto cleanup;
+    }
+
     if (deltacloud_get_instance_states(&api, &instance_states) < 0) {
       fprintf(stderr, "Failed to get_instance_states: %s\n",
 	      deltacloud_get_last_error_string());
