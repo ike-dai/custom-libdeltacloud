@@ -37,15 +37,16 @@ void invalid_argument_error(const char *details)
   set_error(DELTACLOUD_INVALID_ARGUMENT_ERROR, details);
 }
 
-static int parse_xml(const char *xml_string, const char *name, void **data,
+static int parse_xml(const char *xml_string, const char *name,
 		     int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
-			       void **data));
+			       void **data),
+		     void **data);
 static int parse_error_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data);
 void set_xml_error(const char *xml, int type)
 {
   char *errmsg = NULL;
 
-  if (parse_xml(xml, "error", (void **)&errmsg, parse_error_xml) < 0)
+  if (parse_xml(xml, "error", parse_error_xml, (void **)&errmsg) < 0)
     errmsg = strdup("Unknown error");
 
   set_error(type, errmsg);
@@ -282,7 +283,7 @@ int internal_get(struct deltacloud_api *api, const char *relname,
   }
 
   *output = NULL;
-  if (parse_xml(data, rootname, output, xml_cb) < 0)
+  if (parse_xml(data, rootname, xml_cb, output) < 0)
     goto cleanup;
 
   ret = 0;
@@ -414,15 +415,17 @@ static void set_error_from_xml(const char *name, const char *usermsg)
   xml_error(name, usermsg, msg);
 }
 
-int parse_xml_single(const char *xml_string, const char *name,
-		     int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
-			       void *data),
-		     void *output)
+typedef int (*xml_cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void *data);
+
+static int internal_xml_parse(const char *xml_string, const char *name,
+			      xml_cb cb,
+			      int single, void *output)
 {
   xmlDocPtr xml;
   xmlNodePtr root;
   xmlXPathContextPtr ctxt = NULL;
   int ret = -1;
+  int rc;
 
   xml = xmlReadDoc(BAD_CAST xml_string, name, NULL,
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
@@ -451,7 +454,17 @@ int parse_xml_single(const char *xml_string, const char *name,
 
   ctxt->node = root;
 
-  if (cb(root, ctxt, output) < 0)
+  /* if "single" is true, then the XML looks something like:
+   * <instance> ... </instance>
+   * if "single" is false, then the XML looks something like:
+   * <instances> <instance> ... </instance> </instances>"
+   */
+  if (single)
+    rc = cb(root, ctxt, output);
+  else
+    rc = cb(root->children, ctxt, output);
+
+  if (rc < 0)
     /* the callbacks are expected to have set their own error */
     goto cleanup;
 
@@ -463,6 +476,13 @@ int parse_xml_single(const char *xml_string, const char *name,
   xmlFreeDoc(xml);
 
   return ret;
+}
+
+int parse_xml_single(const char *xml_string, const char *name,
+		     xml_cb cb,
+		     void *output)
+{
+  return internal_xml_parse(xml_string, name, cb, 1, output);
 }
 
 char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
@@ -488,52 +508,16 @@ char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
   return ret;
 }
 
-static int parse_xml(const char *xml_string, const char *name, void **data,
+static int parse_xml(const char *xml_string, const char *name,
 		     int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
-			       void **data))
+			       void **data),
+		     void **data)
 {
-  xmlDocPtr xml;
-  xmlNodePtr root;
-  xmlXPathContextPtr ctxt = NULL;
-  int ret = -1;
-
-  xml = xmlReadDoc(BAD_CAST xml_string, name, NULL,
-		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
-		   XML_PARSE_NOWARNING);
-  if (!xml) {
-    set_error_from_xml(name, "Failed to parse XML");
-    return -1;
-  }
-
-  root = xmlDocGetRootElement(xml);
-  if (root == NULL) {
-    set_error_from_xml(name, "Failed to get the root element");
-    goto cleanup;
-  }
-
-  if (STRNEQ((const char *)root->name, name)) {
-    xml_error(name, "Failed to get expected root element", (char *)root->name);
-    goto cleanup;
-  }
-
-  ctxt = xmlXPathNewContext(xml);
-  if (ctxt == NULL) {
-    set_error_from_xml(name, "Failed to initialize XPath context");
-    goto cleanup;
-  }
-
-  if (cb(root->children, ctxt, data) < 0)
-    /* the callbacks are expected to have set their own error */
-    goto cleanup;
-
-  ret = 0;
-
- cleanup:
-  if (ctxt != NULL)
-    xmlXPathFreeContext(ctxt);
-  xmlFreeDoc(xml);
-
-  return ret;
+  /* note the cast from the function pointer with void ** to xml_cb
+   * (a function pointer with void *).  This is a little wonky, but safe
+   * since we know sizeof(void *) == sizeof(void **)
+   */
+  return internal_xml_parse(xml_string, name, (xml_cb)cb, 0, data);
 }
 
 /************************ MISCELLANEOUS FUNCTIONS ***************************/
