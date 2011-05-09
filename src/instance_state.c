@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "libdeltacloud.h"
+#include "instance_state.h"
 
 static void free_transition(struct deltacloud_instance_state_transition *transition)
 {

@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "libdeltacloud.h"
+#include "link.h"
 
 void free_feature(struct deltacloud_feature *feature)
 {

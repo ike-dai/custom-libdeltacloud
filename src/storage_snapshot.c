@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "common.h"
-#include "libdeltacloud.h"
+#include "storage_snapshot.h"
 
 static int parse_one_storage_snapshot(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				      void *output)

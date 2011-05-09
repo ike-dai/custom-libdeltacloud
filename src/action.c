@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "common.h"
-#include "libdeltacloud.h"
+#include "action.h"
 
 int parse_actions_xml(xmlNodePtr root, struct deltacloud_action **actions)
 {

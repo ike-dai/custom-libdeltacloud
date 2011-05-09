@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "libdeltacloud.h"
+#include "image.h"
 
 static int parse_one_image(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			   void *output)

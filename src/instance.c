@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "common.h"
-#include "libdeltacloud.h"
+#include "instance.h"
 #include "curl_action.h"
 
 static int parse_one_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,

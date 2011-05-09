@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "common.h"
-#include "libdeltacloud.h"
+#include "driver.h"
 
 static void free_provider(struct deltacloud_driver_provider *provider)
 {

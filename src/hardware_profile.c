@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "common.h"
-#include "libdeltacloud.h"
+#include "hardware_profile.h"
 
 static void free_range(struct deltacloud_property_range *onerange)
 {

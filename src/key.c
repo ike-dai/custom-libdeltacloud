@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "common.h"
-#include "libdeltacloud.h"
+#include "key.h"
 
 static int parse_one_key(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			 void *output)
