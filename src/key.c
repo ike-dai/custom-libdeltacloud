@@ -100,6 +100,11 @@ int deltacloud_create_key(struct deltacloud_api *api, const char *name,
   if (!valid_api(api) || !valid_arg(name))
     return -1;
 
+  if (params_length < 0) {
+    invalid_argument_error("params_length must be >= 0");
+    return -1;
+  }
+
   internal_params = calloc(params_length + 1,
 			   sizeof(struct deltacloud_create_parameter));
   if (internal_params == NULL) {

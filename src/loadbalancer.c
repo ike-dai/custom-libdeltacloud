@@ -307,6 +307,11 @@ int deltacloud_create_loadbalancer(struct deltacloud_api *api, const char *name,
     return -1;
   }
 
+  if (params_length < 0) {
+    invalid_argument_error("params_length must be >= 0");
+    return -1;
+  }
+
   internal_params = calloc(params_length + 5,
 			   sizeof(struct deltacloud_create_parameter));
   if (internal_params == NULL) {
