@@ -55,7 +55,7 @@ static int parse_one_driver(xmlNodePtr cur, xmlXPathContextPtr ctxt,
       thisprovider = calloc(1, sizeof(struct deltacloud_driver_provider));
       if (thisprovider == NULL) {
 	oom_error();
-	free_provider_list(&thisdriver->providers);
+	deltacloud_free_driver(thisdriver);
 	return -1;
       }
 
