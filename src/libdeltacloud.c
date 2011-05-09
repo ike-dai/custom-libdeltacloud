@@ -29,7 +29,6 @@
 #include "common.h"
 #include "curl_action.h"
 
-/***************** ERROR HANDLING ROUTINES ***************************/
 /* On first initialization of the library we setup a per-thread local
  * variable to hold errors.  If one of the API calls subsequently fails,
  * then we set the per-thread variable with details of the failure.
@@ -51,7 +50,6 @@ const char *deltacloud_get_last_error_string(void)
   return NULL;
 }
 
-/********************** XML PARSING *********************************/
 static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void *data)
 {
   struct deltacloud_api *api = (struct deltacloud_api *)data;
@@ -80,6 +78,17 @@ static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void *data)
    */
 
   return ret;
+}
+
+static void internal_free(struct deltacloud_api *api)
+{
+  free_link_list(&api->links);
+  SAFE_FREE(api->user);
+  SAFE_FREE(api->password);
+  SAFE_FREE(api->url);
+  SAFE_FREE(api->driver);
+  SAFE_FREE(api->version);
+  memset(api, 0, sizeof(struct deltacloud_api));
 }
 
 int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
@@ -118,7 +127,6 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
     oom_error();
     goto cleanup;
   }
-  api->links = NULL;
 
   if (get_url(api->url, api->user, api->password, &data) != 0)
     /* get_url sets its own errors, so don't overwrite it here */
@@ -148,7 +156,7 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
  cleanup:
   SAFE_FREE(data);
   if (ret < 0)
-    deltacloud_free(api);
+    internal_free(api);
   return ret;
 }
 
@@ -223,11 +231,5 @@ void deltacloud_free(struct deltacloud_api *api)
   if (!valid_api(api))
     return;
 
-  free_link_list(&api->links);
-  SAFE_FREE(api->user);
-  SAFE_FREE(api->password);
-  SAFE_FREE(api->url);
-  SAFE_FREE(api->driver);
-  SAFE_FREE(api->version);
-  memset(api, 0, sizeof(struct deltacloud_api));
+  internal_free(api);
 }
