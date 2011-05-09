@@ -24,7 +24,7 @@
 #include "common.h"
 #include "link.h"
 
-void free_feature(struct deltacloud_feature *feature)
+static void free_feature(struct deltacloud_feature *feature)
 {
   SAFE_FREE(feature->name);
 }
@@ -54,9 +54,16 @@ static int parse_feature_xml(xmlNodePtr featurenode,
   return 0;
 }
 
-void free_feature_list(struct deltacloud_feature **features)
+static void free_feature_list(struct deltacloud_feature **features)
 {
   free_list(features, struct deltacloud_feature, free_feature);
+}
+
+static void free_link(struct deltacloud_link *link)
+{
+  SAFE_FREE(link->href);
+  SAFE_FREE(link->rel);
+  free_feature_list(&link->features);
 }
 
 int parse_link_xml(xmlNodePtr linknode, struct deltacloud_link **links)
@@ -93,13 +100,6 @@ int parse_link_xml(xmlNodePtr linknode, struct deltacloud_link **links)
 
  cleanup:
   return ret;
-}
-
-void free_link(struct deltacloud_link *link)
-{
-  SAFE_FREE(link->href);
-  SAFE_FREE(link->rel);
-  free_feature_list(&link->features);
 }
 
 void free_link_list(struct deltacloud_link **links)

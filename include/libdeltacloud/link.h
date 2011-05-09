@@ -44,7 +44,6 @@ struct deltacloud_link {
 
 /* for internal use only */
 int parse_link_xml(xmlNodePtr linknode, struct deltacloud_link **links);
-void free_link(struct deltacloud_link *link);
 void free_link_list(struct deltacloud_link **links);
 
 #ifdef __cplusplus
