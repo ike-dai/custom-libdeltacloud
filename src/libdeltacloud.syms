@@ -26,6 +26,7 @@ LIBDELTACLOUD_7.0.0 {
 	deltacloud_create_key;
 	deltacloud_create_loadbalancer;
 	deltacloud_create_storage_snapshot;
+	deltacloud_create_storage_volume;
 	deltacloud_free;
 	deltacloud_free_driver;
 	deltacloud_free_driver_list;
@@ -73,4 +74,5 @@ LIBDELTACLOUD_7.0.0 {
 	deltacloud_key_destroy;
 	deltacloud_loadbalancer_destroy;
 	deltacloud_storage_snapshot_destroy;
+	deltacloud_storage_volume_destroy;
 } LIBDELTACLOUD_6.0.0;

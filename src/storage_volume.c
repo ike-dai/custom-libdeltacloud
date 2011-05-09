@@ -125,6 +125,56 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
 			    parse_one_storage_volume, storage_volume);
 }
 
+int deltacloud_create_storage_volume(struct deltacloud_api *api,
+				     struct deltacloud_create_parameter *params,
+				     int params_length)
+{
+  struct deltacloud_create_parameter *internal_params;
+  int ret = -1;
+  int pos;
+
+  if (!valid_api(api))
+    return -1;
+
+  if (params_length < 0) {
+    invalid_argument_error("params_length must be >= 0");
+    return -1;
+  }
+
+  internal_params = calloc(params_length,
+			   sizeof(struct deltacloud_create_parameter));
+  if (internal_params == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  pos = copy_parameters(internal_params, params, params_length);
+  if (pos < 0)
+    /* copy_parameters already set the error */
+    goto cleanup;
+
+  if (internal_create(api, "storage_volumes", internal_params, pos, NULL) < 0)
+    /* internal_create already set the error */
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  free_parameters(internal_params, pos);
+  SAFE_FREE(internal_params);
+
+  return ret;
+}
+
+int deltacloud_storage_volume_destroy(struct deltacloud_api *api,
+				      struct deltacloud_storage_volume *storage_volume)
+{
+  if (!valid_api(api) || !valid_arg(storage_volume))
+    return -1;
+
+  return internal_destroy(storage_volume->href, api->user, api->password);
+}
+
 void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_volume)
 {
   if (storage_volume == NULL)

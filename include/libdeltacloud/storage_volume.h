@@ -56,6 +56,11 @@ int deltacloud_get_storage_volumes(struct deltacloud_api *api,
 int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
 					const char *id,
 					struct deltacloud_storage_volume *storage_volume);
+int deltacloud_create_storage_volume(struct deltacloud_api *api,
+				     struct deltacloud_create_parameter *params,
+				     int params_length);
+int deltacloud_storage_volume_destroy(struct deltacloud_api *api,
+				      struct deltacloud_storage_volume *storage_volume);
 void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_volume);
 void deltacloud_free_storage_volume_list(struct deltacloud_storage_volume **storage_volumes);
 
