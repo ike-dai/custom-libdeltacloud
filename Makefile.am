@@ -1,6 +1,6 @@
 # Process this file with automake to produce Makefile.in
 
-EXTRA_DIST = libdeltacloud.spec
+EXTRA_DIST = libdeltacloud.spec libdeltacloud.pc.in
 SUBDIRS = include src tests
 
 pkgconfigdir = $(libdir)/pkgconfig
