@@ -56,9 +56,10 @@ void invalid_argument_error(const char *details);
 
 char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt);
 
-int parse_xml(const char *xml_string, const char *name, void **data,
-	      int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
-			void **data), int multiple);
+int parse_xml_single(const char *xml_string, const char *name,
+		     int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			       void *data),
+		     void *output);
 
 #define valid_arg(x) ((x == NULL) ? invalid_argument_error(#x " cannot be NULL"), 0 : 1)
 

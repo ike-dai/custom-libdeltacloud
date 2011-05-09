@@ -37,12 +37,15 @@ void invalid_argument_error(const char *details)
   set_error(DELTACLOUD_INVALID_ARGUMENT_ERROR, details);
 }
 
+static int parse_xml(const char *xml_string, const char *name, void **data,
+		     int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			       void **data));
 static int parse_error_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data);
 void set_xml_error(const char *xml, int type)
 {
   char *errmsg = NULL;
 
-  if (parse_xml(xml, "error", (void **)&errmsg, parse_error_xml, 1) < 0)
+  if (parse_xml(xml, "error", (void **)&errmsg, parse_error_xml) < 0)
     errmsg = strdup("Unknown error");
 
   set_error(type, errmsg);
@@ -283,7 +286,7 @@ int internal_get(struct deltacloud_api *api, const char *relname,
   }
 
   *output = NULL;
-  if (parse_xml(data, rootname, output, xml_cb, 1) < 0)
+  if (parse_xml(data, rootname, output, xml_cb) < 0)
     goto cleanup;
 
   ret = 0;
@@ -294,10 +297,6 @@ int internal_get(struct deltacloud_api *api, const char *relname,
   return ret;
 }
 
-static int parse_xml_single(const char *xml_string, const char *name,
-			    int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
-				      void *data),
-			    void *output);
 int internal_get_by_id(struct deltacloud_api *api, const char *id,
 		       const char *relname, const char *rootname,
 		       int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
@@ -419,10 +418,10 @@ static void set_error_from_xml(const char *name, const char *usermsg)
   xml_error(name, usermsg, msg);
 }
 
-static int parse_xml_single(const char *xml_string, const char *name,
-			    int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
-				      void *data),
-			    void *output)
+int parse_xml_single(const char *xml_string, const char *name,
+		     int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			       void *data),
+		     void *output)
 {
   xmlDocPtr xml;
   xmlNodePtr root;
@@ -493,15 +492,14 @@ char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
   return ret;
 }
 
-int parse_xml(const char *xml_string, const char *name, void **data,
-	      int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data),
-	      int multiple)
+static int parse_xml(const char *xml_string, const char *name, void **data,
+		     int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			       void **data))
 {
   xmlDocPtr xml;
   xmlNodePtr root;
   xmlXPathContextPtr ctxt = NULL;
   int ret = -1;
-  int rc;
 
   xml = xmlReadDoc(BAD_CAST xml_string, name, NULL,
 		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
@@ -528,17 +526,7 @@ int parse_xml(const char *xml_string, const char *name, void **data,
     goto cleanup;
   }
 
-  /* if "multiple" is true, then the XML looks something like:
-   * <instances> <instance> ... </instance> </instances>"
-   * if "multiple" is false, then the XML looks something like:
-   * <instance> ... </instance>
-   */
-  if (multiple)
-    rc = cb(root->children, ctxt, data);
-  else
-    rc = cb(root, ctxt, data);
-
-  if (rc < 0)
+  if (cb(root->children, ctxt, data) < 0)
     /* the callbacks are expected to have set their own error */
     goto cleanup;
 

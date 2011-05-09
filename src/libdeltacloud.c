@@ -52,18 +52,18 @@ const char *deltacloud_get_last_error_string(void)
 }
 
 /********************** XML PARSING *********************************/
-static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
+static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void *data)
 {
-  struct deltacloud_api **api = (struct deltacloud_api **)data;
+  struct deltacloud_api *api = (struct deltacloud_api *)data;
   int ret = -1;
 
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
 	STREQ((const char *)cur->name, "api")) {
-      (*api)->driver = (char *)xmlGetProp(cur, BAD_CAST "driver");
-      (*api)->version = (char *)xmlGetProp(cur, BAD_CAST "version");
+      api->driver = (char *)xmlGetProp(cur, BAD_CAST "driver");
+      api->version = (char *)xmlGetProp(cur, BAD_CAST "version");
 
-      if (parse_link_xml(cur->children, &((*api)->links)) < 0)
+      if (parse_link_xml(cur->children, &(api->links)) < 0)
 	goto cleanup;
     }
 
@@ -138,7 +138,7 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
     goto cleanup;
   }
 
-  if (parse_xml(data, "api", (void **)&api, parse_api_xml, 0) < 0)
+  if (parse_xml_single(data, "api", parse_api_xml, api) < 0)
     goto cleanup;
 
   api->initialized = 0xfeedbeef;
