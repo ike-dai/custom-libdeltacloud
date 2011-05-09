@@ -34,6 +34,9 @@ void free_parameters(struct deltacloud_create_parameter *params,
 int copy_parameters(struct deltacloud_create_parameter *dst,
 		    struct deltacloud_create_parameter *src,
 		    int params_length);
+int internal_post(struct deltacloud_api *api, const char *href,
+		  struct deltacloud_create_parameter *params,
+		  int params_length, char **headers);
 int internal_create(struct deltacloud_api *api, const char *link,
 		    struct deltacloud_create_parameter *params,
 		    int params_length, char **headers);

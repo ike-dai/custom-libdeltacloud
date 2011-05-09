@@ -61,6 +61,16 @@ int deltacloud_create_storage_volume(struct deltacloud_api *api,
 				     int params_length);
 int deltacloud_storage_volume_destroy(struct deltacloud_api *api,
 				      struct deltacloud_storage_volume *storage_volume);
+int deltacloud_storage_volume_attach(struct deltacloud_api *api,
+				     struct deltacloud_storage_volume *storage_volume,
+				     const char *instance_id,
+				     const char *device,
+				     struct deltacloud_create_parameter *params,
+				     int params_length);
+int deltacloud_storage_volume_detach(struct deltacloud_api *api,
+				     struct deltacloud_storage_volume *storage_volume,
+				     struct deltacloud_create_parameter *params,
+				     int params_length);
 void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_volume);
 void deltacloud_free_storage_volume_list(struct deltacloud_storage_volume **storage_volumes);
 

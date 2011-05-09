@@ -129,10 +129,6 @@ int deltacloud_create_storage_volume(struct deltacloud_api *api,
 				     struct deltacloud_create_parameter *params,
 				     int params_length)
 {
-  struct deltacloud_create_parameter *internal_params;
-  int ret = -1;
-  int pos;
-
   if (!valid_api(api))
     return -1;
 
@@ -141,7 +137,55 @@ int deltacloud_create_storage_volume(struct deltacloud_api *api,
     return -1;
   }
 
-  internal_params = calloc(params_length,
+  if (internal_create(api, "storage_volumes", params, params_length, NULL) < 0)
+    /* internal_create already set the error */
+    return -1;
+
+  return 0;
+}
+
+int deltacloud_storage_volume_destroy(struct deltacloud_api *api,
+				      struct deltacloud_storage_volume *storage_volume)
+{
+  if (!valid_api(api) || !valid_arg(storage_volume))
+    return -1;
+
+  return internal_destroy(storage_volume->href, api->user, api->password);
+}
+
+int deltacloud_storage_volume_attach(struct deltacloud_api *api,
+				     struct deltacloud_storage_volume *storage_volume,
+				     const char *instance_id,
+				     const char *device,
+				     struct deltacloud_create_parameter *params,
+				     int params_length)
+{
+  struct deltacloud_link *thislink;
+  struct deltacloud_create_parameter *internal_params;
+  char *href;
+  int ret = -1;
+  int pos;
+  int rc;
+
+  if (!valid_api(api) || !valid_arg(storage_volume) ||
+      !valid_arg(instance_id) || !valid_arg(device))
+    return -1;
+
+  if (params_length < 0) {
+    invalid_argument_error("params_length must be >= 0");
+    return -1;
+  }
+
+  deltacloud_for_each(thislink, api->links) {
+    if (STREQ(thislink->rel, "storage_volumes"))
+      break;
+  }
+  if (thislink == NULL) {
+    link_error("storage_volumes");
+    return -1;
+  }
+
+  internal_params = calloc(params_length + 3,
 			   sizeof(struct deltacloud_create_parameter));
   if (internal_params == NULL) {
     oom_error();
@@ -153,8 +197,30 @@ int deltacloud_create_storage_volume(struct deltacloud_api *api,
     /* copy_parameters already set the error */
     goto cleanup;
 
-  if (internal_create(api, "storage_volumes", internal_params, pos, NULL) < 0)
-    /* internal_create already set the error */
+  if (deltacloud_prepare_parameter(&internal_params[pos++], "id",
+				   storage_volume->id) < 0)
+    /* deltacloud_prepare_parameter already set the error */
+    goto cleanup;
+
+  if (deltacloud_prepare_parameter(&internal_params[pos++], "instance_id",
+				   instance_id) < 0)
+    /* deltacloud_prepare_parameter already set the error */
+    goto cleanup;
+
+  if (deltacloud_prepare_parameter(&internal_params[pos++], "device",
+				   device) < 0)
+    /* deltacloud_prepare_parameter already set the error */
+    goto cleanup;
+
+  if (asprintf(&href, "%s/%s/attach", thislink->href, storage_volume->id) < 0) {
+    oom_error();
+    goto cleanup;
+  }
+
+  rc = internal_post(api, href, internal_params, pos, NULL);
+  SAFE_FREE(href);
+  if (rc < 0)
+    /* internal_post already set the error */
     goto cleanup;
 
   ret = 0;
@@ -166,13 +232,44 @@ int deltacloud_create_storage_volume(struct deltacloud_api *api,
   return ret;
 }
 
-int deltacloud_storage_volume_destroy(struct deltacloud_api *api,
-				      struct deltacloud_storage_volume *storage_volume)
+int deltacloud_storage_volume_detach(struct deltacloud_api *api,
+				     struct deltacloud_storage_volume *storage_volume,
+				     struct deltacloud_create_parameter *params,
+				     int params_length)
 {
+  struct deltacloud_link *thislink;
+  char *href;
+  int rc;
+
   if (!valid_api(api) || !valid_arg(storage_volume))
     return -1;
 
-  return internal_destroy(storage_volume->href, api->user, api->password);
+  if (params_length < 0) {
+    invalid_argument_error("params_length must be >= 0");
+    return -1;
+  }
+
+  deltacloud_for_each(thislink, api->links) {
+    if (STREQ(thislink->rel, "storage_volumes"))
+      break;
+  }
+  if (thislink == NULL) {
+    link_error("storage_volumes");
+    return -1;
+  }
+
+  if (asprintf(&href, "%s/%s/detach", thislink->href, storage_volume->id) < 0) {
+    oom_error();
+    return -1;
+  }
+
+  rc = internal_post(api, href, params, params_length, NULL);
+  SAFE_FREE(href);
+  if (rc < 0)
+    /* internal_post already set the error */
+    return -1;
+
+  return 0;
 }
 
 void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_volume)
