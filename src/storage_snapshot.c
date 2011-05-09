@@ -103,6 +103,62 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 			    parse_one_storage_snapshot, storage_snapshot);
 }
 
+int deltacloud_create_storage_snapshot(struct deltacloud_api *api,
+				       const char *volume_id,
+				       struct deltacloud_create_parameter *params,
+				       int params_length)
+{
+  struct deltacloud_create_parameter *internal_params;
+  int ret = -1;
+  int pos;
+
+  if (!valid_api(api) || !valid_arg(volume_id))
+    return -1;
+
+  if (params_length < 0) {
+    invalid_argument_error("params_length must be >= 0");
+    return -1;
+  }
+
+  internal_params = calloc(params_length + 1,
+			   sizeof(struct deltacloud_create_parameter));
+  if (internal_params == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  pos = copy_parameters(internal_params, params, params_length);
+  if (pos < 0)
+    /* copy_parameters already set the error */
+    goto cleanup;
+
+  if (deltacloud_prepare_parameter(&internal_params[pos++], "volume_id",
+				   volume_id) < 0)
+    /* deltacloud_create_parameter already set the error */
+    goto cleanup;
+
+  if (internal_create(api, "storage_snapshots", internal_params, pos, NULL) < 0)
+    /* internal_create already set the error */
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  free_parameters(internal_params, pos);
+  SAFE_FREE(internal_params);
+
+  return ret;
+}
+
+int deltacloud_storage_snapshot_destroy(struct deltacloud_api *api,
+					struct deltacloud_storage_snapshot *storage_snapshot)
+{
+  if (!valid_api(api) || !valid_arg(storage_snapshot))
+    return -1;
+
+  return internal_destroy(storage_snapshot->href, api->user, api->password);
+}
+
 void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot)
 {
   if (storage_snapshot == NULL)
