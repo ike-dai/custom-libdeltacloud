@@ -134,23 +134,19 @@ int internal_destroy(const char *href, const char *user, const char *password)
   char *data = NULL;
   int ret = -1;
 
-  /* in deltacloud the destroy action is a DELETE method, so we need
-   * to use a different implementation
-   */
-  data = delete_url(href, user, password);
-  if (data == NULL)
-    /* delete_url sets its own errors, so don't overwrite it here */
-    goto cleanup;
+  if (delete_url(href, user, password, &data) < 0)
+    /* delete_url already set the error */
+    return -1;
 
-  if (is_error_xml(data)) {
+  if (data != NULL && is_error_xml(data)) {
     set_xml_error(data, DELTACLOUD_DELETE_URL_ERROR);
     goto cleanup;
   }
+
   ret = 0;
 
  cleanup:
   SAFE_FREE(data);
-
   return ret;
 }
 

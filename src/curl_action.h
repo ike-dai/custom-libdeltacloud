@@ -34,7 +34,8 @@ int do_get_post_url(const char *url, const char *user, const char *password,
 #define get_url(url, user, password, returndata) do_get_post_url(url, user, password, 0, NULL, returndata, NULL)
 #define post_url(url, user, password, data, returndata, returnheader) do_get_post_url(url, user, password, 1, data, returndata, returnheader)
 
-char *delete_url(const char *url, const char *user, const char *password);
+int delete_url(const char *url, const char *user, const char *password,
+	       char **returndata);
 
 #ifdef __cplusplus
 }

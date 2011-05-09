@@ -250,20 +250,21 @@ int do_get_post_url(const char *url, const char *user, const char *password,
   return ret;
 }
 
-char *delete_url(const char *url, const char *user, const char *password)
+int delete_url(const char *url, const char *user, const char *password,
+	       char **returndata)
 {
   CURL *curl;
   CURLcode res;
   struct curl_slist *reqlist = NULL;
   struct memory chunk;
+  int ret = -1;
 
-  chunk.data = NULL;
-  chunk.size = 0;
+  memset(&chunk, 0, sizeof(struct memory));
 
   curl = curl_easy_init();
   if (curl == NULL) {
     set_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to initialize curl library");
-    return NULL;
+    return -1;
   }
 
   reqlist = curl_slist_append(reqlist, "Accept: application/xml");
@@ -318,9 +319,15 @@ char *delete_url(const char *url, const char *user, const char *password)
     SAFE_FREE(chunk.data);
   }
 
+  ret = 0;
+
+  if (chunk.data != NULL && returndata != NULL)
+    *returndata = strdup(chunk.data);
+
  cleanup:
+  SAFE_FREE(chunk.data);
   curl_slist_free_all(reqlist);
   curl_easy_cleanup(curl);
 
-  return chunk.data;
+  return ret;
 }
