@@ -231,14 +231,10 @@ int internal_create(struct deltacloud_api *api, const char *link,
 {
   struct deltacloud_link *thislink;
 
-  deltacloud_for_each(thislink, api->links) {
-    if (STREQ(thislink->rel, link))
-      break;
-  }
-  if (thislink == NULL) {
-    link_error(link);
+  thislink = api_find_link(api, link);
+  if (thislink == NULL)
+    /* api_find_link set the error */
     return -1;
-  }
 
   return internal_post(api, thislink->href, params, params_length, headers);
 }
@@ -253,7 +249,7 @@ int internal_get(struct deltacloud_api *api, const char *relname,
 		 int (*xml_cb)(xmlNodePtr, xmlXPathContextPtr, void **),
 		 void **output)
 {
-  struct deltacloud_link *thislink = NULL;
+  struct deltacloud_link *thislink;
   char *data = NULL;
   int ret = -1;
 
@@ -263,14 +259,10 @@ int internal_get(struct deltacloud_api *api, const char *relname,
   if (!valid_api(api) || !valid_arg(output))
     return -1;
 
-  deltacloud_for_each(thislink, api->links) {
-    if (STREQ(thislink->rel, relname))
-      break;
-  }
-  if (thislink == NULL) {
-    link_error(relname);
+  thislink = api_find_link(api, relname);
+  if (thislink == NULL)
+    /* api_find_link set the error */
     return -1;
-  }
 
   if (get_url(thislink->href, api->user, api->password, &data) != 0)
     /* get_url sets its own errors, so don't overwrite it here */
@@ -529,6 +521,21 @@ static int parse_xml(const char *xml_string, const char *name,
 }
 
 /************************ MISCELLANEOUS FUNCTIONS ***************************/
+struct deltacloud_link *api_find_link(struct deltacloud_api *api,
+				      const char *name)
+{
+  struct deltacloud_link *thislink;
+
+  deltacloud_for_each(thislink, api->links) {
+    if (STREQ(thislink->rel, name))
+      break;
+  }
+  if (thislink == NULL)
+    link_error(name);
+
+  return thislink;
+}
+
 void free_parameters(struct deltacloud_create_parameter *params,
 		     int params_length)
 {

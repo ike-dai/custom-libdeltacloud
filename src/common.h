@@ -29,6 +29,8 @@ extern "C" {
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 
+struct deltacloud_link *api_find_link(struct deltacloud_api *api,
+				      const char *name);
 void free_parameters(struct deltacloud_create_parameter *params,
 		     int params_length);
 int copy_parameters(struct deltacloud_create_parameter *dst,

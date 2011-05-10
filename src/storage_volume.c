@@ -176,14 +176,10 @@ int deltacloud_storage_volume_attach(struct deltacloud_api *api,
     return -1;
   }
 
-  deltacloud_for_each(thislink, api->links) {
-    if (STREQ(thislink->rel, "storage_volumes"))
-      break;
-  }
-  if (thislink == NULL) {
-    link_error("storage_volumes");
+  thislink = api_find_link(api, "storage_volumes");
+  if (thislink == NULL)
+    /* api_find_link set the error */
     return -1;
-  }
 
   internal_params = calloc(params_length + 3,
 			   sizeof(struct deltacloud_create_parameter));

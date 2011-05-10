@@ -384,14 +384,10 @@ static int lb_register_unregister(struct deltacloud_api *api,
     return -1;
   }
 
-  deltacloud_for_each(thislink, api->links) {
-    if (STREQ(thislink->rel, "load_balancers"))
-      break;
-  }
-  if (thislink == NULL) {
-    link_error("load_balancers");
+  thislink = api_find_link(api, "load_balancers");
+  if (thislink == NULL)
+    /* api_find_link set the error */
     return -1;
-  }
 
   internal_params = calloc(params_length + 1,
 			   sizeof(struct deltacloud_create_parameter));
