@@ -18,8 +18,8 @@
  * Author: Chris Lalancette <clalance@redhat.com>
  */
 
-#ifndef LIBDELTACLOUD_KEYS_H
-#define LIBDELTACLOUD_KEYS_H
+#ifndef LIBDELTACLOUD_KEY_H
+#define LIBDELTACLOUD_KEY_H
 
 #ifdef __cplusplus
 extern "C" {
