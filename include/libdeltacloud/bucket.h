@@ -25,9 +25,22 @@
 extern "C" {
 #endif
 
+struct deltacloud_bucket_blob_metadata {
+  char *key;
+  char *value;
+
+  struct deltacloud_bucket_blob_metadata *next;
+};
+
 struct deltacloud_bucket_blob {
   char *href;
   char *id;
+  char *bucket_id;
+  char *content_length;
+  char *content_type;
+  char *last_modified;
+  char *content_href;
+  struct deltacloud_bucket_blob_metadata *metadata;
 
   struct deltacloud_bucket_blob *next;
 };
@@ -51,6 +64,19 @@ int deltacloud_create_bucket(struct deltacloud_api *api,
 			     const char *name,
 			     struct deltacloud_create_parameter *params,
 			     int params_length);
+int deltacloud_bucket_create_blob_from_file(struct deltacloud_api *api,
+					    struct deltacloud_bucket *bucket,
+					    const char *blob_name,
+					    const char *filename,
+					    struct deltacloud_create_parameter *params,
+					    int params_length);
+int deltacloud_bucket_get_blob_by_id(struct deltacloud_api *api,
+				     struct deltacloud_bucket *bucket,
+				     const char *name,
+				     struct deltacloud_bucket_blob *blob);
+int deltacloud_bucket_delete_blob(struct deltacloud_api *api,
+				  struct deltacloud_bucket_blob *blob);
+void deltacloud_free_bucket_blob(struct deltacloud_bucket_blob *blob);
 int deltacloud_bucket_destroy(struct deltacloud_api *api,
 			      struct deltacloud_bucket *bucket);
 void deltacloud_free_bucket(struct deltacloud_bucket *bucket);

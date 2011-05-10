@@ -37,6 +37,11 @@ int do_get_post_url(const char *url, const char *user, const char *password,
 int delete_url(const char *url, const char *user, const char *password,
 	       char **returndata);
 
+int do_multipart_post_url(const char *url, const char *user,
+			  const char *password,
+			  struct curl_httppost *httppost,
+			  char **returndata);
+
 #ifdef __cplusplus
 }
 #endif

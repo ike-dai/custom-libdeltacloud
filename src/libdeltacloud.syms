@@ -21,7 +21,10 @@ LIBDELTACLOUD_6.0.0 {
 } LIBDELTACLOUD_5.0.0;
 LIBDELTACLOUD_7.0.0 {
     global:
+	deltacloud_bucket_create_blob_from_file;
+	deltacloud_bucket_delete_blob;
 	deltacloud_bucket_destroy;
+	deltacloud_bucket_get_blob_by_id;
 	deltacloud_create_bucket;
 	deltacloud_create_image;
 	deltacloud_create_instance;
@@ -31,6 +34,7 @@ LIBDELTACLOUD_7.0.0 {
 	deltacloud_create_storage_volume;
 	deltacloud_free;
 	deltacloud_free_bucket;
+	deltacloud_free_bucket_blob;
 	deltacloud_free_bucket_list;
 	deltacloud_free_driver;
 	deltacloud_free_driver_list;

@@ -103,80 +103,107 @@ static int set_user_password(CURL *curl, const char *user, const char *password)
   return 0;
 }
 
+/* errcode, url, user, and password are input parameters used to do the
+ * setup
+ *
+ * curl, headers, chunk, and header_chunk are all output parameters that
+ * are setup after this function call
+ */
+static int internal_curl_setup(int errcode, const char *url, const char *user,
+			       const char *password, CURL **curl,
+			       struct curl_slist **headers,
+			       struct memory *chunk,
+			       struct memory *header_chunk)
+{
+  CURLcode res;
+
+  *headers = NULL;
+
+  *curl = curl_easy_init();
+  if (*curl == NULL) {
+    set_error(errcode, "Failed to initialize curl library");
+    return -1;
+  }
+
+  res = curl_easy_setopt(*curl, CURLOPT_URL, url);
+  if (res != CURLE_OK) {
+    set_curl_error(errcode, "Failed to set URL header", res);
+    goto error;
+  }
+
+  *headers = curl_slist_append(*headers, "Accept: application/xml");
+  if (*headers == NULL) {
+    set_error(errcode, "Failed to create header list");
+    goto error;
+  }
+
+  res = curl_easy_setopt(*curl, CURLOPT_HTTPHEADER, *headers);
+  if (res != CURLE_OK) {
+    set_curl_error(errcode, "Failed to set HTTP header", res);
+    goto error;
+  }
+
+  if (set_user_password(*curl, user, password) < 0)
+    /* set_user_password already printed the error */
+    goto error;
+
+  if (chunk != NULL) {
+    memset(chunk, 0, sizeof(struct memory));
+
+    res = curl_easy_setopt(*curl, CURLOPT_WRITEFUNCTION, memory_callback);
+    if (res != CURLE_OK) {
+      set_curl_error(errcode, "Failed to set data callback", res);
+      goto error;
+    }
+
+    res = curl_easy_setopt(*curl, CURLOPT_WRITEDATA, (void *)chunk);
+    if (res != CURLE_OK) {
+      set_curl_error(errcode, "Failed to set data pointer", res);
+      goto error;
+    }
+  }
+
+  if (header_chunk != NULL) {
+    memset(header_chunk, 0, sizeof(struct memory));
+
+    res = curl_easy_setopt(*curl, CURLOPT_HEADERFUNCTION, memory_callback);
+    if (res != CURLE_OK) {
+      set_curl_error(errcode, "Failed to set header callback", res);
+      goto error;
+    }
+
+    res = curl_easy_setopt(*curl, CURLOPT_HEADERDATA, (void *)header_chunk);
+    if (res != CURLE_OK) {
+      set_curl_error(errcode, "Failed to set header pointer", res);
+      goto error;
+    }
+  }
+
+  return 0;
+
+ error:
+  curl_slist_free_all(*headers);
+  curl_easy_cleanup(*curl);
+  return -1;
+}
+
 int do_get_post_url(const char *url, const char *user, const char *password,
 		    int post, char *data, char **returndata,
 		    char **returnheader)
 {
   CURL *curl;
   CURLcode res;
-  struct curl_slist *reqlist = NULL;
+  struct curl_slist *headers = NULL;
   struct memory chunk;
   struct memory header_chunk;
   int ret = -1;
   size_t datalen;
 
-  memset(&chunk, 0, sizeof(struct memory));
-  memset(&header_chunk, 0, sizeof(struct memory));
-
-  curl = curl_easy_init();
-  if (curl == NULL) {
-    set_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
-	      "Failed to initialize curl library");
-    return ret;
-  }
-
-  reqlist = curl_slist_append(reqlist, "Accept: application/xml");
-  if (reqlist == NULL) {
-    set_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
-	      "Failed to create request list");
-    goto cleanup;
-  }
-
-  res = curl_easy_setopt(curl, CURLOPT_URL, url);
-  if (res != CURLE_OK) {
-    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
-		   "Failed to set URL header", res);
-    goto cleanup;
-  }
-
-  res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, reqlist);
-  if (res != CURLE_OK) {
-    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
-		   "Failed to set HTTP header", res);
-    goto cleanup;
-  }
-
-  if (set_user_password(curl, user, password) < 0)
-    /* set_user_password already printed the error */
-    goto cleanup;
-
-  res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, memory_callback);
-  if (res != CURLE_OK) {
-    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
-		   "Failed to set data callback", res);
-    goto cleanup;
-  }
-
-  res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
-  if (res != CURLE_OK) {
-    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
-		   "Failed to set data pointer", res);
-    goto cleanup;
-  }
-
-  res = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, memory_callback);
-  if (res != CURLE_OK) {
-    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
-		   "Failed to set header callback", res);
-    goto cleanup;
-  }
-
-  res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void *)&header_chunk);
-  if (res != CURLE_OK) {
-    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
-		   "Failed to set header pointer", res);
-    goto cleanup;
-  }
+  if (internal_curl_setup(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
+			  url, user, password, &curl, &headers, &chunk,
+			  &header_chunk) < 0)
+    /* internal_curl_setup set the error */
+    return -1;
 
   if (post) {
     /* in this case, we want to do a POST; note, however, that it is possible
@@ -228,7 +255,7 @@ int do_get_post_url(const char *url, const char *user, const char *password,
  cleanup:
   SAFE_FREE(chunk.data);
   SAFE_FREE(header_chunk.data);
-  curl_slist_free_all(reqlist);
+  curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
 
   return ret;
@@ -239,41 +266,14 @@ int delete_url(const char *url, const char *user, const char *password,
 {
   CURL *curl;
   CURLcode res;
-  struct curl_slist *reqlist = NULL;
+  struct curl_slist *headers = NULL;
   struct memory chunk;
   int ret = -1;
 
-  memset(&chunk, 0, sizeof(struct memory));
-
-  curl = curl_easy_init();
-  if (curl == NULL) {
-    set_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to initialize curl library");
+  if (internal_curl_setup(DELTACLOUD_DELETE_URL_ERROR, url, user, password,
+			  &curl, &headers, &chunk, NULL) < 0)
+    /* internal_curl_setup set the error */
     return -1;
-  }
-
-  reqlist = curl_slist_append(reqlist, "Accept: application/xml");
-  if (reqlist == NULL) {
-    set_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to create request list");
-    goto cleanup;
-  }
-
-  if (set_user_password(curl, user, password) < 0)
-    /* set_user_password already printed the error */
-    goto cleanup;
-
-  res = curl_easy_setopt(curl, CURLOPT_URL, url);
-  if (res != CURLE_OK) {
-    set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to set URL header",
-		   res);
-    goto cleanup;
-  }
-
-  res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, reqlist);
-  if (res != CURLE_OK) {
-    set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to set HTTP header",
-		   res);
-    goto cleanup;
-  }
 
   res = curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
   if (res != CURLE_OK) {
@@ -282,25 +282,11 @@ int delete_url(const char *url, const char *user, const char *password,
     goto cleanup;
   }
 
-  res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, memory_callback);
-  if (res != CURLE_OK) {
-    set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to set data callback",
-		   res);
-    goto cleanup;
-  }
-
-  res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
-  if (res != CURLE_OK) {
-    set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to set data pointer",
-		   res);
-    goto cleanup;
-  }
-
   res = curl_easy_perform(curl);
   if (res != CURLE_OK) {
     set_curl_error(DELTACLOUD_DELETE_URL_ERROR, "Failed to perform transfer",
 		   res);
-    SAFE_FREE(chunk.data);
+    goto cleanup;
   }
 
   ret = 0;
@@ -310,7 +296,50 @@ int delete_url(const char *url, const char *user, const char *password,
 
  cleanup:
   SAFE_FREE(chunk.data);
-  curl_slist_free_all(reqlist);
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(curl);
+
+  return ret;
+}
+
+int do_multipart_post_url(const char *url, const char *user,
+			  const char *password,
+			  struct curl_httppost *httppost,
+			  char **returndata)
+{
+  CURL *curl;
+  CURLcode res;
+  struct curl_slist *headers = NULL;
+  struct memory chunk;
+  int ret = -1;
+
+  if (internal_curl_setup(DELTACLOUD_MULTIPART_POST_URL_ERROR, url, user,
+			  password, &curl, &headers, &chunk, NULL) < 0)
+    /* internal_curl_setup set the error */
+    return -1;
+
+  res = curl_easy_setopt(curl, CURLOPT_HTTPPOST, httppost);
+  if (res != CURLE_OK) {
+    set_curl_error(DELTACLOUD_MULTIPART_POST_URL_ERROR,
+		   "Failed set HTTP POST multipart headers", res);
+    goto cleanup;
+  }
+
+  res = curl_easy_perform(curl);
+  if (res != CURLE_OK) {
+    set_curl_error(DELTACLOUD_MULTIPART_POST_URL_ERROR,
+		   "Failed to perform transfer", res);
+    goto cleanup;
+  }
+
+  ret = 0;
+
+  if (chunk.data != NULL && returndata != NULL)
+    *returndata = strdup(chunk.data);
+
+ cleanup:
+  SAFE_FREE(chunk.data);
+  curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
 
   return ret;
