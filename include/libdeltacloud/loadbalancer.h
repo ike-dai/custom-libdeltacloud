@@ -70,6 +70,16 @@ int deltacloud_create_loadbalancer(struct deltacloud_api *api, const char *name,
 				   int balancer_port, int instance_port,
 				   struct deltacloud_create_parameter *params,
 				   int params_length);
+int deltacloud_loadbalancer_register(struct deltacloud_api *api,
+				     struct deltacloud_loadbalancer *balancer,
+				     const char *instance_id,
+				     struct deltacloud_create_parameter *params,
+				     int params_length);
+int deltacloud_loadbalancer_unregister(struct deltacloud_api *api,
+				       struct deltacloud_loadbalancer *balancer,
+				       const char *instance_id,
+				       struct deltacloud_create_parameter *params,
+				       int params_length);
 int deltacloud_loadbalancer_destroy(struct deltacloud_api *api,
 				    struct deltacloud_loadbalancer *balancer);
 void deltacloud_free_loadbalancer(struct deltacloud_loadbalancer *lb);

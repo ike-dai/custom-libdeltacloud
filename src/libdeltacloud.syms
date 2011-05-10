@@ -73,6 +73,8 @@ LIBDELTACLOUD_7.0.0 {
 	deltacloud_instance_destroy;
 	deltacloud_key_destroy;
 	deltacloud_loadbalancer_destroy;
+	deltacloud_loadbalancer_register;
+	deltacloud_loadbalancer_unregister;
 	deltacloud_storage_snapshot_destroy;
 	deltacloud_storage_volume_attach;
 	deltacloud_storage_volume_destroy;
