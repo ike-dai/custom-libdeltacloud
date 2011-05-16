@@ -28,9 +28,11 @@ extern "C" {
 #include "libdeltacloud.h"
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
+#include <curl/curl.h>
 
 void strip_trailing_whitespace(char *msg);
 void strip_leading_whitespace(char *msg);
+void set_curl_error(int errcode, const char *header, CURLcode res);
 struct deltacloud_link *api_find_link(struct deltacloud_api *api,
 				      const char *name);
 void free_parameters(struct deltacloud_create_parameter *params,

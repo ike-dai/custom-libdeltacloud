@@ -25,22 +25,6 @@
 #include "curl_action.h"
 #include "common.h"
 
-static void set_curl_error(int errcode, const char *header, CURLcode res)
-{
-  char *errstr;
-  int alloc_fail = 0;
-
-  if (asprintf(&errstr, "%s: %s", header, curl_easy_strerror(res)) < 0) {
-    errstr = "Failed to set URL header";
-    alloc_fail = 1;
-  }
-
-  set_error(errcode, errstr);
-
-  if (!alloc_fail)
-    SAFE_FREE(errstr);
-}
-
 struct memory {
   char *data;
   size_t size;

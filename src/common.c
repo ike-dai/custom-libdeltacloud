@@ -129,6 +129,22 @@ void set_error(int errnum, const char *details)
   pthread_setspecific(deltacloud_last_error, err);
 }
 
+void set_curl_error(int errcode, const char *header, CURLcode res)
+{
+  char *errstr;
+  int alloc_fail = 0;
+
+  if (asprintf(&errstr, "%s: %s", header, curl_easy_strerror(res)) < 0) {
+    errstr = "Failed to set URL header";
+    alloc_fail = 1;
+  }
+
+  set_error(errcode, errstr);
+
+  if (!alloc_fail)
+    SAFE_FREE(errstr);
+}
+
 /********************** IMPLEMENTATIONS OF COMMON FUNCTIONS *****************/
 int internal_destroy(const char *href, const char *user, const char *password)
 {
