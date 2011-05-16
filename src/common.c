@@ -354,30 +354,6 @@ int internal_get_by_id(struct deltacloud_api *api, const char *id,
 }
 
 /************************** XML PARSING FUNCTIONS ****************************/
-static void strip_trailing_whitespace(char *msg)
-{
-  int i;
-
-  for (i = strlen(msg) - 1; i >= 0; i--) {
-    if (msg[i] != ' ' && msg[i] != '\t' && msg[i] != '\n')
-      break;
-
-    msg[i] = '\0';
-  }
-}
-
-static void strip_leading_whitespace(char *msg)
-{
-  char *p;
-
-  p = msg;
-  while (*p == ' ' || *p == '\t' || *p == '\n')
-    p++;
-
-  /* use strlen(p) + 1 to make sure to copy the \0 */
-  memmove(msg, p, strlen(p) + 1);
-}
-
 static int parse_error_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 {
   char **msg = (char **)data;
@@ -603,6 +579,30 @@ int valid_api(struct deltacloud_api *api)
   }
 
   return 1;
+}
+
+void strip_trailing_whitespace(char *msg)
+{
+  int i;
+
+  for (i = strlen(msg) - 1; i >= 0; i--) {
+    if (msg[i] != ' ' && msg[i] != '\t' && msg[i] != '\n')
+      break;
+
+    msg[i] = '\0';
+  }
+}
+
+void strip_leading_whitespace(char *msg)
+{
+  char *p;
+
+  p = msg;
+  while (*p == ' ' || *p == '\t' || *p == '\n')
+    p++;
+
+  /* use strlen(p) + 1 to make sure to copy the \0 */
+  memmove(msg, p, strlen(p) + 1);
 }
 
 /****************************** DEBUG FUNCTIONS *****************************/
