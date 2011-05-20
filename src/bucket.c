@@ -386,6 +386,79 @@ int deltacloud_bucket_get_blob_by_id(struct deltacloud_api *api,
   return rc;
 }
 
+int deltacloud_bucket_blob_update_metadata(struct deltacloud_api *api,
+					   struct deltacloud_bucket_blob *blob,
+					   struct deltacloud_create_parameter *params,
+					   int params_length)
+{
+  struct deltacloud_link *thislink;
+  char *bloburl;
+  int ret;
+
+  thislink = api_find_link(api, "buckets");
+  if (thislink == NULL)
+    /* api_find_link set the error */
+    return -1;
+
+  if (asprintf(&bloburl, "%s/%s/%s", thislink->href, blob->bucket_id,
+	       blob->id) < 0) {
+    oom_error();
+    return -1;
+  }
+
+  ret = internal_post(api, bloburl, params, params_length, NULL);
+
+  SAFE_FREE(bloburl);
+
+  return ret;
+}
+
+int deltacloud_bucket_blob_get_content(struct deltacloud_api *api,
+				       struct deltacloud_bucket_blob *blob,
+				       char **output)
+{
+  struct deltacloud_link *thislink;
+  char *bloburl;
+  int ret = -1;
+
+  thislink = api_find_link(api, "buckets");
+  if (thislink == NULL)
+    /* api_find_link set the error */
+    return -1;
+
+  if (asprintf(&bloburl, "%s/%s/%s/content", thislink->href, blob->bucket_id,
+	       blob->id) < 0) {
+    oom_error();
+    return -1;
+  }
+
+  if (get_url(bloburl, api->user, api->password, output) != 0)
+    /* get_url sets its own errors, so don't overwrite it here */
+    return -1;
+
+  if (*output == NULL) {
+    /* if we made it here, it means that the transfer was successful (ret
+     * was 0), but the data that we expected wasn't returned.  This is probably
+     * a deltacloud server bug, so just set an error and bail out
+     */
+    data_error("buckets");
+    goto cleanup;
+  }
+
+  if (is_error_xml(*output)) {
+    set_xml_error(*output, DELTACLOUD_GET_URL_ERROR);
+    SAFE_FREE(*output);
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(bloburl);
+
+  return ret;
+}
+
 int deltacloud_bucket_delete_blob(struct deltacloud_api *api,
 				  struct deltacloud_bucket_blob *blob)
 {
