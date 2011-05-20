@@ -69,7 +69,7 @@ void link_error(const char *name)
     SAFE_FREE(tmp);
 }
 
-static void data_error(const char *name)
+void data_error(const char *name)
 {
   char *tmp;
   int alloc_fail = 0;
@@ -357,6 +357,7 @@ int internal_get_by_id(struct deltacloud_api *api, const char *id,
   }
 
   if (parse_xml_single(data, rootname, cb, output) < 0)
+    /* parse_xml_single set the error */
     goto cleanup;
 
   ret = 0;
@@ -407,11 +408,8 @@ static void set_error_from_xml(const char *name, const char *usermsg)
   xml_error(name, usermsg, msg);
 }
 
-typedef int (*xml_cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void *data);
-
-static int internal_xml_parse(const char *xml_string, const char *name,
-			      xml_cb cb,
-			      int single, void *output)
+int internal_xml_parse(const char *xml_string, const char *name, xml_cb cb,
+		       int single, void *output)
 {
   xmlDocPtr xml;
   xmlNodePtr root;

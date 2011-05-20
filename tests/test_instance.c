@@ -148,6 +148,45 @@ int main(int argc, char *argv[])
       }
       print_instance(&instance);
       deltacloud_free_instance(&instance);
+
+      /* test out deltacloud_get_instance_by_name */
+      if (deltacloud_get_instance_by_name(NULL, instances->name,
+					  &instance) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_instance_by_name to fail with NULL api, but succeeded\n");
+	goto cleanup;
+      }
+
+      if (deltacloud_get_instance_by_name(&api, NULL, &instance) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_instance_by_name to fail with NULL id, but succeeded\n");
+	goto cleanup;
+      }
+
+      if (deltacloud_get_instance_by_name(&api, instances->name, NULL) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_instance_by_name to fail with NULL instance, but succeeded\n");
+	goto cleanup;
+      }
+
+      if (deltacloud_get_instance_by_name(&api, "bogus_id", &instance) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_instance_by_name to fail with bogus id, but succeeded\n");
+	goto cleanup;
+      }
+
+      if (deltacloud_get_instance_by_name(&zeroapi, instances->name,
+					  &instance) >= 0) {
+	fprintf(stderr, "Expected deltacloud_get_instance_by_name to fail with unintialized api, but succeeded\n");
+	goto cleanup;
+      }
+
+      /* here we use the first instance from the list above */
+      fprintf(stderr, "Going to try to get name %s\n", instances->name);
+      if (deltacloud_get_instance_by_name(&api, instances->name,
+					  &instance) < 0) {
+	fprintf(stderr, "Failed to get instance by name: %s\n",
+		deltacloud_get_last_error_string());
+	goto cleanup;
+      }
+      print_instance(&instance);
+      deltacloud_free_instance(&instance);
     }
 
     /* in order to create an instance, we need to find an image to use */

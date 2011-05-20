@@ -327,6 +327,102 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
 			    parse_one_instance, instance);
 }
 
+struct instance_find {
+  struct deltacloud_instance *instance;
+  const char *name;
+};
+
+static int find_and_parse_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				   void *data)
+{
+  struct instance_find *finder = (struct instance_find *)data;
+  char *instname;
+
+  while (cur != NULL) {
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "instance")) {
+
+      ctxt->node = cur;
+      instname = getXPathString("string(./name)", ctxt);
+      if (STREQ(instname, finder->name)) {
+	SAFE_FREE(instname);
+	if (parse_one_instance(cur, ctxt, finder->instance) < 0)
+	  /* parse_one_instance set the error */
+	  return -1;
+	break;
+      }
+      SAFE_FREE(instname);
+    }
+
+    cur = cur->next;
+  }
+
+  if (cur == NULL) {
+    set_error(DELTACLOUD_NAME_NOT_FOUND_ERROR,
+	      "Failed to find instance in instances list");
+    return -1;
+  }
+
+  return 0;
+}
+
+/* this is actually a bit of a silly function.  Deltacloud does not guarantee
+ * that the name of an instance is unique, so this function just finds the
+ * first instance that has the correct name.  This isn't typically good
+ * behavior, but it is behavior that condor expects, so we leave this API
+ * in place.
+ */
+int deltacloud_get_instance_by_name(struct deltacloud_api *api,
+				    const char *name,
+				    struct deltacloud_instance *instance)
+{
+  struct deltacloud_link *thislink;
+  char *data = NULL;
+  int ret = -1;
+  struct instance_find finder;
+
+  if (!valid_api(api) || !valid_arg(name) || !valid_arg(instance))
+    return -1;
+
+  thislink = api_find_link(api, "instances");
+  if (thislink == NULL)
+    /* api_find_link set the error */
+    return -1;
+
+  if (get_url(thislink->href, api->user, api->password, &data) != 0)
+    /* get_url sets its own errors, so don't overwrite it here */
+    return -1;
+
+  if (data == NULL) {
+    /* if we made it here, it means that the transfer was successful (ret
+     * was 0), but the data that we expected wasn't returned.  This is probably
+     * a deltacloud server bug, so just set an error and bail out
+     */
+    data_error("instances");
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
+  finder.instance = instance;
+  finder.name = name;
+
+  if (internal_xml_parse(data, "instances", find_and_parse_instance, 0,
+			 &finder) < 0)
+    /* internal_xml_parse already set the error */
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(data);
+
+  return ret;
+}
+
 void deltacloud_free_instance(struct deltacloud_instance *instance)
 {
   if (instance == NULL)

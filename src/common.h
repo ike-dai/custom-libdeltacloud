@@ -30,6 +30,10 @@ extern "C" {
 #include <libxml/xpath.h>
 #include <curl/curl.h>
 
+void data_error(const char *name);
+typedef int (*xml_cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void *data);
+int internal_xml_parse(const char *xml_string, const char *name, xml_cb cb,
+		       int single, void *output);
 void strip_trailing_whitespace(char *msg);
 void strip_leading_whitespace(char *msg);
 void set_curl_error(int errcode, const char *header, CURLcode res);
