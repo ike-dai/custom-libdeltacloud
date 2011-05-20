@@ -52,6 +52,7 @@ static int parse_one_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   thisinst->realm_id = getXPathString("string(./realm/@id)", ctxt);
   thisinst->realm_href = getXPathString("string(./realm/@href)", ctxt);
   thisinst->state = getXPathString("string(./state)", ctxt);
+  thisinst->launch_time = getXPathString("string(./launch_time)", ctxt);
 
   hwpset = xmlXPathEval(BAD_CAST "./hardware_profile", ctxt);
   if (hwpset && hwpset->type == XPATH_NODESET && hwpset->nodesetval &&

@@ -38,8 +38,8 @@ struct deltacloud_instance {
   char *image_href;
   char *realm_id;
   char *realm_href;
-  char *key_name;
   char *state;
+  char *launch_time;
   struct deltacloud_hardware_profile hwp;
   struct deltacloud_action *actions;
   struct deltacloud_address *public_addresses;

@@ -33,8 +33,8 @@ static void print_instance(struct deltacloud_instance *instance)
 	  instance->image_href);
   fprintf(stderr, "\tRealm ID: %s, Realm Href: %s\n", instance->realm_id,
 	  instance->realm_href);
-  fprintf(stderr, "\tKey Name: %s, State: %s\n", instance->key_name,
-	  instance->state);
+  fprintf(stderr, "\tState: %s, Launch Time: %s\n", instance->state,
+	  instance->launch_time);
   fprintf(stderr, "\t");
   print_hwp(&instance->hwp);
   print_action_list(instance->actions);
