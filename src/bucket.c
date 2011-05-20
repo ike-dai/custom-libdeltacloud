@@ -196,6 +196,11 @@ static int parse_bucket_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
+static void free_blob_list(struct deltacloud_bucket_blob **blobs)
+{
+  free_list(blobs, struct deltacloud_bucket_blob, deltacloud_free_bucket_blob);
+}
+
 int deltacloud_get_buckets(struct deltacloud_api *api,
 			   struct deltacloud_bucket **buckets)
 {
@@ -481,11 +486,6 @@ void deltacloud_free_bucket_blob(struct deltacloud_bucket_blob *blob)
   SAFE_FREE(blob->last_modified);
   SAFE_FREE(blob->content_href);
   free_metadata_list(&blob->metadata);
-}
-
-static void free_blob_list(struct deltacloud_bucket_blob **blobs)
-{
-  free_list(blobs, struct deltacloud_bucket_blob, deltacloud_free_bucket_blob);
 }
 
 int deltacloud_bucket_destroy(struct deltacloud_api *api,
