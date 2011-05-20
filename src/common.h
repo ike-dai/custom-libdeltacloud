@@ -30,20 +30,18 @@ extern "C" {
 #include <libxml/xpath.h>
 #include <curl/curl.h>
 
+/****************** ERROR REPORTING FUNCTIONS ********************************/
+extern pthread_key_t deltacloud_last_error;
+void invalid_argument_error(const char *details);
+void set_xml_error(const char *xml, int type);
+void link_error(const char *name);
 void data_error(const char *name);
-typedef int (*xml_cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void *data);
-int internal_xml_parse(const char *xml_string, const char *name, xml_cb cb,
-		       int single, void *output);
-void strip_trailing_whitespace(char *msg);
-void strip_leading_whitespace(char *msg);
+void oom_error(void);
+void set_error(int errnum, const char *details);
 void set_curl_error(int errcode, const char *header, CURLcode res);
-struct deltacloud_link *api_find_link(struct deltacloud_api *api,
-				      const char *name);
-void free_parameters(struct deltacloud_create_parameter *params,
-		     int params_length);
-int copy_parameters(struct deltacloud_create_parameter *dst,
-		    struct deltacloud_create_parameter *src,
-		    int params_length);
+
+/********************** IMPLEMENTATIONS OF COMMON FUNCTIONS *****************/
+int internal_destroy(const char *href, const char *user, const char *password);
 int internal_post(struct deltacloud_api *api, const char *href,
 		  struct deltacloud_create_parameter *params,
 		  int params_length, char **headers);
@@ -59,37 +57,37 @@ int internal_get_by_id(struct deltacloud_api *api, const char *id,
 		       int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				 void *data),
 		       void *output);
-int internal_destroy(const char *href, const char *user, const char *password);
 
+/************************** XML PARSING FUNCTIONS ****************************/
 int is_error_xml(const char *xml);
-void oom_error(void);
-void set_xml_error(const char *xml, int type);
-void link_error(const char *name);
-void invalid_argument_error(const char *details);
-
-char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt);
-
+typedef int (*xml_cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void *data);
+int internal_xml_parse(const char *xml_string, const char *name, xml_cb cb,
+		       int single, void *output);
 int parse_xml_single(const char *xml_string, const char *name,
 		     int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			       void *data),
 		     void *output);
+char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt);
 
-#define valid_arg(x) ((x == NULL) ? invalid_argument_error(#x " cannot be NULL"), 0 : 1)
-
+/************************ MISCELLANEOUS FUNCTIONS ***************************/
+struct deltacloud_link *api_find_link(struct deltacloud_api *api,
+				      const char *name);
+void free_parameters(struct deltacloud_create_parameter *params,
+		     int params_length);
+int copy_parameters(struct deltacloud_create_parameter *dst,
+		    struct deltacloud_create_parameter *src,
+		    int params_length);
+void free_and_null(void *ptrptr);
+void dcloudprintf(const char *fmt, ...);
+void deltacloud_error_free_data(void *data);
 int valid_api(struct deltacloud_api *api);
-
+void strip_trailing_whitespace(char *msg);
+void strip_leading_whitespace(char *msg);
+#define valid_arg(x) ((x == NULL) ? invalid_argument_error(#x " cannot be NULL"), 0 : 1)
 #define STREQ(a,b) (strcmp(a,b) == 0)
 #define STRNEQ(a,b) (strcmp(a,b) != 0)
 #define STRPREFIX(a,b) (strncmp(a,b,strlen(b)) == 0)
-
 #define SAFE_FREE(ptr) free_and_null(&(ptr))
-void free_and_null(void *ptrptr);
-
-void dcloudprintf(const char *fmt, ...);
-
-extern pthread_key_t deltacloud_last_error;
-void deltacloud_error_free_data(void *data);
-void set_error(int errnum, const char *details);
 
 #define add_to_list(list, type, element) do { \
     type *curr, *last;			      \
@@ -125,6 +123,7 @@ void set_error(int errnum, const char *details);
 }
 #endif
 
+/****************************** DEBUG FUNCTIONS *****************************/
 #ifdef DEBUG
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
