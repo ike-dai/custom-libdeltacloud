@@ -25,12 +25,15 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing a single key.
+ */
 struct deltacloud_key {
-  char *href;
-  char *id;
-  char *type;
-  char *state;
-  char *fingerprint;
+  char *href; /**< The full URL to the key */
+  char *id; /**< The ID of the key */
+  char *type; /**< The type of the key */
+  char *state; /**< The state of the key */
+  char *fingerprint; /**< The fingerprint of the key */
 
   struct deltacloud_key *next;
 };

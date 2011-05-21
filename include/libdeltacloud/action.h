@@ -25,10 +25,13 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing a single action that can be taken on an instance.
+ */
 struct deltacloud_action {
-  char *rel;
-  char *href;
-  char *method;
+  char *rel; /**< The relative name of the action */
+  char *href; /**< The full URL to the action */
+  char *method; /**< The type of HTTP request (GET, POST, etc) to use */
 
   struct deltacloud_action *next;
 };

@@ -25,49 +25,66 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing a single value for a deltacloud hardware profile
+ * enum.
+ */
 struct deltacloud_property_enum {
-  char *value;
+  char *value; /**< The value for this enum */
 
   struct deltacloud_property_enum *next;
 };
 
+/**
+ * A structure representing a single deltacloud hardware profile property range.
+ * A range represents a range of values for this property.
+ */
 struct deltacloud_property_range {
-  char *first;
-  char *last;
+  char *first; /**< The start of this range */
+  char *last; /**< The end of this range */
 
   struct deltacloud_property_range *next;
 };
 
+/**
+ * A structure representing a single deltacloud hardware profile param.
+ */
 struct deltacloud_property_param {
-  char *href;
-  char *method;
-  char *name;
-  char *operation;
+  char *href; /**< The full URL to this parameter */
+  char *method; /**< The type of HTTP request (GET, POST, etc) to use */
+  char *name; /**< The name of this param */
+  char *operation; /**< The operation of this param */
 
   struct deltacloud_property_param *next;
 };
 
+/**
+ * A structure representing a single deltacloud hardware profile property.
+ * A property can be a deltacloud_property_param, a deltacloud_property_range,
+ * or a deltacloud_property_enum.
+ */
 struct deltacloud_property {
-  char *kind;
-  char *name;
-  char *unit;
-  char *value;
+  char *kind; /**< The type of property this is (param, range, or enum) */
+  char *name; /**< The name of this property */
+  char *unit; /**< The units this property is specified in (MB, GB, etc) */
+  char *value; /**< The value for this property */
 
-  struct deltacloud_property_param *params;
-
-  /* these next two are mutually exclusive */
-  struct deltacloud_property_enum *enums;
-  struct deltacloud_property_range *ranges;
+  struct deltacloud_property_param *params; /**< A list of params associated with this property */
+  struct deltacloud_property_enum *enums; /**< A list of enums associated with this property */
+  struct deltacloud_property_range *ranges; /**< A list of ranges associated with this property */
 
   struct deltacloud_property *next;
 };
 
+/**
+ * A structure representing a single deltacloud hardware profile.
+ */
 struct deltacloud_hardware_profile {
-  char *href;
-  char *id;
-  char *name;
+  char *href; /**< The full URL to this hardware profile */
+  char *id; /**< The ID of this hardware profile */
+  char *name; /**< The name of this hardware profile */
 
-  struct deltacloud_property *properties;
+  struct deltacloud_property *properties; /**< A list of deltacloud_property structures */
 
   struct deltacloud_hardware_profile *next;
 };

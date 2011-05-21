@@ -24,6 +24,8 @@
 #include "common.h"
 #include "hardware_profile.h"
 
+/** @file */
+
 static void free_range(struct deltacloud_property_range *onerange)
 {
   SAFE_FREE(onerange->first);
@@ -198,6 +200,7 @@ static int parse_hardware_profile_properties(xmlNodePtr hwp,
   return ret;
 }
 
+/** @cond INTERNAL */
 int parse_one_hardware_profile(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			       void *output)
 {
@@ -262,7 +265,17 @@ int parse_hardware_profile_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
   return ret;
 }
+/** @endcond */
 
+/**
+ * A function to get a linked list of all of the hardware profiles supported.
+ * The caller is expected to free the list using
+ * deltacloud_free_hardware_profile_list().
+ * @param[in] api The deltacloud_api structure representing this connection
+ * @param[out] profiles A pointer to the deltacloud_hardware_profile structure
+ *                      to hold the list of hardware profiles
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
 				     struct deltacloud_hardware_profile **profiles)
 {
@@ -270,6 +283,16 @@ int deltacloud_get_hardware_profiles(struct deltacloud_api *api,
 		      parse_hardware_profile_xml, (void **)profiles);
 }
 
+/**
+ * A function to look up a particular hardware profile by id.  The caller is
+ * expected to free the deltacloud_hardware_profile structure using
+ * deltacloud_free_hardware_profile().
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] id The hardware_profile ID to look for
+ * @param[out] profile The deltacloud_hardware_profile structure to fill in if
+ *                     the ID is found
+ * @returns 0 on success, -1 if the hardware profile cannot be found or on error
+ */
 int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
 					  const char *id,
 					  struct deltacloud_hardware_profile *profile)
@@ -278,6 +301,12 @@ int deltacloud_get_hardware_profile_by_id(struct deltacloud_api *api,
 			    parse_one_hardware_profile, profile);
 }
 
+/**
+ * A function to free a deltacloud_hardware_profile structure initially
+ * allocated by deltacloud_get_hardware_profile_by_id().
+ * @param[in] profile The deltacloud_hardware_profile structure representing
+ *                    the hardware profile
+ */
 void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profile)
 {
   if (profile == NULL)
@@ -289,6 +318,12 @@ void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profil
   free_property_list(&profile->properties);
 }
 
+/**
+ * A function to free a list of deltacloud_hardware_profile structures
+ * initially allocated by deltacloud_get_hardware_profiles().
+ * @param[in] profiles The pointer to the head of the
+ *                     deltacloud_hardware_profile list
+ */
 void deltacloud_free_hardware_profile_list(struct deltacloud_hardware_profile **profiles)
 {
   free_list(profiles, struct deltacloud_hardware_profile,

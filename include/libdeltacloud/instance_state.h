@@ -25,17 +25,23 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing a single instance state transition.
+ */
 struct deltacloud_instance_state_transition {
-  char *action;
-  char *to;
-  char *auto_bool;
+  char *action; /**< The name of this action */
+  char *to; /**< The state that can be transitioned to */
+  char *auto_bool; /**< Whether the state transition happens automatically */
 
   struct deltacloud_instance_state_transition *next;
 };
 
+/**
+ * A structure representing a single instance state (RUNNING, STOPPED, etc).
+ */
 struct deltacloud_instance_state {
-  char *name;
-  struct deltacloud_instance_state_transition *transitions;
+  char *name; /**< The name of the instance state */
+  struct deltacloud_instance_state_transition *transitions; /**< A list of the valid transitions from this state */
 
   struct deltacloud_instance_state *next;
 };

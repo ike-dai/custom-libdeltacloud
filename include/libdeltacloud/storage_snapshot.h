@@ -25,13 +25,16 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing a single storage snapshot.
+ */
 struct deltacloud_storage_snapshot {
-  char *href;
-  char *id;
-  char *created;
-  char *state;
-  char *storage_volume_href;
-  char *storage_volume_id;
+  char *href; /**< The full URL to this storage snapshot */
+  char *id; /**< The ID of this storage snapshot */
+  char *created; /**< The time this storage snapshot was created */
+  char *state; /**< The state of this storage snapshot */
+  char *storage_volume_href; /**< The full URL to the storage volume this snapshot is based on */
+  char *storage_volume_id; /**< The ID of the storage volume this snapshot is based on */
 
   struct deltacloud_storage_snapshot *next;
 };

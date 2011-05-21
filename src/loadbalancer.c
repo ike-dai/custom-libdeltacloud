@@ -25,7 +25,10 @@
 #include "common.h"
 #include "loadbalancer.h"
 
-/* instead of putting these in a header we replicate it here so the header
+/** @file */
+
+/** @cond INTERNAL
+ * instead of putting these in a header we replicate it here so the header
  * files don't need to include libxml2 headers.  This saves client programs
  * from having to have -I/path/to/libxml2/headers in their build paths.
  */
@@ -33,6 +36,7 @@ int parse_addresses_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
 			struct deltacloud_address **addresses);
 int parse_actions_xml(xmlNodePtr root, struct deltacloud_action **actions);
 int parse_link_xml(xmlNodePtr linknode, struct deltacloud_link **links);
+/** @endcond */
 
 static void free_lb_instance(struct deltacloud_loadbalancer_instance *instance)
 {
@@ -279,6 +283,14 @@ static int prepare_int_parameter(struct deltacloud_create_parameter *param,
   return 0;
 }
 
+/**
+ * A function to get a linked list of all of the load balancers.  The caller
+ * is expected to free the list using deltacloud_free_loadbalancer_list().
+ * @param[in] api The deltacloud_api structure representing this connection
+ * @param[out] balancers A pointer to the deltacloud_loadbalancer structure to
+ *                       hold the list of load balancers
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_get_loadbalancers(struct deltacloud_api *api,
 				 struct deltacloud_loadbalancer **balancers)
 {
@@ -286,6 +298,16 @@ int deltacloud_get_loadbalancers(struct deltacloud_api *api,
 		      parse_loadbalancer_xml, (void **)balancers);
 }
 
+/**
+ * A function to look up a particular load balancer by id.  The caller is
+ * expected to free the deltacloud_loadbalancer structure using
+ * deltacloud_free_loadbalancer().
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] id The load balancer ID to look for
+ * @param[out] balancer The deltacloud_loadbalancer structure to fill in if
+ *                      the ID is found
+ * @returns 0 on success, -1 if the load balancer cannot be found or on error
+ */
 int deltacloud_get_loadbalancer_by_id(struct deltacloud_api *api,
 				      const char *id,
 				      struct deltacloud_loadbalancer *balancer)
@@ -294,6 +316,21 @@ int deltacloud_get_loadbalancer_by_id(struct deltacloud_api *api,
 			    parse_one_loadbalancer, balancer);
 }
 
+/**
+ * A function to create a new load balancer.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] name The name to give to the new load balancer
+ * @param[in] realm_id The realm ID to put the new load balancer in
+ * @param[in] protocol The protocol to load balance
+ * @param[in] balancer_port The port the load balancer listens on
+ * @param[in] instance_port The port the load balancer balances to
+ * @param[in] params An array of deltacloud_create_parameter structures that
+ *                   represent any optional parameters to pass into the
+ *                   create call
+ * @param[in] params_length An integer describing the length of the params
+ *                          array
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_create_loadbalancer(struct deltacloud_api *api, const char *name,
 				   const char *realm_id, const char *protocol,
 				   int balancer_port, int instance_port,
@@ -426,6 +463,19 @@ static int lb_register_unregister(struct deltacloud_api *api,
   return ret;
 }
 
+/**
+ * A function to register an instance to a load balancer.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] balancer The deltacloud_loadbalancer structure representing the
+                       load balancer
+ * @param[in] instance_id The instance ID to add to the load balancer
+ * @param[in] params An array of deltacloud_create_parameter structures that
+ *                   represent any optional parameters to pass into the
+ *                   register call
+ * @param[in] params_length An integer describing the length of the params
+ *                          array
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_loadbalancer_register(struct deltacloud_api *api,
 				     struct deltacloud_loadbalancer *balancer,
 				     const char *instance_id,
@@ -436,6 +486,19 @@ int deltacloud_loadbalancer_register(struct deltacloud_api *api,
 				params_length, "register");
 }
 
+/**
+ * A function to unregister an instance from a load balancer.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] balancer The deltacloud_loadbalancer structure representing the
+                       load balancer
+ * @param[in] instance_id The instance ID to remove from the load balancer
+ * @param[in] params An array of deltacloud_create_parameter structures that
+ *                   represent any optional parameters to pass into the
+ *                   unregister call
+ * @param[in] params_length An integer describing the length of the params
+ *                          array
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_loadbalancer_unregister(struct deltacloud_api *api,
 				       struct deltacloud_loadbalancer *balancer,
 				       const char *instance_id,
@@ -446,6 +509,13 @@ int deltacloud_loadbalancer_unregister(struct deltacloud_api *api,
 				params_length, "unregister");
 }
 
+/**
+ * A function to destroy a load balancer.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] balancer The deltacloud_loadbalancer structure representing the
+ *                     load balancer
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_loadbalancer_destroy(struct deltacloud_api *api,
 				    struct deltacloud_loadbalancer *balancer)
 {
@@ -455,6 +525,12 @@ int deltacloud_loadbalancer_destroy(struct deltacloud_api *api,
   return internal_destroy(balancer->href, api->user, api->password);
 }
 
+/**
+ * A function to free a deltacloud_loadbalancer structure initially allocated
+ * by deltacloud_get_loadbalancer_by_id().
+ * @param[in] lb The deltacloud_loadbalancer structure representing the
+ *               load balancer
+ */
 void deltacloud_free_loadbalancer(struct deltacloud_loadbalancer *lb)
 {
   if (lb == NULL)
@@ -471,6 +547,11 @@ void deltacloud_free_loadbalancer(struct deltacloud_loadbalancer *lb)
   free_lb_instance_list(&lb->instances);
 }
 
+/**
+ * A function to free a list of deltacloud_loadbalancer structures initially
+ * allocated by deltacloud_get_loadbalancers().
+ * @param[in] lbs The pointer to the head of the deltacloud_loadbalancer list
+ */
 void deltacloud_free_loadbalancer_list(struct deltacloud_loadbalancer **lbs)
 {
   free_list(lbs, struct deltacloud_loadbalancer, deltacloud_free_loadbalancer);

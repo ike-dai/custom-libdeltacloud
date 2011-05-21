@@ -25,6 +25,8 @@
 #include "common.h"
 #include "storage_volume.h"
 
+/** @file */
+
 static void free_capacity(struct deltacloud_storage_volume_capacity *curr)
 {
   SAFE_FREE(curr->unit);
@@ -111,6 +113,14 @@ static int parse_storage_volume_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
+/**
+ * A function to get a linked list of all of the storage volumes.  The caller
+ * is expected to free the list using deltacloud_free_storage_volume_list().
+ * @param[in] api The deltacloud_api structure representing this connection
+ * @param[out] storage_volumes A pointer to the deltacloud_storage_volume
+ *                             structure to hold the list of storage volumes
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_get_storage_volumes(struct deltacloud_api *api,
 				   struct deltacloud_storage_volume **storage_volumes)
 {
@@ -118,6 +128,16 @@ int deltacloud_get_storage_volumes(struct deltacloud_api *api,
 		      parse_storage_volume_xml, (void **)storage_volumes);
 }
 
+/**
+ * A function to look up a particular storage volume by id.  The caller is
+ * expected to free the deltacloud_storage_volume structure using
+ * deltacloud_free_storage_volume().
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] id The storage volume ID to look for
+ * @param[out] storage_volume The deltacloud_storage_volume structure to
+ *                            fill in if the ID is found
+ * @returns 0 on success, -1 if the storage volume cannot be found or on error
+ */
 int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
 					const char *id,
 					struct deltacloud_storage_volume *storage_volume)
@@ -126,6 +146,16 @@ int deltacloud_get_storage_volume_by_id(struct deltacloud_api *api,
 			    parse_one_storage_volume, storage_volume);
 }
 
+/**
+ * A function to create a new storage volume.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] params An array of deltacloud_create_parameter structures that
+ *                   represent any optional parameters to pass into the
+ *                   create call
+ * @param[in] params_length An integer describing the length of the params
+ *                          array
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_create_storage_volume(struct deltacloud_api *api,
 				     struct deltacloud_create_parameter *params,
 				     int params_length)
@@ -145,6 +175,13 @@ int deltacloud_create_storage_volume(struct deltacloud_api *api,
   return 0;
 }
 
+/**
+ * A function to destroy a storage volume.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] storage_volume The deltacloud_storage_snapstho structure
+ *                           representing the storage volume
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_storage_volume_destroy(struct deltacloud_api *api,
 				      struct deltacloud_storage_volume *storage_volume)
 {
@@ -154,6 +191,20 @@ int deltacloud_storage_volume_destroy(struct deltacloud_api *api,
   return internal_destroy(storage_volume->href, api->user, api->password);
 }
 
+/**
+ * A function to attach a storage volume to an instance.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] storage_volume The deltacloud_storage_volume structure
+ *                           representing the storage volume to attach
+ * @param[in] instance_id The instance ID to attach the storage volume to
+ * @param[in] device The device name that the storage volume will be attached as
+ * @param[in] params An array of deltacloud_create_parameter structures that
+ *                   represent any optional parameters to pass into the
+ *                   register call
+ * @param[in] params_length An integer describing the length of the params
+ *                          array
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_storage_volume_attach(struct deltacloud_api *api,
 				     struct deltacloud_storage_volume *storage_volume,
 				     const char *instance_id,
@@ -229,6 +280,18 @@ int deltacloud_storage_volume_attach(struct deltacloud_api *api,
   return ret;
 }
 
+/**
+ * A function to detach a storage volume from an instance.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] storage_volume The deltacloud_storage_volume structure
+ *                           representing the storage volume to detach
+ * @param[in] params An array of deltacloud_create_parameter structures that
+ *                   represent any optional parameters to pass into the
+ *                   register call
+ * @param[in] params_length An integer describing the length of the params
+ *                          array
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_storage_volume_detach(struct deltacloud_api *api,
 				     struct deltacloud_storage_volume *storage_volume,
 				     struct deltacloud_create_parameter *params,
@@ -269,6 +332,12 @@ int deltacloud_storage_volume_detach(struct deltacloud_api *api,
   return 0;
 }
 
+/**
+ * A function to free a deltacloud_storage_volume structure initially
+ * allocated by deltacloud_get_storage_volume_by_id().
+ * @param[in] storage_volume The deltacloud_storage_volume structure
+ *                           representing the storage volume
+ */
 void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_volume)
 {
   if (storage_volume == NULL)
@@ -285,6 +354,12 @@ void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_vo
   free_mount(&storage_volume->mount);
 }
 
+/**
+ * A function to free a list of deltacloud_storage_volume structures initially
+ * allocated by deltacloud_get_storage_volumes().
+ * @param[in] storage_volumes The pointer to the head of the
+ *                            deltacloud_storage_volume list
+ */
 void deltacloud_free_storage_volume_list(struct deltacloud_storage_volume **storage_volumes)
 {
   free_list(storage_volumes, struct deltacloud_storage_volume,

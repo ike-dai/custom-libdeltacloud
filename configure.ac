@@ -98,4 +98,4 @@ AC_SUBST([LIBCURL_LIBS])
 AC_CHECK_DECL(CURLOPT_USERNAME, [AC_DEFINE(CURL_HAVE_USERNAME, [], [Description])], ,[#include <curl/curl.h>])
 
 AC_OUTPUT(Makefile include/Makefile include/libdeltacloud/Makefile \
-	  src/Makefile tests/Makefile libdeltacloud.pc)
+	  src/Makefile tests/Makefile libdeltacloud.pc doxygen.cfg)

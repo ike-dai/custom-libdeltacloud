@@ -26,6 +26,8 @@
 #include "curl_action.h"
 #include "bucket.h"
 
+/** @file */
+
 static void free_metadata(struct deltacloud_bucket_blob_metadata *metadata)
 {
   SAFE_FREE(metadata->key);
@@ -201,6 +203,14 @@ static void free_blob_list(struct deltacloud_bucket_blob **blobs)
   free_list(blobs, struct deltacloud_bucket_blob, deltacloud_free_bucket_blob);
 }
 
+/**
+ * A function to get a linked list of all of the buckets defined.  The caller
+ * is expected to free the list using deltacloud_free_bucket_list().
+ * @param[in] api The deltacloud_api structure representing this connection
+ * @param[out] buckets A pointer to the deltacloud_bucket structure to hold
+ *                     the list of buckets
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_get_buckets(struct deltacloud_api *api,
 			   struct deltacloud_bucket **buckets)
 {
@@ -208,6 +218,15 @@ int deltacloud_get_buckets(struct deltacloud_api *api,
 		      (void **)buckets);
 }
 
+/**
+ * A function to look up a particular bucket by id.  The caller is expected
+ * to free the deltacloud_bucket structure using deltacloud_free_bucket().
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] id The bucket ID to look for
+ * @param[out] bucket The deltacloud_bucket structure to fill in if the ID
+ *                     is found
+ * @returns 0 on success, -1 if the bucket cannot be found or on error
+ */
 int deltacloud_get_bucket_by_id(struct deltacloud_api *api, const char *id,
 				struct deltacloud_bucket *bucket)
 {
@@ -215,6 +234,17 @@ int deltacloud_get_bucket_by_id(struct deltacloud_api *api, const char *id,
 			    bucket);
 }
 
+/**
+ * A function to create a new bucket.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] name The name to give to the new bucket
+ * @param[in] params An array of deltacloud_create_parameter structures that
+ *                   represent any optional parameters to pass into the
+ *                   create call
+ * @param[in] params_length An integer describing the length of the params
+ *                          array
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_create_bucket(struct deltacloud_api *api,
 			     const char *name,
 			     struct deltacloud_create_parameter *params,
@@ -260,6 +290,20 @@ int deltacloud_create_bucket(struct deltacloud_api *api,
   return ret;
 }
 
+/**
+ * A function to create a new blob in a bucket.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] bucket The deltacloud_bucket representing the bucket in which
+ *                   to create the blob
+ * @param[in] blob_name The name to give to the new blob
+ * @param[in] filename The filename from which to read the data for the blob
+ * @param[in] params An array of deltacloud_create_parameter structures that
+ *                   represent any optional parameters to pass into the
+ *                   create call
+ * @param[in] params_length An integer describing the length of the params
+ *                          array
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_bucket_create_blob_from_file(struct deltacloud_api *api,
 					    struct deltacloud_bucket *bucket,
 					    const char *blob_name,
@@ -371,6 +415,17 @@ int deltacloud_bucket_create_blob_from_file(struct deltacloud_api *api,
   return ret;
 }
 
+/**
+ * A function to lookup a blob by id.  It is up to the caller to free the
+ * structure with deltacloud_free_bucket_blob().
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] bucket The deltacloud_bucket representing the bucket in which
+ *                   to look for the blob
+ * @param[in] name The name of the blob to lookup
+ * @param[out] blob The deltacloud_bucket_blob structure that will be filled
+ *                  in if the blob is found
+ * @returns 0 on success, -1 on error or if the blob could not be found
+ */
 int deltacloud_bucket_get_blob_by_id(struct deltacloud_api *api,
 				     struct deltacloud_bucket *bucket,
 				     const char *name,
@@ -391,6 +446,16 @@ int deltacloud_bucket_get_blob_by_id(struct deltacloud_api *api,
   return rc;
 }
 
+/**
+ * A function to update the metadata on a blob.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] blob The deltacloud_bucket_blob structure representing the blob
+ * @param[in] params An array of deltacloud_create_parameter structures that
+ *                   represent the key/value pairs of metadata to update
+ * @param[in] params_length An integer describing the length of the params
+ *                          array
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_bucket_blob_update_metadata(struct deltacloud_api *api,
 					   struct deltacloud_bucket_blob *blob,
 					   struct deltacloud_create_parameter *params,
@@ -418,6 +483,14 @@ int deltacloud_bucket_blob_update_metadata(struct deltacloud_api *api,
   return ret;
 }
 
+/**
+ * A function to get the contents of a blob.  It is the responsibility of the
+ * caller to free the memory returned in output.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] blob The deltacloud_bucket_blob structure representing the blob
+ * @param[out] output A pointer to an memory location to store the blob contents
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_bucket_blob_get_content(struct deltacloud_api *api,
 				       struct deltacloud_bucket_blob *blob,
 				       char **output)
@@ -464,6 +537,12 @@ int deltacloud_bucket_blob_get_content(struct deltacloud_api *api,
   return ret;
 }
 
+/**
+ * A function to delete a blob.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] blob The deltacloud_bucket_blob structure representing the blob
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_bucket_delete_blob(struct deltacloud_api *api,
 				  struct deltacloud_bucket_blob *blob)
 {
@@ -473,6 +552,11 @@ int deltacloud_bucket_delete_blob(struct deltacloud_api *api,
   return internal_destroy(blob->href, api->user, api->password);
 }
 
+/**
+ * A function to free a deltacloud_bucket_blob structure initially allocated
+ * through deltacloud_bucket_get_blob_by_id().
+ * @param[in] blob The deltacloud_bucket_blob structure representing the blob
+ */
 void deltacloud_free_bucket_blob(struct deltacloud_bucket_blob *blob)
 {
   if (blob == NULL)
@@ -488,6 +572,12 @@ void deltacloud_free_bucket_blob(struct deltacloud_bucket_blob *blob)
   free_metadata_list(&blob->metadata);
 }
 
+/**
+ * A function to destroy a bucket.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] bucket The deltacloud_bucket structure representing the bucket
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_bucket_destroy(struct deltacloud_api *api,
 			      struct deltacloud_bucket *bucket)
 {
@@ -497,6 +587,11 @@ int deltacloud_bucket_destroy(struct deltacloud_api *api,
   return internal_destroy(bucket->href, api->user, api->password);
 }
 
+/**
+ * A function to free a deltacloud_bucket structure initially allocated
+ * by deltacloud_get_bucket_by_id().
+ * @param[in] bucket The deltacloud_bucket structure representing the bucket
+ */
 void deltacloud_free_bucket(struct deltacloud_bucket *bucket)
 {
   if (bucket == NULL)
@@ -509,6 +604,11 @@ void deltacloud_free_bucket(struct deltacloud_bucket *bucket)
   free_blob_list(&bucket->blobs);
 }
 
+/**
+ * A function to free a list of deltacloud_bucket structures initially allocated
+ * by deltacloud_get_buckets().
+ * @param[in] buckets The pointer to the head of the deltacloud_bucket list
+ */
 void deltacloud_free_bucket_list(struct deltacloud_bucket **buckets)
 {
   free_list(buckets, struct deltacloud_bucket, deltacloud_free_bucket);

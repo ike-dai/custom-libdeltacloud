@@ -25,8 +25,12 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing a single hostname or IP address assigned to an
+ * instance.
+ */
 struct deltacloud_address {
-  char *address;
+  char *address; /**< The hostname or IP address */
 
   struct deltacloud_address *next;
 };

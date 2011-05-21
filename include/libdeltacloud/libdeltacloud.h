@@ -25,26 +25,42 @@
 extern "C" {
 #endif
 
+/**
+ * The main libdeltacloud structure.  Since almost all libdeltacloud calls
+ * require a deltacloud_api structure, this structure must be initialized first
+ * via a call to deltacloud_initialize().
+ */
 struct deltacloud_api {
-  char *url;
-  char *user;
-  char *password;
-  char *driver;
-  char *version;
+  char *url; /**< The top-level URL to the deltacloud server */
+  char *user; /**< The username used to connect to the deltacloud server */
+  char *password; /**< The password used to connect to the deltacloud server */
+  char *driver; /**< The driver in use with the connection (this is determined automatically from the URL) */
+  char *version; /**< The version of the deltacloud API as returned by the server */
 
-  int initialized;
+  int initialized; /**< An internal field used to determine if the deltacloud_api structure has been properly initialized */
 
-  struct deltacloud_link *links;
+  struct deltacloud_link *links; /**< A list of links pointing to the various components (instances, images, etc) available */
 };
 
+/**
+ * A structure representing a libdeltacloud error.  Errors are stored in
+ * thread-safe variables.  A pointer to the error structure for this thread
+ * can be obtained by using deltacloud_get_last_error().
+ */
 struct deltacloud_error {
-  int error_num;
-  char *details;
+  int error_num; /**< The error number associated with an error, one of the DELTACLOUD* errors */
+  char *details; /**< A string representing details of the error */
 };
 
+/**
+ * A structure to represent additional URL parameters to pass to various
+ * libdeltacloud calls.  For instance, if the name field was set to "foo" and
+ * the value field was set to "bar", then the URI used to access a resource
+ * would have the string "foo=bar" appended.
+ */
 struct deltacloud_create_parameter {
-  char *name;
-  char *value;
+  char *name; /**< The name to use for this parameter */
+  char *value; /**< The value to use for this parameter */
 };
 
 #include "link.h"

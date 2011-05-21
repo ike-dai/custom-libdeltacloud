@@ -25,6 +25,8 @@
 #include "common.h"
 #include "instance_state.h"
 
+/** @file */
+
 static void free_transition(struct deltacloud_instance_state_transition *transition)
 {
   SAFE_FREE(transition->action);
@@ -121,6 +123,14 @@ static int parse_instance_state_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
+/**
+ * A function to get a linked list of all of the instance states.  The caller
+ * is expected to free the list using deltacloud_free_instance_state_list().
+ * @param[in] api The deltacloud_api structure representing this connection
+ * @param[out] instance_states A pointer to the deltacloud_instance_state
+ *                             structure to hold the list of instance states
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_get_instance_states(struct deltacloud_api *api,
 				   struct deltacloud_instance_state **instance_states)
 {
@@ -128,6 +138,12 @@ int deltacloud_get_instance_states(struct deltacloud_api *api,
 		      parse_instance_state_xml, (void **)instance_states);
 }
 
+/**
+ * A function to free a list of deltacloud_instance_state structures initially
+ * allocated by deltacloud_get_instance_states().
+ * @param[in] instance_states The pointer to the head of the
+ *                            deltacloud_instance_state list
+ */
 void deltacloud_free_instance_state_list(struct deltacloud_instance_state **instance_states)
 {
   free_list(instance_states, struct deltacloud_instance_state,

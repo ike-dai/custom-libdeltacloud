@@ -24,6 +24,8 @@
 #include "common.h"
 #include "storage_snapshot.h"
 
+/** @file */
+
 static int parse_one_storage_snapshot(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				      void *output)
 {
@@ -88,6 +90,14 @@ static int parse_storage_snapshot_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
+/**
+ * A function to get a linked list of all of the storage snapshots.  The caller
+ * is expected to free the list using deltacloud_free_storage_snapshot_list().
+ * @param[in] api The deltacloud_api structure representing this connection
+ * @param[out] storage_snapshots A pointer to the deltacloud_storage_snapshot
+ *                               structure to hold the list of storage snapshots
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
 				     struct deltacloud_storage_snapshot **storage_snapshots)
 {
@@ -95,6 +105,16 @@ int deltacloud_get_storage_snapshots(struct deltacloud_api *api,
 		      parse_storage_snapshot_xml, (void **)storage_snapshots);
 }
 
+/**
+ * A function to look up a particular storage snapshot by id.  The caller is
+ * expected to free the deltacloud_storage_snapshot structure using
+ * deltacloud_free_storage_snapshot().
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] id The storage snapshot ID to look for
+ * @param[out] storage_snapshot The deltacloud_storage_snapshot structure to
+ *                              fill in if the ID is found
+ * @returns 0 on success, -1 if the storage snapshot cannot be found or on error
+ */
 int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 					  const char *id,
 					  struct deltacloud_storage_snapshot *storage_snapshot)
@@ -103,6 +123,17 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 			    parse_one_storage_snapshot, storage_snapshot);
 }
 
+/**
+ * A function to create a new storage snapshot.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] volume_id The volume ID to take the snapshot from
+ * @param[in] params An array of deltacloud_create_parameter structures that
+ *                   represent any optional parameters to pass into the
+ *                   create call
+ * @param[in] params_length An integer describing the length of the params
+ *                          array
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_create_storage_snapshot(struct deltacloud_api *api,
 				       const char *volume_id,
 				       struct deltacloud_create_parameter *params,
@@ -150,6 +181,13 @@ int deltacloud_create_storage_snapshot(struct deltacloud_api *api,
   return ret;
 }
 
+/**
+ * A function to destroy a storage snapshot.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] storage_snapshot The deltacloud_storage_snapstho structure
+ *                             representing the storage snapshot
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_storage_snapshot_destroy(struct deltacloud_api *api,
 					struct deltacloud_storage_snapshot *storage_snapshot)
 {
@@ -159,6 +197,12 @@ int deltacloud_storage_snapshot_destroy(struct deltacloud_api *api,
   return internal_destroy(storage_snapshot->href, api->user, api->password);
 }
 
+/**
+ * A function to free a deltacloud_storage_snapshot structure initially
+ * allocated by deltacloud_get_storage_snapshot_by_id().
+ * @param[in] storage_snapshot The deltacloud_storage_snapshot structure
+ *                             representing the storage snapshot
+ */
 void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot)
 {
   if (storage_snapshot == NULL)
@@ -172,6 +216,12 @@ void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storag
   SAFE_FREE(storage_snapshot->storage_volume_id);
 }
 
+/**
+ * A function to free a list of deltacloud_storage_snapshot structures initially
+ * allocated by deltacloud_get_storage_snapshots().
+ * @param[in] storage_snapshots The pointer to the head of the
+ *                              deltacloud_storage_snapshot list
+ */
 void deltacloud_free_storage_snapshot_list(struct deltacloud_storage_snapshot **storage_snapshots)
 {
   free_list(storage_snapshots, struct deltacloud_storage_snapshot,

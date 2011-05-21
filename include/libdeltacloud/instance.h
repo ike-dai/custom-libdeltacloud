@@ -29,21 +29,24 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing a single deltacloud instance.
+ */
 struct deltacloud_instance {
-  char *href;
-  char *id;
-  char *name;
-  char *owner_id;
-  char *image_id;
-  char *image_href;
-  char *realm_id;
-  char *realm_href;
-  char *state;
-  char *launch_time;
-  struct deltacloud_hardware_profile hwp;
-  struct deltacloud_action *actions;
-  struct deltacloud_address *public_addresses;
-  struct deltacloud_address *private_addresses;
+  char *href; /**< The full URL to this instance */
+  char *id; /**< The ID of this instance */
+  char *name; /**< The name of this instance */
+  char *owner_id; /**< The owner ID of this instance */
+  char *image_id; /**< The ID of this image this instance was launched from */
+  char *image_href; /**< The full URL to the image */
+  char *realm_id; /**< The ID of the realm this instance is in */
+  char *realm_href; /**< The full URL to the realm this instance is in */
+  char *state; /**< The current state of this instance (RUNNING, STOPPED, etc) */
+  char *launch_time; /**< The time that this instance was launched */
+  struct deltacloud_hardware_profile hwp; /**< The hardware profile this instance was launched with */
+  struct deltacloud_action *actions; /**< A list of actions that can be taken on this instance */
+  struct deltacloud_address *public_addresses; /**< A list of the public addresses assigned to this instance */
+  struct deltacloud_address *private_addresses; /**< A list of the private addresses assigned to this instance */
 
   struct deltacloud_instance *next;
 };

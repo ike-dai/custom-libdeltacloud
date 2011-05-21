@@ -25,7 +25,10 @@
 #include "instance.h"
 #include "curl_action.h"
 
-/* instead of putting these in a header we replicate it here so the header
+/** @file */
+
+/** @cond INTERNAL
+ * instead of putting these in a header we replicate it here so the header
  * files don't need to include libxml2 headers.  This saves client programs
  * from having to have -I/path/to/libxml2/headers in their build paths.
  */
@@ -34,6 +37,7 @@ int parse_addresses_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
 int parse_actions_xml(xmlNodePtr root, struct deltacloud_action **actions);
 int parse_one_hardware_profile(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			       void *output);
+/** @endcond */
 
 static int parse_one_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			      void *output)
@@ -225,6 +229,18 @@ static int instance_action(struct deltacloud_api *api,
   return ret;
 }
 
+/**
+ * A function to create a new instance from an image.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] image_id The image ID to create the instance from
+ * @param[in] params An array of deltacloud_create_parameter structures that
+ *                   represent any optional parameters to pass into the
+ *                   create call
+ * @param[in] params_length An integer describing the length of the params
+ *                          array
+ * @param[out] instance_id The instance ID returned by the create call
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
 			       struct deltacloud_create_parameter *params,
 			       int params_length, char **instance_id)
@@ -286,24 +302,52 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
   return ret;
 }
 
+/**
+ * A function to perform the stop action on an instance.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] instance The deltacloud_instance structure representing the
+ *                     instance
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_instance_stop(struct deltacloud_api *api,
 			     struct deltacloud_instance *instance)
 {
   return instance_action(api, instance, "stop");
 }
 
+/**
+ * A function to perform the reboot action on an instance.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] instance The deltacloud_instance structure representing the
+ *                     instance
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_instance_reboot(struct deltacloud_api *api,
 			       struct deltacloud_instance *instance)
 {
   return instance_action(api, instance, "reboot");
 }
 
+/**
+ * A function to perform the start action on an instance.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] instance The deltacloud_instance structure representing the
+ *                     instance
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_instance_start(struct deltacloud_api *api,
 			      struct deltacloud_instance *instance)
 {
   return instance_action(api, instance, "start");
 }
 
+/**
+ * A function to perform the destroy action on an instance.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] instance The deltacloud_instance structure representing the
+ *                     instance
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_instance_destroy(struct deltacloud_api *api,
 				struct deltacloud_instance *instance)
 {
@@ -313,6 +357,14 @@ int deltacloud_instance_destroy(struct deltacloud_api *api,
   return internal_destroy(instance->href, api->user, api->password);
 }
 
+/**
+ * A function to get a linked list of all of the instances.  The caller
+ * is expected to free the list using deltacloud_free_instance_list().
+ * @param[in] api The deltacloud_api structure representing this connection
+ * @param[out] instances A pointer to the deltacloud_instance structure to hold
+ *                       the list of instances
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_get_instances(struct deltacloud_api *api,
 			     struct deltacloud_instance **instances)
 {
@@ -320,6 +372,15 @@ int deltacloud_get_instances(struct deltacloud_api *api,
 		      (void **)instances);
 }
 
+/**
+ * A function to look up a particular instance by id.  The caller is expected
+ * to free the deltacloud_instance structure using deltacloud_free_instance().
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] id The instance ID to look for
+ * @param[out] instance The deltacloud_instance structure to fill in if the ID
+ *                      is found
+ * @returns 0 on success, -1 if the instance cannot be found or on error
+ */
 int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
 				  struct deltacloud_instance *instance)
 {
@@ -327,10 +388,12 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
 			    parse_one_instance, instance);
 }
 
+/** @cond INTERNAL */
 struct instance_find {
   struct deltacloud_instance *instance;
   const char *name;
 };
+/** @endcond */
 
 static int find_and_parse_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				   void *data)
@@ -366,11 +429,16 @@ static int find_and_parse_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return 0;
 }
 
-/* this is actually a bit of a silly function.  Deltacloud does not guarantee
- * that the name of an instance is unique, so this function just finds the
- * first instance that has the correct name.  This isn't typically good
- * behavior, but it is behavior that condor expects, so we leave this API
- * in place.
+/**
+ * A function to look up a particular instance by name.  The caller is expected
+ * to free the deltacloud_instance structure using deltacloud_free_instance().
+ * Note that deltacloud does not guarantee that instance names are unique; this
+ * function will only find and return the first instance with the desired name.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] name The instance name to look for
+ * @param[out] instance The deltacloud_instance structure to fill in if the name
+ *                      is found
+ * @returns 0 on success, -1 if the instance cannot be found or on error
  */
 int deltacloud_get_instance_by_name(struct deltacloud_api *api,
 				    const char *name,
@@ -423,6 +491,12 @@ int deltacloud_get_instance_by_name(struct deltacloud_api *api,
   return ret;
 }
 
+/**
+ * A function to free a deltacloud_instance structure initially allocated
+ * by deltacloud_get_instance_by_id() or deltacloud_get_instance_by_name().
+ * @param[in] instance The deltacloud_instance structure representing the
+ *                     instance
+ */
 void deltacloud_free_instance(struct deltacloud_instance *instance)
 {
   if (instance == NULL)
@@ -443,6 +517,11 @@ void deltacloud_free_instance(struct deltacloud_instance *instance)
   free_address_list(&instance->private_addresses);
 }
 
+/**
+ * A function to free a list of deltacloud_instance structures initially
+ * allocated by deltacloud_get_instances().
+ * @param[in] instances The pointer to the head of the deltacloud_instance list
+ */
 void deltacloud_free_instance_list(struct deltacloud_instance **instances)
 {
   free_list(instances, struct deltacloud_instance, deltacloud_free_instance);

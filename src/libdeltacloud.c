@@ -29,17 +29,33 @@
 #include "common.h"
 #include "curl_action.h"
 
+/** @file */
+
 /* On first initialization of the library we setup a per-thread local
  * variable to hold errors.  If one of the API calls subsequently fails,
  * then we set the per-thread variable with details of the failure.
  */
 static int tlsinitialized = 0;
 
+/**
+ * A function to get a pointer to the deltacloud_error structure corresponding
+ * to the last failure.  The results of this are undefined if no error occurred.
+ * As the pointer is to thread-local storage that libdeltacloud manages, the
+ * caller should \b not attempt to free the structure.
+ * @returns A deltacloud_error structure corresponding to the last failure
+ */
 struct deltacloud_error *deltacloud_get_last_error(void)
 {
   return pthread_getspecific(deltacloud_last_error);
 }
 
+/**
+ * A function to get the details (as a string) corresponding to the last
+ * failure.  The results of this are undefined if no error occurred.  As the
+ * string is to thread-local storage that libdeltacloud manages, the caller
+ * should \b not attempt to free the string.
+ * @returns A string description of the last failure
+ */
 const char *deltacloud_get_last_error_string(void)
 {
   struct deltacloud_error *last;
@@ -50,11 +66,14 @@ const char *deltacloud_get_last_error_string(void)
   return NULL;
 }
 
-/* instead of putting this in a header we replicate it here so the header
+/** @cond INTERNAL
+ *
+ * instead of putting this in a header we replicate it here so the header
  * files don't need to include libxml2 headers.  This saves client programs
  * from having to have -I/path/to/libxml2/headers in their build paths.
  */
 int parse_link_xml(xmlNodePtr linknode, struct deltacloud_link **links);
+/** @endcond */
 
 static int parse_api_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void *data)
 {
@@ -97,6 +116,16 @@ static void internal_free(struct deltacloud_api *api)
   memset(api, 0, sizeof(struct deltacloud_api));
 }
 
+/**
+ * The main API entry point.  All users of the library \b must call this
+ * function first to initialize the library.  The caller must free the
+ * deltacloud_api structure using deltacloud_free() when finished.
+ * @param[in,out] api The api structure
+ * @param[in] url The url to the deltacloud server
+ * @param[in] user The username required to connect to the deltacloud server
+ * @param[in] password The password required to connect to the deltacloud server
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 			  char *password)
 {
@@ -166,6 +195,19 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
   return ret;
 }
 
+/**
+ * A function to prepare a deltacloud_create_parameter structure for use.  A
+ * deltacloud_create_parameter structure is used as an optional input parameter
+ * to one of the deltacloud_create functions.  It is up to the caller to free
+ * the memory allocated to the structure with deltacloud_free_parameter_value().
+ * @param[in,out] param The deltacloud_create_parameter structure to prepare
+ *                      for use
+ * @param[in] name The name to assign to the deltacloud_create_parameter
+ *                 structure
+ * @param[in] value The value to assign to the deltacloud_create_parameter
+ *                  structure
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_prepare_parameter(struct deltacloud_create_parameter *param,
 				 const char *name, const char *value)
 {
@@ -185,6 +227,18 @@ int deltacloud_prepare_parameter(struct deltacloud_create_parameter *param,
   return 0;
 }
 
+/**
+ * A function to allocate and prepare a deltacloud_create_parameter structure
+ * for use.  A deltacloud_create_parameter structure is used as an optional
+ * input parameter to one of the deltacloud_create functions.  It is up to the
+ * caller to free the structure with deltacloud_free_parameter().
+ * @param[in] name The name to assign to the deltacloud_create_parameter
+ *                 structure
+ * @param[in] value The value to assign to the deltacloud_create_parameter
+ *                  structure
+ * @returns A newly allocated deltacloud_create_parameter structure on success,
+ *          NULL on error
+ */
 struct deltacloud_create_parameter *deltacloud_allocate_parameter(const char *name,
 								  const char *value)
 {
@@ -205,18 +259,38 @@ struct deltacloud_create_parameter *deltacloud_allocate_parameter(const char *na
   return ret;
 }
 
+/**
+ * A function to free the memory assigned to a deltacloud_create_parameter
+ * structure (typically by deltacloud_prepare_parameter()).
+ * @param[in] param The deltacloud_create_parameter structure to free memory
+ *                  from
+ */
 void deltacloud_free_parameter_value(struct deltacloud_create_parameter *param)
 {
   SAFE_FREE(param->name);
   SAFE_FREE(param->value);
 }
 
+/**
+ * A function to free a deltacloud_create_parameter structure (typically
+ * allocated by deltacloud_allocate_parameter()).
+ * @param[in] param The deltacloud_create_parameter to free
+ */
 void deltacloud_free_parameter(struct deltacloud_create_parameter *param)
 {
   deltacloud_free_parameter_value(param);
   SAFE_FREE(param);
 }
 
+/**
+ * A function to determine if the deltacloud_api structure contains a particular
+ * link.  This can be used to determine if the deltacloud server on the other
+ * end supports certain features.
+ * @param[in] api The deltacloud_api structure representing this connection
+ * @param[in] name The feature to find
+ * @returns 1 if the feature is supported, 0 if the feature is not supported,
+ *          and -1 on error
+ */
 int deltacloud_has_link(struct deltacloud_api *api, const char *name)
 {
   struct deltacloud_link *link;
@@ -232,6 +306,11 @@ int deltacloud_has_link(struct deltacloud_api *api, const char *name)
   return 0;
 }
 
+/**
+ * A function to free up a deltacloud_api structure originally configured
+ * through deltacloud_initialize().
+ * @param[in] api The deltacloud_api structure to free
+ */
 void deltacloud_free(struct deltacloud_api *api)
 {
   if (!valid_api(api))

@@ -25,14 +25,17 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing a single deltacloud image.
+ */
 struct deltacloud_image {
-  char *href;
-  char *id;
-  char *description;
-  char *architecture;
-  char *owner_id;
-  char *name;
-  char *state;
+  char *href; /**< The full URL to this image */
+  char *id; /**< The ID of this image */
+  char *description; /**< The description of this image */
+  char *architecture; /**< The architecture of this image */
+  char *owner_id; /**< The owner ID of this image */
+  char *name; /**< The name of this image */
+  char *state; /**< The current state of this image */
 
   struct deltacloud_image *next;
 };

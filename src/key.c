@@ -24,6 +24,8 @@
 #include "common.h"
 #include "key.h"
 
+/** @file */
+
 static int parse_one_key(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			 void *output)
 {
@@ -83,12 +85,31 @@ static int parse_key_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
   return ret;
 }
 
+/**
+ * A function to get a linked list of all of the keys.  The caller
+ * is expected to free the list using deltacloud_free_key_list().
+ * @param[in] api The deltacloud_api structure representing this connection
+ * @param[out] keys A pointer to the deltacloud_key structure to hold the list
+ *                  of keys
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_get_keys(struct deltacloud_api *api,
 			struct deltacloud_key **keys)
 {
   return internal_get(api, "keys", "keys", parse_key_xml, (void **)keys);
 }
 
+/**
+ * A function to create a new key.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] name The name to give to the new key
+ * @param[in] params An array of deltacloud_create_parameter structures that
+ *                   represent any optional parameters to pass into the
+ *                   create call
+ * @param[in] params_length An integer describing the length of the params
+ *                          array
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_create_key(struct deltacloud_api *api, const char *name,
 			  struct deltacloud_create_parameter *params,
 			  int params_length)
@@ -134,6 +155,12 @@ int deltacloud_create_key(struct deltacloud_api *api, const char *name,
   return ret;
 }
 
+/**
+ * A function to destroy a key.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] key The deltacloud_key structure representing the key
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_key_destroy(struct deltacloud_api *api,
 			   struct deltacloud_key *key)
 {
@@ -143,12 +170,25 @@ int deltacloud_key_destroy(struct deltacloud_api *api,
   return internal_destroy(key->href, api->user, api->password);
 }
 
+/**
+ * A function to look up a particular key by id.  The caller is expected
+ * to free the deltacloud_key structure using deltacloud_free_key().
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] id The key ID to look for
+ * @param[out] key The deltacloud_key structure to fill in if the ID is found
+ * @returns 0 on success, -1 if the key cannot be found or on error
+ */
 int deltacloud_get_key_by_id(struct deltacloud_api *api, const char *id,
 			     struct deltacloud_key *key)
 {
   return internal_get_by_id(api, id, "keys", "key", parse_one_key, key);
 }
 
+/**
+ * A function to free a deltacloud_key structure initially allocated
+ * by deltacloud_get_key_by_id().
+ * @param[in] key The deltacloud_key structure representing the key
+ */
 void deltacloud_free_key(struct deltacloud_key *key)
 {
   if (key == NULL)
@@ -161,6 +201,11 @@ void deltacloud_free_key(struct deltacloud_key *key)
   SAFE_FREE(key->fingerprint);
 }
 
+/**
+ * A function to free a list of deltacloud_key structures initially
+ * allocated by deltacloud_get_keys().
+ * @param[in] keys The pointer to the head of the deltacloud_key list
+ */
 void deltacloud_free_key_list(struct deltacloud_key **keys)
 {
   free_list(keys, struct deltacloud_key, deltacloud_free_key);

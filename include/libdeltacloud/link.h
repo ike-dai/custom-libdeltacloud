@@ -25,16 +25,22 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing a single feature.
+ */
 struct deltacloud_feature {
-  char *name;
+  char *name; /**< The name of the feature */
 
   struct deltacloud_feature *next;
 };
 
+/**
+ * A structure representing a single link.
+ */
 struct deltacloud_link {
-  char *href;
-  char *rel;
-  struct deltacloud_feature *features;
+  char *href; /**< The full URL to the resource */
+  char *rel; /**< The relative name of the resource */
+  struct deltacloud_feature *features; /**< A list of features associated with the link */
 
   struct deltacloud_link *next;
 };

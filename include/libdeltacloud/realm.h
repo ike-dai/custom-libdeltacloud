@@ -25,12 +25,15 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing a single realm.
+ */
 struct deltacloud_realm {
-  char *href;
-  char *id;
-  char *name;
-  char *limit;
-  char *state;
+  char *href; /**< The full URL to this realm */
+  char *id; /**< The ID of this realm */
+  char *name; /**< The name of this realm */
+  char *limit; /**< The limit of this realm */
+  char *state; /**< The state of this realm */
 
   struct deltacloud_realm *next;
 };

@@ -25,27 +25,37 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing the storage volume capacity.
+ */
 struct deltacloud_storage_volume_capacity {
-  char *unit;
-  char *size;
+  char *unit; /**< The units the capacity is specified in (MB, GB, etc) */
+  char *size; /**< The size of the storage volume */
 };
 
+/**
+ * A structure representing a single storage volume mount.  This structure
+ * is populated if a storage volume is mounted to an instance.
+ */
 struct deltacloud_storage_volume_mount {
-  char *instance_href;
-  char *instance_id;
-  char *device_name;
+  char *instance_href; /**< The full URL to the instance this storage volume is attached to */
+  char *instance_id; /**< The ID of the instance this storage volume is attached to */
+  char *device_name; /**< The device this storage volume is attached as */
 };
 
+/**
+ * A structure representing a single storage volume.
+ */
 struct deltacloud_storage_volume {
-  char *href;
-  char *id;
-  char *created;
-  char *state;
-  struct deltacloud_storage_volume_capacity capacity;
-  char *device;
-  char *instance_href;
-  char *realm_id;
-  struct deltacloud_storage_volume_mount mount;
+  char *href; /**< The full URL to this storage volume */
+  char *id; /**< The ID of this storage volume */
+  char *created; /**< The time this storage volume was created */
+  char *state; /**< The state of this storage volume */
+  struct deltacloud_storage_volume_capacity capacity; /**< The capacity of this storage volume */
+  char *device; /**< The device this storage volume is attached as */
+  char *instance_href; /**< The full URL to the instance this storage volume is attached to */
+  char *realm_id; /**< The ID of the realm this storage volume is in */
+  struct deltacloud_storage_volume_mount mount; /**< The device this storage volume is mounted as */
 
   struct deltacloud_storage_volume *next;
 };

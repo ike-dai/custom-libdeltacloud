@@ -24,6 +24,8 @@
 #include "common.h"
 #include "image.h"
 
+/** @file */
+
 static int parse_one_image(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			   void *output)
 {
@@ -86,6 +88,14 @@ static int parse_image_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
+/**
+ * A function to get a linked list of all of the images.  The caller
+ * is expected to free the list using deltacloud_free_image_list().
+ * @param[in] api The deltacloud_api structure representing this connection
+ * @param[out] images A pointer to the deltacloud_image structure to hold
+ *                    the list of images
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_get_images(struct deltacloud_api *api,
 			  struct deltacloud_image **images)
 {
@@ -93,12 +103,32 @@ int deltacloud_get_images(struct deltacloud_api *api,
 		      (void **)images);
 }
 
+/**
+ * A function to look up a particular image by id.  The caller is expected
+ * to free the deltacloud_image structure using deltacloud_free_image().
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] id The image ID to look for
+ * @param[out] image The deltacloud_image structure to fill in if the ID
+ *                   is found
+ * @returns 0 on success, -1 if the image cannot be found or on error
+ */
 int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
 			       struct deltacloud_image *image)
 {
   return internal_get_by_id(api, id, "images", "image", parse_one_image, image);
 }
 
+/**
+ * A function to create a new image from a running instance.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] instance_id The instance ID to create the image from
+ * @param[in] params An array of deltacloud_create_parameter structures that
+ *                   represent any optional parameters to pass into the
+ *                   create call
+ * @param[in] params_length An integer describing the length of the params
+ *                          array
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_create_image(struct deltacloud_api *api, const char *instance_id,
 			    struct deltacloud_create_parameter *params,
 			    int params_length)
@@ -144,6 +174,11 @@ int deltacloud_create_image(struct deltacloud_api *api, const char *instance_id,
   return ret;
 }
 
+/**
+ * A function to free a deltacloud_image structure initially allocated
+ * by deltacloud_get_image_by_id().
+ * @param[in] image The deltacloud_image structure representing the image
+ */
 void deltacloud_free_image(struct deltacloud_image *image)
 {
   if (image == NULL)
@@ -158,6 +193,11 @@ void deltacloud_free_image(struct deltacloud_image *image)
   SAFE_FREE(image->state);
 }
 
+/**
+ * A function to free a list of deltacloud_image structures initially allocated
+ * by deltacloud_get_images().
+ * @param[in] images The pointer to the head of the deltacloud_image list
+ */
 void deltacloud_free_image_list(struct deltacloud_image **images)
 {
   free_list(images, struct deltacloud_image, deltacloud_free_image);

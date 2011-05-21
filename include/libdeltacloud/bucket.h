@@ -25,32 +25,41 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing a single piece of blob metadata.
+ */
 struct deltacloud_bucket_blob_metadata {
-  char *key;
-  char *value;
+  char *key; /**< The key for this piece of metadata */
+  char *value; /**< The value for this piece of metadata */
 
   struct deltacloud_bucket_blob_metadata *next;
 };
 
+/**
+ * A structure representing a single blob inside of a bucket.
+ */
 struct deltacloud_bucket_blob {
-  char *href;
-  char *id;
-  char *bucket_id;
-  char *content_length;
-  char *content_type;
-  char *last_modified;
-  char *content_href;
-  struct deltacloud_bucket_blob_metadata *metadata;
+  char *href; /**< The full URL to this blob */
+  char *id; /**< The ID for this blob */
+  char *bucket_id; /**< The ID of the bucket this blob is stored in */
+  char *content_length; /**< The length of this blob */
+  char *content_type; /**< The Content-Type of this blob */
+  char *last_modified; /**< The last time this blob was modified */
+  char *content_href; /**< A URL to the content for this blob */
+  struct deltacloud_bucket_blob_metadata *metadata; /**< A list of all of the metadata associated with this blob */
 
   struct deltacloud_bucket_blob *next;
 };
 
+/**
+ * A structure representing a single bucket.
+ */
 struct deltacloud_bucket {
-  char *href;
-  char *id;
-  char *name;
-  char *size;
-  struct deltacloud_bucket_blob *blobs;
+  char *href; /**< The full URL to this bucket */
+  char *id; /**< The ID for this bucket */
+  char *name; /**< The name for this bucket */
+  char *size; /**< The size of all of the objects inside of this bucket */
+  struct deltacloud_bucket_blob *blobs; /**< A list of all of the blobs stored in this bucket */
 
   struct deltacloud_bucket *next;
 };

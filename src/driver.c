@@ -24,6 +24,8 @@
 #include "common.h"
 #include "driver.h"
 
+/** @file */
+
 static void free_provider(struct deltacloud_driver_provider *provider)
 {
   SAFE_FREE(provider->id);
@@ -114,6 +116,14 @@ static int parse_driver_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
+/**
+ * A function to get a linked list of all of the drivers supported.  The caller
+ * is expected to free the list using deltacloud_free_driver_list().
+ * @param[in] api The deltacloud_api structure representing this connection
+ * @param[out] drivers A pointer to the deltacloud_driver structure to hold
+ *                     the list of drivers
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_get_drivers(struct deltacloud_api *api,
 			   struct deltacloud_driver **drivers)
 {
@@ -121,6 +131,15 @@ int deltacloud_get_drivers(struct deltacloud_api *api,
 		      (void **)drivers);
 }
 
+/**
+ * A function to look up a particular driver by id.  The caller is expected
+ * to free the deltacloud_driver structure using deltacloud_free_driver().
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] id The driver ID to look for
+ * @param[out] driver The deltacloud_driver structure to fill in if the ID
+ *                    is found
+ * @returns 0 on success, -1 if the driver cannot be found or on error
+ */
 int deltacloud_get_driver_by_id(struct deltacloud_api *api, const char *id,
 				struct deltacloud_driver *driver)
 {
@@ -128,6 +147,11 @@ int deltacloud_get_driver_by_id(struct deltacloud_api *api, const char *id,
 			    driver);
 }
 
+/**
+ * A function to free a deltacloud_driver structure initially allocated
+ * by deltacloud_get_driver_by_id().
+ * @param[in] driver The deltacloud_driver structure representing the driver
+ */
 void deltacloud_free_driver(struct deltacloud_driver *driver)
 {
   if (driver == NULL)
@@ -139,6 +163,11 @@ void deltacloud_free_driver(struct deltacloud_driver *driver)
   free_provider_list(&driver->providers);
 }
 
+/**
+ * A function to free a list of deltacloud_driver structures initially allocated
+ * by deltacloud_get_drivers().
+ * @param[in] drivers The pointer to the head of the deltacloud_driver list
+ */
 void deltacloud_free_driver_list(struct deltacloud_driver **drivers)
 {
   free_list(drivers, struct deltacloud_driver, deltacloud_free_driver);

@@ -29,32 +29,43 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing a single listener for this load balancer.  A
+ * listener consists of a protocol (TCP, HTTP, etc), a port that the load
+ * balancer listens on, and a port that the load balancer balances to.
+ */
 struct deltacloud_loadbalancer_listener {
-  char *protocol;
-  char *load_balancer_port;
-  char *instance_port;
+  char *protocol; /**< The protocol to listen for */
+  char *load_balancer_port; /**< The port the load balancer listens on */
+  char *instance_port; /**< The port on the instance the load balancer balances to */
 
   struct deltacloud_loadbalancer_listener *next;
 };
 
+/**
+ * A structure representing a single instance connected to a load balancer.
+ */
 struct deltacloud_loadbalancer_instance {
-  char *href;
-  char *id;
-  struct deltacloud_link *links;
+  char *href; /**< The full URL to the instance */
+  char *id; /**< The ID of the instance */
+  struct deltacloud_link *links; /**< A list of links */
 
   struct deltacloud_loadbalancer_instance *next;
 };
 
+/**
+ * A structure representing a single load balancer.
+ */
 struct deltacloud_loadbalancer {
-  char *href;
-  char *id;
-  struct deltacloud_action *actions;
-  struct deltacloud_address *public_addresses;
-  char *created_at;
-  char *realm_href;
-  char *realm_id;
-  struct deltacloud_loadbalancer_listener *listeners;
-  struct deltacloud_loadbalancer_instance *instances;
+  char *href; /**< The full URL to the load balancer */
+  char *id; /**< The ID of the load balancer */
+  struct deltacloud_action *actions; /**< A list of actions that can be taken on this load balancer */
+  struct deltacloud_address *public_addresses; /**< A list of public addresses assigned to this load balancer */
+  char *created_at; /**< The time at which this load balancer was created */
+  char *realm_href; /**< The full URL to the realm this load balancer is in */
+  char *realm_id; /**< The ID of the realm this load balancer is in */
+  struct deltacloud_loadbalancer_listener *listeners; /**< A list of protocols/ports that this load balancer is listening on */
+  struct deltacloud_loadbalancer_instance *instances; /**< A list of instances attached to this load balancer */
 
   struct deltacloud_loadbalancer *next;
 };

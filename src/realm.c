@@ -24,6 +24,8 @@
 #include "common.h"
 #include "realm.h"
 
+/** @file */
+
 static int parse_one_realm(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			   void *output)
 {
@@ -84,6 +86,14 @@ static int parse_realm_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   return ret;
 }
 
+/**
+ * A function to get a linked list of all of the realms.  The caller
+ * is expected to free the list using deltacloud_free_realm_list().
+ * @param[in] api The deltacloud_api structure representing this connection
+ * @param[out] realms A pointer to the deltacloud_realm structure to hold the
+ *                    list of realms
+ * @returns 0 on success, -1 on error
+ */
 int deltacloud_get_realms(struct deltacloud_api *api,
 			  struct deltacloud_realm **realms)
 {
@@ -91,12 +101,26 @@ int deltacloud_get_realms(struct deltacloud_api *api,
 		      (void **)realms);
 }
 
+/**
+ * A function to look up a particular realm by id.  The caller is expected
+ * to free the deltacloud_realm structure using deltacloud_free_realm().
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] id The realm ID to look for
+ * @param[out] realm The deltacloud_realm structure to fill in if the ID is
+ *                   found
+ * @returns 0 on success, -1 if the realm cannot be found or on error
+ */
 int deltacloud_get_realm_by_id(struct deltacloud_api *api, const char *id,
 			       struct deltacloud_realm *realm)
 {
   return internal_get_by_id(api, id, "realms", "realm", parse_one_realm, realm);
 }
 
+/**
+ * A function to free a deltacloud_realm structure initially allocated
+ * by deltacloud_get_realm_by_id().
+ * @param[in] realm The deltacloud_realm structure representing the realm
+ */
 void deltacloud_free_realm(struct deltacloud_realm *realm)
 {
   if (realm == NULL)
@@ -109,6 +133,11 @@ void deltacloud_free_realm(struct deltacloud_realm *realm)
   SAFE_FREE(realm->state);
 }
 
+/**
+ * A function to free a list of deltacloud_realm structures initially
+ * allocated by deltacloud_get_realms().
+ * @param[in] realms The pointer to the head of the deltacloud_realm list
+ */
 void deltacloud_free_realm_list(struct deltacloud_realm **realms)
 {
   free_list(realms, struct deltacloud_realm, deltacloud_free_realm);

@@ -25,17 +25,23 @@
 extern "C" {
 #endif
 
+/**
+ * A structure representing a single deltacloud provider for a driver.
+ */
 struct deltacloud_driver_provider {
-  char *id;
+  char *id; /**< The ID of this driver provider */
 
   struct deltacloud_driver_provider *next;
 };
 
+/**
+ * A structure representing a single deltacloud driver.
+ */
 struct deltacloud_driver {
-  char *href;
-  char *id;
-  char *name;
-  struct deltacloud_driver_provider *providers;
+  char *href; /**< The full URL to this driver */
+  char *id; /**< The ID of this driver */
+  char *name; /**< The name of this driver */
+  struct deltacloud_driver_provider *providers; /**< A list of providers for this driver */
 
   struct deltacloud_driver *next;
 };
