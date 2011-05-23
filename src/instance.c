@@ -234,12 +234,10 @@ static int instance_action(struct deltacloud_api *api,
   return ret;
 }
 
-/** @cond INTERNAL */
 struct instance_find {
   struct deltacloud_instance *instance;
   const char *name;
 };
-/** @endcond */
 
 static int find_and_parse_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				   void *data)

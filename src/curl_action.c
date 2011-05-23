@@ -25,12 +25,10 @@
 #include "curl_action.h"
 #include "common.h"
 
-/** @cond INTERNAL */
 struct memory {
   char *data;
   size_t size;
 };
-/** @endcond */
 
 static size_t memory_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
