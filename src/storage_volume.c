@@ -55,8 +55,6 @@ static int parse_one_storage_volume(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 					     ctxt);
   thisvolume->capacity.size = getXPathString("string(./capacity)", ctxt);
   thisvolume->device = getXPathString("string(./device)", ctxt);
-  thisvolume->instance_href = getXPathString("string(./instance/@href)",
-					     ctxt);
   thisvolume->realm_id = getXPathString("string(./realm_id)", ctxt);
   thisvolume->mount.instance_href = getXPathString("string(./mount/instance/@href)",
 						   ctxt);
@@ -350,7 +348,6 @@ void deltacloud_free_storage_volume(struct deltacloud_storage_volume *storage_vo
   SAFE_FREE(storage_volume->state);
   free_capacity(&storage_volume->capacity);
   SAFE_FREE(storage_volume->device);
-  SAFE_FREE(storage_volume->instance_href);
   SAFE_FREE(storage_volume->realm_id);
   free_mount(&storage_volume->mount);
 }

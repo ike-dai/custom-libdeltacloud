@@ -32,7 +32,6 @@ static void print_storage_volume(struct deltacloud_storage_volume *volume)
   fprintf(stderr, "\tCapacity: Unit: %s, Size: %s\n", volume->capacity.unit,
 	  volume->capacity.size);
   fprintf(stderr, "\tDevice: %s\n", volume->device);
-  fprintf(stderr, "\tInstance Href: %s\n", volume->instance_href);
   fprintf(stderr, "\tRealm ID: %s\n", volume->realm_id);
   fprintf(stderr, "\tMount: %s\n", volume->mount.instance_id);
   fprintf(stderr, "\t\tInstance Href: %s\n", volume->mount.instance_href);

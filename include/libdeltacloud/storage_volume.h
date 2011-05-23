@@ -53,7 +53,6 @@ struct deltacloud_storage_volume {
   char *state; /**< The state of this storage volume */
   struct deltacloud_storage_volume_capacity capacity; /**< The capacity of this storage volume */
   char *device; /**< The device this storage volume is attached as */
-  char *instance_href; /**< The full URL to the instance this storage volume is attached to */
   char *realm_id; /**< The ID of the realm this storage volume is in */
   struct deltacloud_storage_volume_mount mount; /**< The device this storage volume is mounted as */
 
