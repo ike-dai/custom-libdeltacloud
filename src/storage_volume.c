@@ -168,7 +168,8 @@ int deltacloud_create_storage_volume(struct deltacloud_api *api,
     return -1;
   }
 
-  if (internal_create(api, "storage_volumes", params, params_length, NULL) < 0)
+  if (internal_create(api, "storage_volumes", params, params_length, NULL,
+		      NULL) < 0)
     /* internal_create already set the error */
     return -1;
 
@@ -265,7 +266,7 @@ int deltacloud_storage_volume_attach(struct deltacloud_api *api,
     goto cleanup;
   }
 
-  rc = internal_post(api, href, internal_params, pos, NULL);
+  rc = internal_post(api, href, internal_params, pos, NULL, NULL);
   SAFE_FREE(href);
   if (rc < 0)
     /* internal_post already set the error */
@@ -323,7 +324,7 @@ int deltacloud_storage_volume_detach(struct deltacloud_api *api,
     return -1;
   }
 
-  rc = internal_post(api, href, params, params_length, NULL);
+  rc = internal_post(api, href, params, params_length, NULL, NULL);
   SAFE_FREE(href);
   if (rc < 0)
     /* internal_post already set the error */

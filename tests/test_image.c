@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
   struct deltacloud_image *images = NULL;
   //struct deltacloud_instance instance;
   //char *instid;
+  //char *imgid;
   //int timeout;
   int ret = 3;
 
@@ -178,7 +179,8 @@ int main(int argc, char *argv[])
       /* if we made it here, then the instance went to running.  We can
        * now do operations on it
        */
-      if (deltacloud_create_image(&api, instance.id, NULL, 0) < 0) {
+      if (deltacloud_create_image(&api, "newimage", &instance, NULL, 0,
+				  &imgid) < 0) {
 	deltacloud_instance_destroy(&api, &instance);
 	deltacloud_free_instance(&instance);
 	fprintf(stderr, "Failed to create image from instance: %s\n",
@@ -186,6 +188,7 @@ int main(int argc, char *argv[])
 	goto cleanup;
       }
 
+      free(imgid);
       deltacloud_instance_destroy(&api, &instance);
       deltacloud_free_instance(&instance);
     }

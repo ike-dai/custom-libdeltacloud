@@ -332,7 +332,7 @@ static int lb_register_unregister(struct deltacloud_api *api,
     goto cleanup;
   }
 
-  rc = internal_post(api, href, internal_params, pos, NULL);
+  rc = internal_post(api, href, internal_params, pos, NULL, NULL);
   SAFE_FREE(href);
   if (rc < 0)
     /* internal_post already set the error */
@@ -450,7 +450,8 @@ int deltacloud_create_loadbalancer(struct deltacloud_api *api, const char *name,
     /* prepare_int_parameter already set the error */
     goto cleanup;
 
-  if (internal_create(api, "load_balancers", internal_params, pos, NULL) < 0)
+  if (internal_create(api, "load_balancers", internal_params, pos, NULL,
+		      NULL) < 0)
     /* internal_create already set the error */
     goto cleanup;
 

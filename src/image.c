@@ -121,23 +121,30 @@ int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
 /**
  * A function to create a new image from a running instance.
  * @param[in] api The deltacloud_api structure representing the connection
- * @param[in] instance_id The instance ID to create the image from
+ * @param[in] name The name for the image
+ * @param[in] instance The deltacloud_instance structure to create the image
+ *                     from
  * @param[in] params An array of deltacloud_create_parameter structures that
  *                   represent any optional parameters to pass into the
  *                   create call
  * @param[in] params_length An integer describing the length of the params
  *                          array
+ * @param[out] image_id The image_id returned by the create call
  * @returns 0 on success, -1 on error
  */
-int deltacloud_create_image(struct deltacloud_api *api, const char *instance_id,
+int deltacloud_create_image(struct deltacloud_api *api, const char *name,
+			    struct deltacloud_instance *instance,
 			    struct deltacloud_create_parameter *params,
-			    int params_length)
+			    int params_length, char **image_id)
 {
   struct deltacloud_create_parameter *internal_params;
   int ret = -1;
   int pos;
+  char *headers = NULL;
+  char *data = NULL;
+  struct deltacloud_image image;
 
-  if (!valid_api(api) || !valid_arg(instance_id))
+  if (!valid_api(api) || !valid_arg(name) || !valid_arg(instance))
     return -1;
 
   if (params_length < 0) {
@@ -145,7 +152,7 @@ int deltacloud_create_image(struct deltacloud_api *api, const char *instance_id,
     return -1;
   }
 
-  internal_params = calloc(params_length + 1,
+  internal_params = calloc(params_length + 2,
 			   sizeof(struct deltacloud_create_parameter));
   if (internal_params == NULL) {
     oom_error();
@@ -157,19 +164,39 @@ int deltacloud_create_image(struct deltacloud_api *api, const char *instance_id,
     /* copy_parameters already set the error */
     goto cleanup;
 
-  if (deltacloud_prepare_parameter(&internal_params[pos++], "instance_id",
-				   instance_id) < 0)
+  if (deltacloud_prepare_parameter(&internal_params[pos++], "name", name) < 0)
     /* deltacloud_prepare_parameter already set the error */
     goto cleanup;
 
-  if (internal_create(api, "images", internal_params, pos, NULL) < 0)
+  if (deltacloud_prepare_parameter(&internal_params[pos++], "instance_id",
+				   instance->id) < 0)
+    /* deltacloud_prepare_parameter already set the error */
     goto cleanup;
+
+  if (internal_create(api, "images", internal_params, pos, &data, &headers) < 0)
+    /* internal_create already set the error */
+    goto cleanup;
+
+  if (image_id != NULL) {
+    if (internal_xml_parse(data, "image", parse_one_image, 1, &image) < 0)
+      /* internal_xml_parse set the error */
+      goto cleanup;
+
+    *image_id = strdup(image.id);
+    deltacloud_free_image(&image);
+    if (*image_id == NULL) {
+      oom_error();
+      goto cleanup;
+    }
+  }
 
   ret = 0;
 
  cleanup:
   free_parameters(internal_params, pos);
   SAFE_FREE(internal_params);
+  SAFE_FREE(data);
+  SAFE_FREE(headers);
 
   return ret;
 }

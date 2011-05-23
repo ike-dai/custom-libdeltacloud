@@ -321,7 +321,8 @@ int deltacloud_create_instance(struct deltacloud_api *api, const char *image_id,
     /* deltacloud_prepare_parameter already set the error */
     goto cleanup;
 
-  if (internal_create(api, "instances", internal_params, pos, &headers) < 0)
+  if (internal_create(api, "instances", internal_params, pos, NULL,
+		      &headers) < 0)
     /* internal_create already set the error */
     goto cleanup;
 

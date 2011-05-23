@@ -168,7 +168,8 @@ int deltacloud_create_storage_snapshot(struct deltacloud_api *api,
     /* deltacloud_create_parameter already set the error */
     goto cleanup;
 
-  if (internal_create(api, "storage_snapshots", internal_params, pos, NULL) < 0)
+  if (internal_create(api, "storage_snapshots", internal_params, pos, NULL,
+		      NULL) < 0)
     /* internal_create already set the error */
     goto cleanup;
 

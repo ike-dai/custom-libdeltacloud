@@ -190,14 +190,16 @@ static int add_safe_value(FILE *fp, const char *name, const char *value)
 
 int internal_post(struct deltacloud_api *api, const char *href,
 		  struct deltacloud_create_parameter *params,
-		  int params_length, char **headers)
+		  int params_length, char **data, char **headers)
 {
   size_t param_string_length;
   FILE *paramfp;
   int ret = -1;
-  char *data = NULL;
   char *param_string = NULL;
   int i;
+
+  *data = NULL;
+  *headers = NULL;
 
   paramfp = open_memstream(&param_string, &param_string_length);
   if (paramfp == NULL) {
@@ -220,13 +222,15 @@ int internal_post(struct deltacloud_api *api, const char *href,
   fclose(paramfp);
   paramfp = NULL;
 
-  if (post_url(href, api->user, api->password, param_string, &data,
+  if (post_url(href, api->user, api->password, param_string, data,
 	       headers) != 0)
     /* post_url sets its own errors, so don't overwrite it here */
     goto cleanup;
 
-  if (data != NULL && is_error_xml(data)) {
-    set_xml_error(data, DELTACLOUD_POST_URL_ERROR);
+  if (*data != NULL && is_error_xml(*data)) {
+    set_xml_error(*data, DELTACLOUD_POST_URL_ERROR);
+    SAFE_FREE(*data);
+    SAFE_FREE(*headers);
     goto cleanup;
   }
 
@@ -236,14 +240,13 @@ int internal_post(struct deltacloud_api *api, const char *href,
   if (paramfp != NULL)
     fclose(paramfp);
   SAFE_FREE(param_string);
-  SAFE_FREE(data);
 
   return ret;
 }
 
 int internal_create(struct deltacloud_api *api, const char *link,
 		    struct deltacloud_create_parameter *params,
-		    int params_length, char **headers)
+		    int params_length, char **data, char **headers)
 {
   struct deltacloud_link *thislink;
 
@@ -252,7 +255,8 @@ int internal_create(struct deltacloud_api *api, const char *link,
     /* api_find_link set the error */
     return -1;
 
-  return internal_post(api, thislink->href, params, params_length, headers);
+  return internal_post(api, thislink->href, params, params_length, data,
+		       headers);
 }
 
 /*

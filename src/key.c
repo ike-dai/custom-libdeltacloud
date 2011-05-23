@@ -142,7 +142,7 @@ int deltacloud_create_key(struct deltacloud_api *api, const char *name,
     /* deltacloud_create_parameter already set the error */
     goto cleanup;
 
-  if (internal_create(api, "keys", internal_params, pos, NULL) < 0)
+  if (internal_create(api, "keys", internal_params, pos, NULL, NULL) < 0)
     /* internal_create already set the error */
     goto cleanup;
 

@@ -278,7 +278,8 @@ int deltacloud_create_bucket(struct deltacloud_api *api,
     /* deltacloud_prepare_parameter already set the error */
     goto cleanup;
 
-  if (internal_create(api, "buckets", internal_params, pos, NULL) < 0)
+  if (internal_create(api, "buckets", internal_params, pos, NULL, NULL) < 0)
+    /* internal_create already set the error */
     goto cleanup;
 
   ret = 0;
@@ -476,7 +477,7 @@ int deltacloud_bucket_blob_update_metadata(struct deltacloud_api *api,
     return -1;
   }
 
-  ret = internal_post(api, bloburl, params, params_length, NULL);
+  ret = internal_post(api, bloburl, params, params_length, NULL, NULL);
 
   SAFE_FREE(bloburl);
 

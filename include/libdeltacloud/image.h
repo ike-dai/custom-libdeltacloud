@@ -45,9 +45,10 @@ int deltacloud_get_images(struct deltacloud_api *api,
 			  struct deltacloud_image **images);
 int deltacloud_get_image_by_id(struct deltacloud_api *api, const char *id,
 			       struct deltacloud_image *image);
-int deltacloud_create_image(struct deltacloud_api *api, const char *instance_id,
+int deltacloud_create_image(struct deltacloud_api *api, const char *name,
+			    struct deltacloud_instance *instance,
 			    struct deltacloud_create_parameter *params,
-			    int params_length);
+			    int params_length, char **image_id);
 void deltacloud_free_image(struct deltacloud_image *image);
 void deltacloud_free_image_list(struct deltacloud_image **images);
 

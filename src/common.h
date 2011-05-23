@@ -44,10 +44,10 @@ void set_curl_error(int errcode, const char *header, CURLcode res);
 int internal_destroy(const char *href, const char *user, const char *password);
 int internal_post(struct deltacloud_api *api, const char *href,
 		  struct deltacloud_create_parameter *params,
-		  int params_length, char **headers);
+		  int params_length, char **data, char **headers);
 int internal_create(struct deltacloud_api *api, const char *link,
 		    struct deltacloud_create_parameter *params,
-		    int params_length, char **headers);
+		    int params_length, char **data, char **headers);
 int internal_get(struct deltacloud_api *api, const char *relname,
 		 const char *rootname,
 		 int (*xml_cb)(xmlNodePtr, xmlXPathContextPtr, void **),
