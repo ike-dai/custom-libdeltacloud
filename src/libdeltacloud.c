@@ -31,6 +31,85 @@
 
 /** @file */
 
+/** \mainpage libdeltacloud main page
+ * \section Introduction
+ * libdeltacloud is a library for accessing the deltacloud API through a
+ * convenient C library.
+ * \section api_abi_stability API and ABI stability
+ * As of version 0.9, libdeltacloud is mostly API, but not ABI, stable.  The
+ * difference between the two is subtle but important.  A library that is ABI
+ * (Application Binary Interface) stable means that programs that use the
+ * library will not need to be modified nor re-compiled when a new version of
+ * the library comes out.  A library that is API (Application Programming
+ * Interface) stable means that programs that use the library will not need
+ * to be modified, but may need to be re-compiled when a new version of the
+ * library comes out.  That is because the sizes of structures in the library
+ * might change, and a mis-match between what the library thinks the size of
+ * a structure is and what the program thinks the size of a structure is is
+ * a recipe for disaster.
+ *
+ * Due to the magic of libtool versioning, programs built against an older
+ * version of libdeltacloud will refuse to run against a newer version of
+ * libdeltacloud if the size of the structures has changed.  If this happens,
+ * then the program must be recompiled against the newer libdeltacloud.
+ * \section examples Examples
+ * \subsection example1 Connect to deltacloud
+ * \code
+ * #include <stdio.h>
+ * #include <stdlib.h>
+ * #include <libdeltacloud/libdeltacloud.h>
+ *
+ * int main()
+ * {
+ *   struct deltacloud_api api;
+ *
+ *   if (deltacloud_initialize(&api, "http://localhost:3001/api", "mockuser",
+ *                             "mockpassword") < 0) {
+ *       fprintf(stderr, "Failed to initialize libdeltacloud: %s\n",
+ *               deltacloud_get_last_error_string());
+ *       return 1;
+ *   }
+ *
+ *   deltacloud_free(&api);
+ *   return 0;
+ * }
+ * \endcode
+ * \subsection example2 List all running instances
+ * \code
+ * #include <stdio.h>
+ * #include <stdlib.h>
+ * #include <libdeltacloud/libdeltacloud.h>
+ *
+ * int main()
+ * {
+ *   struct deltacloud_api api;
+ *   struct deltacloud_instances *instances = NULL;
+ *   int ret = 2;
+ *
+ *   if (deltacloud_initialize(&api, "http://localhost:3001/api", "mockuser",
+ *                             "mockpassword") < 0) {
+ *       fprintf(stderr, "Failed to initialize libdeltacloud: %s\n",
+ *               deltacloud_get_last_error_string());
+ *       return 1;
+ *   }
+ *
+ *   if (deltacloud_get_instances(&api, &instances) < 0) {
+ *       fprintf(stderr, "Failed to get deltacloud instances: %s\n",
+ *               deltacloud_get_last_error_string());
+ *       goto cleanup;
+ *   }
+ *
+ *   deltacloud_free_instance_list(&instances);
+ *
+ *   ret = 0;
+ *
+ *  cleanup:
+ *   deltacloud_free(&api);
+ *   return ret;
+ * }
+ * \endcode
+ */
+
 /* On first initialization of the library we setup a per-thread local
  * variable to hold errors.  If one of the API calls subsequently fails,
  * then we set the per-thread variable with details of the failure.
