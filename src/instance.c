@@ -106,6 +106,11 @@ static int parse_one_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   }
   xmlXPathFreeObject(privset);
 
+  thisinst->auth.type = getXPathString("string(./authentication/@type)", ctxt);
+  thisinst->auth.keyname = getXPathString("string(./authentication/login/keyname)", ctxt);
+  thisinst->auth.username = getXPathString("string(./authentication/login/username)", ctxt);
+  thisinst->auth.password = getXPathString("string(./authentication/login/password)", ctxt);
+
   return 0;
 }
 

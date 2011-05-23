@@ -30,6 +30,20 @@ extern "C" {
 #endif
 
 /**
+ * A structure representing an instance authentication method.  Each instance
+ * only has a single authentication method, which may either be via key or
+ * via username/password (not both).
+ */
+struct deltacloud_instance_auth {
+  char *type; /**< The type of authentication method in use */
+
+  char *keyname; /**< The name of the key to connect to the instance */
+
+  char *username; /**< The username to use to connect to the instance */
+  char *password; /**< The password to use to connect to the instance */
+};
+
+/**
  * A structure representing a single deltacloud instance.
  */
 struct deltacloud_instance {
@@ -47,6 +61,7 @@ struct deltacloud_instance {
   struct deltacloud_action *actions; /**< A list of actions that can be taken on this instance */
   struct deltacloud_address *public_addresses; /**< A list of the public addresses assigned to this instance */
   struct deltacloud_address *private_addresses; /**< A list of the private addresses assigned to this instance */
+  struct deltacloud_instance_auth auth; /**< The authentication method used to connect to this instance */
 
   struct deltacloud_instance *next;
 };
