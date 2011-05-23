@@ -229,6 +229,47 @@ static int instance_action(struct deltacloud_api *api,
   return ret;
 }
 
+/** @cond INTERNAL */
+struct instance_find {
+  struct deltacloud_instance *instance;
+  const char *name;
+};
+/** @endcond */
+
+static int find_and_parse_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				   void *data)
+{
+  struct instance_find *finder = (struct instance_find *)data;
+  char *instname;
+
+  while (cur != NULL) {
+    if (cur->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)cur->name, "instance")) {
+
+      ctxt->node = cur;
+      instname = getXPathString("string(./name)", ctxt);
+      if (STREQ(instname, finder->name)) {
+	SAFE_FREE(instname);
+	if (parse_one_instance(cur, ctxt, finder->instance) < 0)
+	  /* parse_one_instance set the error */
+	  return -1;
+	break;
+      }
+      SAFE_FREE(instname);
+    }
+
+    cur = cur->next;
+  }
+
+  if (cur == NULL) {
+    set_error(DELTACLOUD_NAME_NOT_FOUND_ERROR,
+	      "Failed to find instance in instances list");
+    return -1;
+  }
+
+  return 0;
+}
+
 /**
  * A function to create a new instance from an image.
  * @param[in] api The deltacloud_api structure representing the connection
@@ -386,47 +427,6 @@ int deltacloud_get_instance_by_id(struct deltacloud_api *api, const char *id,
 {
   return internal_get_by_id(api, id, "instances", "instance",
 			    parse_one_instance, instance);
-}
-
-/** @cond INTERNAL */
-struct instance_find {
-  struct deltacloud_instance *instance;
-  const char *name;
-};
-/** @endcond */
-
-static int find_and_parse_instance(xmlNodePtr cur, xmlXPathContextPtr ctxt,
-				   void *data)
-{
-  struct instance_find *finder = (struct instance_find *)data;
-  char *instname;
-
-  while (cur != NULL) {
-    if (cur->type == XML_ELEMENT_NODE &&
-	STREQ((const char *)cur->name, "instance")) {
-
-      ctxt->node = cur;
-      instname = getXPathString("string(./name)", ctxt);
-      if (STREQ(instname, finder->name)) {
-	SAFE_FREE(instname);
-	if (parse_one_instance(cur, ctxt, finder->instance) < 0)
-	  /* parse_one_instance set the error */
-	  return -1;
-	break;
-      }
-      SAFE_FREE(instname);
-    }
-
-    cur = cur->next;
-  }
-
-  if (cur == NULL) {
-    set_error(DELTACLOUD_NAME_NOT_FOUND_ERROR,
-	      "Failed to find instance in instances list");
-    return -1;
-  }
-
-  return 0;
 }
 
 /**

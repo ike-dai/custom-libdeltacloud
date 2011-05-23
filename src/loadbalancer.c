@@ -283,6 +283,70 @@ static int prepare_int_parameter(struct deltacloud_create_parameter *param,
   return 0;
 }
 
+static int lb_register_unregister(struct deltacloud_api *api,
+				  struct deltacloud_loadbalancer *balancer,
+				  const char *instance_id,
+				  struct deltacloud_create_parameter *params,
+				  int params_length,
+				  const char *link)
+{
+  struct deltacloud_link *thislink;
+  struct deltacloud_create_parameter *internal_params;
+  char *href;
+  int ret = -1;
+  int pos;
+  int rc;
+
+  if (!valid_api(api) || !valid_arg(balancer) || !valid_arg(instance_id))
+    return -1;
+
+  if (params_length < 0) {
+    invalid_argument_error("params_length must be >= 0");
+    return -1;
+  }
+
+  thislink = api_find_link(api, "load_balancers");
+  if (thislink == NULL)
+    /* api_find_link set the error */
+    return -1;
+
+  internal_params = calloc(params_length + 1,
+			   sizeof(struct deltacloud_create_parameter));
+  if (internal_params == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  pos = copy_parameters(internal_params, params, params_length);
+  if (pos < 0)
+    /* copy_parameters already set the error */
+    goto cleanup;
+
+  if (deltacloud_prepare_parameter(&internal_params[pos++], "instance_id",
+				   instance_id) < 0)
+    /* deltacloud_prepare_parameter already set the error */
+    goto cleanup;
+
+  if (asprintf(&href, "%s/%s/%s", thislink->href, balancer->id, link) < 0) {
+    oom_error();
+    goto cleanup;
+  }
+
+  rc = internal_post(api, href, internal_params, pos, NULL);
+  SAFE_FREE(href);
+  if (rc < 0)
+    /* internal_post already set the error */
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  free_parameters(internal_params, pos);
+  SAFE_FREE(internal_params);
+
+  return ret;
+}
+
 /**
  * A function to get a linked list of all of the load balancers.  The caller
  * is expected to free the list using deltacloud_free_loadbalancer_list().
@@ -388,70 +452,6 @@ int deltacloud_create_loadbalancer(struct deltacloud_api *api, const char *name,
 
   if (internal_create(api, "load_balancers", internal_params, pos, NULL) < 0)
     /* internal_create already set the error */
-    goto cleanup;
-
-  ret = 0;
-
- cleanup:
-  free_parameters(internal_params, pos);
-  SAFE_FREE(internal_params);
-
-  return ret;
-}
-
-static int lb_register_unregister(struct deltacloud_api *api,
-				  struct deltacloud_loadbalancer *balancer,
-				  const char *instance_id,
-				  struct deltacloud_create_parameter *params,
-				  int params_length,
-				  const char *link)
-{
-  struct deltacloud_link *thislink;
-  struct deltacloud_create_parameter *internal_params;
-  char *href;
-  int ret = -1;
-  int pos;
-  int rc;
-
-  if (!valid_api(api) || !valid_arg(balancer) || !valid_arg(instance_id))
-    return -1;
-
-  if (params_length < 0) {
-    invalid_argument_error("params_length must be >= 0");
-    return -1;
-  }
-
-  thislink = api_find_link(api, "load_balancers");
-  if (thislink == NULL)
-    /* api_find_link set the error */
-    return -1;
-
-  internal_params = calloc(params_length + 1,
-			   sizeof(struct deltacloud_create_parameter));
-  if (internal_params == NULL) {
-    oom_error();
-    return -1;
-  }
-
-  pos = copy_parameters(internal_params, params, params_length);
-  if (pos < 0)
-    /* copy_parameters already set the error */
-    goto cleanup;
-
-  if (deltacloud_prepare_parameter(&internal_params[pos++], "instance_id",
-				   instance_id) < 0)
-    /* deltacloud_prepare_parameter already set the error */
-    goto cleanup;
-
-  if (asprintf(&href, "%s/%s/%s", thislink->href, balancer->id, link) < 0) {
-    oom_error();
-    goto cleanup;
-  }
-
-  rc = internal_post(api, href, internal_params, pos, NULL);
-  SAFE_FREE(href);
-  if (rc < 0)
-    /* internal_post already set the error */
     goto cleanup;
 
   ret = 0;
