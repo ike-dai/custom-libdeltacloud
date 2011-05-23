@@ -126,24 +126,28 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 /**
  * A function to create a new storage snapshot.
  * @param[in] api The deltacloud_api structure representing the connection
- * @param[in] volume_id The volume ID to take the snapshot from
+ * @param[in] volume The volume to take the snapshot from
  * @param[in] params An array of deltacloud_create_parameter structures that
  *                   represent any optional parameters to pass into the
  *                   create call
  * @param[in] params_length An integer describing the length of the params
  *                          array
+ * @param[out] snap_id The snapshot_id returned by the create call
  * @returns 0 on success, -1 on error
  */
 int deltacloud_create_storage_snapshot(struct deltacloud_api *api,
-				       const char *volume_id,
+				       struct deltacloud_storage_volume *volume,
 				       struct deltacloud_create_parameter *params,
-				       int params_length)
+				       int params_length,
+				       char **snap_id)
 {
   struct deltacloud_create_parameter *internal_params;
+  struct deltacloud_storage_snapshot snap;
+  char *data = NULL;
   int ret = -1;
   int pos;
 
-  if (!valid_api(api) || !valid_arg(volume_id))
+  if (!valid_api(api) || !valid_arg(volume))
     return -1;
 
   if (params_length < 0) {
@@ -164,20 +168,35 @@ int deltacloud_create_storage_snapshot(struct deltacloud_api *api,
     goto cleanup;
 
   if (deltacloud_prepare_parameter(&internal_params[pos++], "volume_id",
-				   volume_id) < 0)
+				   volume->id) < 0)
     /* deltacloud_create_parameter already set the error */
     goto cleanup;
 
-  if (internal_create(api, "storage_snapshots", internal_params, pos, NULL,
+  if (internal_create(api, "storage_snapshots", internal_params, pos, &data,
 		      NULL) < 0)
     /* internal_create already set the error */
     goto cleanup;
+
+  if (snap_id != NULL) {
+    if (internal_xml_parse(data, "storage_snapshot", parse_one_storage_snapshot,
+			   1, &snap) < 0)
+      /* internal_xml_parse set the error */
+      goto cleanup;
+
+    *snap_id = strdup(snap.id);
+    deltacloud_free_storage_snapshot(&snap);
+    if (*snap_id == NULL) {
+      oom_error();
+      goto cleanup;
+    }
+  }
 
   ret = 0;
 
  cleanup:
   free_parameters(internal_params, pos);
   SAFE_FREE(internal_params);
+  SAFE_FREE(data);
 
   return ret;
 }

@@ -195,11 +195,9 @@ int internal_post(struct deltacloud_api *api, const char *href,
   size_t param_string_length;
   FILE *paramfp;
   int ret = -1;
+  char *internal_data = NULL;
   char *param_string = NULL;
   int i;
-
-  *data = NULL;
-  *headers = NULL;
 
   paramfp = open_memstream(&param_string, &param_string_length);
   if (paramfp == NULL) {
@@ -222,17 +220,20 @@ int internal_post(struct deltacloud_api *api, const char *href,
   fclose(paramfp);
   paramfp = NULL;
 
-  if (post_url(href, api->user, api->password, param_string, data,
+  if (post_url(href, api->user, api->password, param_string, &internal_data,
 	       headers) != 0)
     /* post_url sets its own errors, so don't overwrite it here */
     goto cleanup;
 
-  if (*data != NULL && is_error_xml(*data)) {
-    set_xml_error(*data, DELTACLOUD_POST_URL_ERROR);
-    SAFE_FREE(*data);
-    SAFE_FREE(*headers);
+  if (internal_data != NULL && is_error_xml(internal_data)) {
+    set_xml_error(internal_data, DELTACLOUD_POST_URL_ERROR);
+    if (headers != NULL)
+      SAFE_FREE(*headers);
     goto cleanup;
   }
+
+  if (data != NULL)
+    *data = strdup(internal_data);
 
   ret = 0;
 
@@ -240,6 +241,7 @@ int internal_post(struct deltacloud_api *api, const char *href,
   if (paramfp != NULL)
     fclose(paramfp);
   SAFE_FREE(param_string);
+  SAFE_FREE(internal_data);
 
   return ret;
 }

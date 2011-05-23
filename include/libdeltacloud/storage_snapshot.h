@@ -46,9 +46,10 @@ int deltacloud_get_storage_snapshot_by_id(struct deltacloud_api *api,
 					  const char *id,
 					  struct deltacloud_storage_snapshot *storage_snapshot);
 int deltacloud_create_storage_snapshot(struct deltacloud_api *api,
-				       const char *volume_id,
+				       struct deltacloud_storage_volume *volume,
 				       struct deltacloud_create_parameter *params,
-				       int params_length);
+				       int params_length,
+				       char **snap_id);
 int deltacloud_storage_snapshot_destroy(struct deltacloud_api *api,
 					struct deltacloud_storage_snapshot *storage_snapshot);
 void deltacloud_free_storage_snapshot(struct deltacloud_storage_snapshot *storage_snapshot);

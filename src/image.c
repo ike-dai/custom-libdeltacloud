@@ -140,7 +140,6 @@ int deltacloud_create_image(struct deltacloud_api *api, const char *name,
   struct deltacloud_create_parameter *internal_params;
   int ret = -1;
   int pos;
-  char *headers = NULL;
   char *data = NULL;
   struct deltacloud_image image;
 
@@ -173,7 +172,7 @@ int deltacloud_create_image(struct deltacloud_api *api, const char *name,
     /* deltacloud_prepare_parameter already set the error */
     goto cleanup;
 
-  if (internal_create(api, "images", internal_params, pos, &data, &headers) < 0)
+  if (internal_create(api, "images", internal_params, pos, &data, NULL) < 0)
     /* internal_create already set the error */
     goto cleanup;
 
@@ -196,7 +195,6 @@ int deltacloud_create_image(struct deltacloud_api *api, const char *name,
   free_parameters(internal_params, pos);
   SAFE_FREE(internal_params);
   SAFE_FREE(data);
-  SAFE_FREE(headers);
 
   return ret;
 }
