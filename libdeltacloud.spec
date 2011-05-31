@@ -66,6 +66,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %attr(0644,root,root) %{_includedir}/libdeltacloud/action.h
 %attr(0644,root,root) %{_includedir}/libdeltacloud/address.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/bucket.h
 %attr(0644,root,root) %{_includedir}/libdeltacloud/driver.h
 %attr(0644,root,root) %{_includedir}/libdeltacloud/hardware_profile.h
 %attr(0644,root,root) %{_includedir}/libdeltacloud/image.h
