@@ -308,14 +308,10 @@ int deltacloud_storage_volume_detach(struct deltacloud_api *api,
     return -1;
   }
 
-  deltacloud_for_each(thislink, api->links) {
-    if (STREQ(thislink->rel, "storage_volumes"))
-      break;
-  }
-  if (thislink == NULL) {
-    link_error("storage_volumes");
+  thislink = api_find_link(api, "storage_volumes");
+  if (thislink == NULL)
+    /* api_find_link set the error */
     return -1;
-  }
 
   if (asprintf(&href, "%s/%s/detach", thislink->href, storage_volume->id) < 0) {
     oom_error();
