@@ -31,11 +31,6 @@ static void free_provider(struct deltacloud_driver_provider *provider)
   SAFE_FREE(provider->id);
 }
 
-static void free_provider_list(struct deltacloud_driver_provider **providers)
-{
-  free_list(providers, struct deltacloud_driver_provider, free_provider);
-}
-
 static int parse_one_driver(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			    void *output)
 {
@@ -161,7 +156,8 @@ void deltacloud_free_driver(struct deltacloud_driver *driver)
   SAFE_FREE(driver->href);
   SAFE_FREE(driver->id);
   SAFE_FREE(driver->name);
-  free_provider_list(&driver->providers);
+  free_list(&driver->providers, struct deltacloud_driver_provider,
+	    free_provider);
 }
 
 /**

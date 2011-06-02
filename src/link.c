@@ -55,16 +55,11 @@ static int parse_feature_xml(xmlNodePtr featurenode,
   return 0;
 }
 
-static void free_feature_list(struct deltacloud_feature **features)
-{
-  free_list(features, struct deltacloud_feature, free_feature);
-}
-
 static void free_link(struct deltacloud_link *link)
 {
   SAFE_FREE(link->href);
   SAFE_FREE(link->rel);
-  free_feature_list(&link->features);
+  free_list(&link->features, struct deltacloud_feature, free_feature);
 }
 
 int parse_link_xml(xmlNodePtr linknode, struct deltacloud_link **links)

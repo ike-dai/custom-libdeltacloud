@@ -34,19 +34,14 @@ static void free_transition(struct deltacloud_instance_state_transition *transit
   SAFE_FREE(transition->auto_bool);
 }
 
-static void free_transition_list(struct deltacloud_instance_state_transition **transitions)
-{
-  free_list(transitions, struct deltacloud_instance_state_transition,
-	    free_transition);
-}
-
 static void free_instance_state(struct deltacloud_instance_state *instance_state)
 {
   if (instance_state == NULL)
     return;
 
   SAFE_FREE(instance_state->name);
-  free_transition_list(&instance_state->transitions);
+  free_list(&instance_state->transitions,
+	    struct deltacloud_instance_state_transition, free_transition);
 }
 
 static int parse_one_instance_state(xmlNodePtr cur, xmlXPathContextPtr ctxt,

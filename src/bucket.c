@@ -34,11 +34,6 @@ static void free_metadata(struct deltacloud_bucket_blob_metadata *metadata)
   SAFE_FREE(metadata->value);
 }
 
-static void free_metadata_list(struct deltacloud_bucket_blob_metadata **metadata)
-{
-  free_list(metadata, struct deltacloud_bucket_blob_metadata, free_metadata);
-}
-
 static int parse_one_blob(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			  void *output)
 {
@@ -196,11 +191,6 @@ static int parse_bucket_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
     deltacloud_free_bucket_list(buckets);
 
   return ret;
-}
-
-static void free_blob_list(struct deltacloud_bucket_blob **blobs)
-{
-  free_list(blobs, struct deltacloud_bucket_blob, deltacloud_free_bucket_blob);
 }
 
 /**
@@ -570,7 +560,8 @@ void deltacloud_free_bucket_blob(struct deltacloud_bucket_blob *blob)
   SAFE_FREE(blob->content_type);
   SAFE_FREE(blob->last_modified);
   SAFE_FREE(blob->content_href);
-  free_metadata_list(&blob->metadata);
+  free_list(&blob->metadata, struct deltacloud_bucket_blob_metadata,
+	    free_metadata);
 }
 
 /**
@@ -602,7 +593,8 @@ void deltacloud_free_bucket(struct deltacloud_bucket *bucket)
   SAFE_FREE(bucket->id);
   SAFE_FREE(bucket->name);
   SAFE_FREE(bucket->size);
-  free_blob_list(&bucket->blobs);
+  free_list(&bucket->blobs, struct deltacloud_bucket_blob,
+	    deltacloud_free_bucket_blob);
 }
 
 /**

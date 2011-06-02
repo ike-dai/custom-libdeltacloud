@@ -32,19 +32,9 @@ static void free_range(struct deltacloud_property_range *onerange)
   SAFE_FREE(onerange->last);
 }
 
-static void free_range_list(struct deltacloud_property_range **ranges)
-{
-  free_list(ranges, struct deltacloud_property_range, free_range);
-}
-
 static void free_enum(struct deltacloud_property_enum *oneenum)
 {
   SAFE_FREE(oneenum->value);
-}
-
-static void free_enum_list(struct deltacloud_property_enum **enums)
-{
-  free_list(enums, struct deltacloud_property_enum, free_enum);
 }
 
 static void free_param(struct deltacloud_property_param *param)
@@ -55,25 +45,15 @@ static void free_param(struct deltacloud_property_param *param)
   SAFE_FREE(param->operation);
 }
 
-static void free_param_list(struct deltacloud_property_param **params)
-{
-  free_list(params, struct deltacloud_property_param, free_param);
-}
-
 static void free_prop(struct deltacloud_property *prop)
 {
   SAFE_FREE(prop->kind);
   SAFE_FREE(prop->name);
   SAFE_FREE(prop->unit);
   SAFE_FREE(prop->value);
-  free_param_list(&prop->params);
-  free_enum_list(&prop->enums);
-  free_range_list(&prop->ranges);
-}
-
-static void free_property_list(struct deltacloud_property **props)
-{
-  free_list(props, struct deltacloud_property, free_prop);
+  free_list(&prop->params, struct deltacloud_property_param, free_param);
+  free_list(&prop->enums, struct deltacloud_property_enum, free_enum);
+  free_list(&prop->ranges, struct deltacloud_property_range, free_range);
 }
 
 static int parse_hwp_params_enums_ranges(xmlNodePtr property,
@@ -83,7 +63,6 @@ static int parse_hwp_params_enums_ranges(xmlNodePtr property,
   struct deltacloud_property_enum *thisenum;
   struct deltacloud_property_range *thisrange;
   xmlNodePtr enum_cur;
-  int ret = -1;
 
   while (property != NULL) {
     if (property->type == XML_ELEMENT_NODE) {
@@ -92,7 +71,7 @@ static int parse_hwp_params_enums_ranges(xmlNodePtr property,
 	thisparam = calloc(1, sizeof(struct deltacloud_property_param));
 	if (thisparam == NULL) {
 	  oom_error();
-	  goto cleanup;
+	  return -1;
 	}
 
 	thisparam->href = (char *)xmlGetProp(property, BAD_CAST "href");
@@ -113,7 +92,7 @@ static int parse_hwp_params_enums_ranges(xmlNodePtr property,
 	    thisenum = calloc(1, sizeof(struct deltacloud_property_enum));
 	    if (thisenum == NULL) {
 	      oom_error();
-	      goto cleanup;
+	      return -1;
 	    }
 
 	    thisenum->value = (char *)xmlGetProp(enum_cur, BAD_CAST "value");
@@ -130,7 +109,7 @@ static int parse_hwp_params_enums_ranges(xmlNodePtr property,
 	thisrange = calloc(1, sizeof(struct deltacloud_property_range));
 	if (thisrange == NULL) {
 	  oom_error();
-	  goto cleanup;
+	  return -1;
 	}
 	thisrange->first = (char *)xmlGetProp(property, BAD_CAST "first");
 	thisrange->last = (char *)xmlGetProp(property, BAD_CAST "last");
@@ -142,16 +121,7 @@ static int parse_hwp_params_enums_ranges(xmlNodePtr property,
     property = property->next;
   }
 
-  ret = 0;
-
- cleanup:
-  if (ret < 0) {
-    free_param_list(&prop->params);
-    free_enum_list(&prop->enums);
-    free_range_list(&prop->ranges);
-  }
-
-  return ret;
+  return 0;
 }
 
 static int parse_hardware_profile_properties(xmlNodePtr hwp,
@@ -159,7 +129,6 @@ static int parse_hardware_profile_properties(xmlNodePtr hwp,
 {
   xmlNodePtr profile_cur;
   struct deltacloud_property *thisprop;
-  int ret = -1;
 
   profile_cur = hwp->children;
 
@@ -170,7 +139,7 @@ static int parse_hardware_profile_properties(xmlNodePtr hwp,
       thisprop = calloc(1, sizeof(struct deltacloud_property));
       if (thisprop == NULL) {
 	oom_error();
-	goto cleanup;
+	return -1;
       }
 
       thisprop->kind = (char *)xmlGetProp(profile_cur, BAD_CAST "kind");
@@ -182,7 +151,7 @@ static int parse_hardware_profile_properties(xmlNodePtr hwp,
 	/* parse_hwp_params_enums_ranges already set the error */
 	free_prop(thisprop);
 	SAFE_FREE(thisprop);
-	goto cleanup;
+	return -1;
       }
 
       /* add_to_list can't fail */
@@ -192,12 +161,7 @@ static int parse_hardware_profile_properties(xmlNodePtr hwp,
     profile_cur = profile_cur->next;
   }
 
-  ret = 0;
-
- cleanup:
-  if (ret < 0)
-    free_property_list(props);
-  return ret;
+  return 0;
 }
 
 /** @cond INTERNAL */
@@ -315,7 +279,7 @@ void deltacloud_free_hardware_profile(struct deltacloud_hardware_profile *profil
   SAFE_FREE(profile->id);
   SAFE_FREE(profile->href);
   SAFE_FREE(profile->name);
-  free_property_list(&profile->properties);
+  free_list(&profile->properties, struct deltacloud_property, free_prop);
 }
 
 /**

@@ -45,22 +45,11 @@ static void free_lb_instance(struct deltacloud_loadbalancer_instance *instance)
   free_link_list(&instance->links);
 }
 
-static void free_lb_instance_list(struct deltacloud_loadbalancer_instance **instances)
-{
-  free_list(instances, struct deltacloud_loadbalancer_instance,
-	    free_lb_instance);
-}
-
 static void free_listener(struct deltacloud_loadbalancer_listener *listener)
 {
   SAFE_FREE(listener->protocol);
   SAFE_FREE(listener->load_balancer_port);
   SAFE_FREE(listener->instance_port);
-}
-
-static void free_listener_list(struct deltacloud_loadbalancer_listener **listeners)
-{
-  free_list(listeners, struct deltacloud_loadbalancer_listener, free_listener);
 }
 
 static int parse_listener_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
@@ -103,8 +92,6 @@ static int parse_listener_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
 
  cleanup:
   ctxt->node = oldnode;
-  if (ret < 0)
-    free_listener_list(listeners);
 
   return ret;
 }
@@ -151,8 +138,6 @@ static int parse_lb_instance_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
 
  cleanup:
   ctxt->node = oldnode;
-  if (ret < 0)
-    free_lb_instance_list(instances);
 
   return ret;
 }
@@ -545,8 +530,10 @@ void deltacloud_free_loadbalancer(struct deltacloud_loadbalancer *lb)
   SAFE_FREE(lb->realm_id);
   free_action_list(&lb->actions);
   free_address_list(&lb->public_addresses);
-  free_listener_list(&lb->listeners);
-  free_lb_instance_list(&lb->instances);
+  free_list(&lb->listeners, struct deltacloud_loadbalancer_listener,
+	    free_listener);
+  free_list(&lb->instances, struct deltacloud_loadbalancer_instance,
+	    free_lb_instance);
 }
 
 /**
