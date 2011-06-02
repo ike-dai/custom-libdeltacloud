@@ -24,9 +24,47 @@
 #include "common.h"
 #include "link.h"
 
+static void free_constraint(struct deltacloud_feature_constraint *constraint)
+{
+  SAFE_FREE(constraint->name);
+  SAFE_FREE(constraint->value);
+}
+
+static int parse_constraint_xml(xmlNodePtr constraintnode,
+				struct deltacloud_feature_constraint **constraints)
+{
+  struct deltacloud_feature_constraint *thisconstraint;
+
+  while (constraintnode != NULL) {
+    if (constraintnode->type == XML_ELEMENT_NODE &&
+	STREQ((const char *)constraintnode->name, "constraint")) {
+
+      thisconstraint = calloc(1, sizeof(struct deltacloud_feature_constraint));
+      if (thisconstraint == NULL) {
+	oom_error();
+	return -1;
+      }
+
+      thisconstraint->name = (char *)xmlGetProp(constraintnode,
+						BAD_CAST "name");
+      thisconstraint->value = (char *)xmlGetProp(constraintnode,
+						 BAD_CAST "value");
+
+      /* add_to_list can't fail */
+      add_to_list(constraints, struct deltacloud_feature_constraint,
+		  thisconstraint);
+    }
+    constraintnode = constraintnode->next;
+  }
+
+  return 0;
+}
+
 static void free_feature(struct deltacloud_feature *feature)
 {
   SAFE_FREE(feature->name);
+  free_list(&feature->constraints, struct deltacloud_feature_constraint,
+	    free_constraint);
 }
 
 static int parse_feature_xml(xmlNodePtr featurenode,
@@ -45,6 +83,13 @@ static int parse_feature_xml(xmlNodePtr featurenode,
       }
 
       thisfeature->name = (char *)xmlGetProp(featurenode, BAD_CAST "name");
+
+      if (parse_constraint_xml(featurenode->children,
+			       &(thisfeature->constraints)) < 0) {
+	free_feature(thisfeature);
+	SAFE_FREE(thisfeature);
+	return -1;
+      }
 
       /* add_to_list can't fail */
       add_to_list(features, struct deltacloud_feature, thisfeature);

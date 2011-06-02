@@ -51,14 +51,19 @@ void print_link_list(struct deltacloud_link *links)
 {
   struct deltacloud_link *link;
   struct deltacloud_feature *feature;
+  struct deltacloud_feature_constraint *constraint;
 
   deltacloud_for_each(link, links) {
     fprintf(stderr, "Link:\n");
     fprintf(stderr, "\tRel: %s\n", link->rel);
     fprintf(stderr, "\tHref: %s\n", link->href);
-    fprintf(stderr, "\tFeatures: ");
-    deltacloud_for_each(feature, link->features)
-      fprintf(stderr, "%s, ", feature->name);
+    fprintf(stderr, "\tFeatures:\n");
+    deltacloud_for_each(feature, link->features) {
+      fprintf(stderr, "\t\t%s\n", feature->name);
+      deltacloud_for_each(constraint, feature->constraints)
+	fprintf(stderr, "\t\t\t%s = %s\n", constraint->name,
+		constraint->value);
+    }
     fprintf(stderr, "\n");
   }
 }

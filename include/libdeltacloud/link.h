@@ -26,10 +26,21 @@ extern "C" {
 #endif
 
 /**
+ * A structure representing a constraint on a feature.
+ */
+struct deltacloud_feature_constraint {
+  char *name; /**< The name of the constraint */
+  char *value; /**< The value of the constraint */
+
+  struct deltacloud_feature_constraint *next;
+};
+
+/**
  * A structure representing a single feature.
  */
 struct deltacloud_feature {
   char *name; /**< The name of the feature */
+  struct deltacloud_feature_constraint *constraints; /**< A list of constraints associated with this feature */
 
   struct deltacloud_feature *next;
 };
