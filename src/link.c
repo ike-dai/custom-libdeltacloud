@@ -46,6 +46,7 @@ static int parse_feature_xml(xmlNodePtr featurenode,
 
       thisfeature->name = (char *)xmlGetProp(featurenode, BAD_CAST "name");
 
+      /* add_to_list can't fail */
       add_to_list(features, struct deltacloud_feature, thisfeature);
     }
     featurenode = featurenode->next;

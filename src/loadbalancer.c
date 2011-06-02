@@ -141,6 +141,7 @@ static int parse_lb_instance_xml(xmlNodePtr root, xmlXPathContextPtr ctxt,
 	goto cleanup;
       }
 
+      /* add_to_list can't fail */
       add_to_list(instances, struct deltacloud_loadbalancer_instance, thisinst);
     }
     cur = cur->next;

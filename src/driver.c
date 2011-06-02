@@ -63,6 +63,7 @@ static int parse_one_driver(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
       thisprovider->id = (char *)xmlGetProp(providernode, BAD_CAST "id");
 
+      /* add_to_list can't fail */
       add_to_list(&thisdriver->providers, struct deltacloud_driver_provider,
 		  thisprovider);
     }
