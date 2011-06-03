@@ -232,7 +232,7 @@ int internal_post(struct deltacloud_api *api, const char *href,
     goto cleanup;
   }
 
-  if (data != NULL)
+  if (internal_data != NULL && data != NULL)
     *data = strdup(internal_data);
 
   ret = 0;
