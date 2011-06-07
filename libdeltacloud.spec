@@ -1,6 +1,6 @@
 Summary: A library for accessing deltacloud
 Name: libdeltacloud
-Version: 0.8
+Version: 0.9
 Release: 1%{?dist}
 License: LGPLv2+
 Group: System Environment/Libraries
@@ -83,6 +83,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/libdeltacloud.pc
 
 %changelog
+* Mon Jun 06 2011 Chris Lalancette <clalance@redhat.com> - 0.9-1
+- Update to latest upstream (0.9)
+
 * Mon Apr 18 2011 Chris Lalancette <clalance@redhat.com> - 0.8-1
 - Update to latest upstream (0.8)
 
