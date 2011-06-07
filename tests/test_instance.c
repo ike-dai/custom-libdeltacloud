@@ -178,7 +178,6 @@ int main(int argc, char *argv[])
       }
 
       /* here we use the first instance from the list above */
-      fprintf(stderr, "Going to try to get name %s\n", instances->name);
       if (deltacloud_get_instance_by_name(&api, instances->name,
 					  &instance) < 0) {
 	fprintf(stderr, "Failed to get instance by name: %s\n",
