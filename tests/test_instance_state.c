@@ -30,8 +30,8 @@ static void print_instance_state(struct deltacloud_instance_state *state)
 
   fprintf(stderr, "Instance State: %s\n", state->name);
   deltacloud_for_each(transition, state->transitions)
-    fprintf(stderr, "\tTransition Action: %s, To: %s, Bool: %s\n",
-	    transition->action, transition->to, transition->auto_bool);
+    fprintf(stderr, "\tTransition Action: %s, To: %s, Auto: %s\n",
+	    transition->action, transition->to, transition->automatically);
 }
 
 static void print_instance_state_list(struct deltacloud_instance_state *states)

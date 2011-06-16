@@ -31,7 +31,7 @@ extern "C" {
 struct deltacloud_instance_state_transition {
   char *action; /**< The name of this action */
   char *to; /**< The state that can be transitioned to */
-  char *auto_bool; /**< Whether the state transition happens automatically */
+  char *automatically; /**< Whether the state transition happens automatically */
 
   struct deltacloud_instance_state_transition *next;
 };

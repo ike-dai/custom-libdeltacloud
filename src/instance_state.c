@@ -31,7 +31,7 @@ static void free_transition(struct deltacloud_instance_state_transition *transit
 {
   SAFE_FREE(transition->action);
   SAFE_FREE(transition->to);
-  SAFE_FREE(transition->auto_bool);
+  SAFE_FREE(transition->automatically);
 }
 
 static void free_instance_state(struct deltacloud_instance_state *instance_state)
@@ -68,7 +68,7 @@ static int parse_one_instance_state(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 
       thistrans->action = (char *)xmlGetProp(state_cur, BAD_CAST "action");
       thistrans->to = (char *)xmlGetProp(state_cur, BAD_CAST "to");
-      thistrans->auto_bool = (char *)xmlGetProp(state_cur, BAD_CAST "auto");
+      thistrans->automatically = (char *)xmlGetProp(state_cur, BAD_CAST "auto");
 
       /* add_to_list can't fail */
       add_to_list(&thisstate->transitions,
