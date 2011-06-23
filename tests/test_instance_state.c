@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 
     /* test out deltacloud_get_instance_states */
     if (deltacloud_get_instance_states(NULL, &instance_states) >= 0) {
-      fprintf(stderr, "Expected deltacloud_supports_instance_states to fail with NULL api, but succeeded\n");
+      fprintf(stderr, "Expected deltacloud_get_instance_states to fail with NULL api, but succeeded\n");
       goto cleanup;
     }
 

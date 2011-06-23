@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
     /* test out deltacloud_get_hardware_profiles */
     if (deltacloud_get_hardware_profiles(NULL, &profiles) >= 0) {
-      fprintf(stderr, "Expected deltacloud_supports_hardware_profiles to fail with NULL api, but succeeded\n");
+      fprintf(stderr, "Expected deltacloud_get_hardware_profiles to fail with NULL api, but succeeded\n");
       goto cleanup;
     }
 

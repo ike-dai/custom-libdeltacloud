@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 
     /* test out deltacloud_get_buckets */
     if (deltacloud_get_buckets(NULL, &buckets) >= 0) {
-      fprintf(stderr, "Expected deltacloud_supports_buckets to fail with NULL api, but succeeded\n");
+      fprintf(stderr, "Expected deltacloud_get_buckets to fail with NULL api, but succeeded\n");
       goto cleanup;
     }
 
@@ -143,6 +143,8 @@ int main(int argc, char *argv[])
       deltacloud_free_bucket(&bucket);
     }
   }
+  else
+    fprintf(stderr, "Buckets are not supported\n");
 
  cleanup:
   deltacloud_free_bucket_list(&buckets);

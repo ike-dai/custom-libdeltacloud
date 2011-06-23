@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 
     /* test out deltacloud_get_keys */
     if (deltacloud_get_keys(NULL, &keys) >= 0) {
-      fprintf(stderr, "Expected deltacloud_supports_keys to fail with NULL api, but succeeded\n");
+      fprintf(stderr, "Expected deltacloud_get_keys to fail with NULL api, but succeeded\n");
       goto cleanup;
     }
 

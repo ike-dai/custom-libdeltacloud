@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 
     /* test out deltacloud_get_storage_snapshots */
     if (deltacloud_get_storage_snapshots(NULL, &storage_snapshots) >= 0) {
-      fprintf(stderr, "Expected deltacloud_supports_storage_snapshots to fail with NULL api, but succeeded\n");
+      fprintf(stderr, "Expected deltacloud_get_storage_snapshots to fail with NULL api, but succeeded\n");
       goto cleanup;
     }
 

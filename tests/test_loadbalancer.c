@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 
     /* test out deltacloud_get_loadbalancers */
     if (deltacloud_get_loadbalancers(NULL, &lbs) >= 0) {
-      fprintf(stderr, "Expected deltacloud_supports_loadbalancers to fail with NULL api, but succeeded\n");
+      fprintf(stderr, "Expected deltacloud_get_loadbalancers to fail with NULL api, but succeeded\n");
       goto cleanup;
     }
 

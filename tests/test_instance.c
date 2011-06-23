@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 
     /* test out deltacloud_get_instances */
     if (deltacloud_get_instances(NULL, &instances) >= 0) {
-      fprintf(stderr, "Expected deltacloud_supports_instances to fail with NULL api, but succeeded\n");
+      fprintf(stderr, "Expected deltacloud_get_instances to fail with NULL api, but succeeded\n");
       goto cleanup;
     }
 

@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 
     /* test out deltacloud_get_storage_volumes */
     if (deltacloud_get_storage_volumes(NULL, &storage_volumes) >= 0) {
-      fprintf(stderr, "Expected deltacloud_supports_storage_volumes to fail with NULL api, but succeeded\n");
+      fprintf(stderr, "Expected deltacloud_get_storage_volumes to fail with NULL api, but succeeded\n");
       goto cleanup;
     }
 

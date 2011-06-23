@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 
     /* test out deltacloud_get_drivers */
     if (deltacloud_get_drivers(NULL, &drivers) >= 0) {
-      fprintf(stderr, "Expected deltacloud_supports_drivers to fail with NULL api, but succeeded\n");
+      fprintf(stderr, "Expected deltacloud_get_drivers to fail with NULL api, but succeeded\n");
       goto cleanup;
     }
 

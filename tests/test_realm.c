@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 
     /* test out deltacloud_get_realms */
     if (deltacloud_get_realms(NULL, &realms) >= 0) {
-      fprintf(stderr, "Expected deltacloud_supports_realms to fail with NULL api, but succeeded\n");
+      fprintf(stderr, "Expected deltacloud_get_realms to fail with NULL api, but succeeded\n");
       goto cleanup;
     }
 
