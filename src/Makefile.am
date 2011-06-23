@@ -8,26 +8,9 @@ libdeltacloud_la_LDFLAGS = $(LIBXML_LIBS) $(LIBCURL_LIBS) -lpthread \
 
 lib_LTLIBRARIES = libdeltacloud.la
 
-libdeltacloud_la_SOURCES =			\
-  libdeltacloud.c				\
-  common.h					\
-  common.c					\
-  curl_action.h					\
-  curl_action.c					\
-  image.c					\
-  hardware_profile.c				\
-  instance.c					\
-  instance_state.c				\
-  link.c					\
-  realm.c					\
-  storage_snapshot.c				\
-  storage_volume.c                      	\
-  key.c						\
-  driver.c					\
-  action.c					\
-  address.c					\
-  loadbalancer.c				\
-  bucket.c 					\
-  firewall.c
+libdeltacloud_la_SOURCES = action.c address.c bucket.c common.h common.c \
+	curl_action.h curl_action.c driver.c firewall.c hardware_profile.c \
+	image.c instance.c instance_state.c key.c libdeltacloud.c link.c \
+	loadbalancer.c realm.c storage_snapshot.c storage_volume.c
 
 LDADD = $(lib_LTLIBRARIES)
