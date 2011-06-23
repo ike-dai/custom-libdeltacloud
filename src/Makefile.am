@@ -27,6 +27,7 @@ libdeltacloud_la_SOURCES =			\
   action.c					\
   address.c					\
   loadbalancer.c				\
-  bucket.c
+  bucket.c 					\
+  firewall.c
 
 LDADD = $(lib_LTLIBRARIES)
