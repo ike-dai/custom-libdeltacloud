@@ -41,6 +41,21 @@ int main(int argc, char *argv[])
     return 2;
   }
 
+  if (deltacloud_prepare_parameter(NULL, "name", "foo") >= 0) {
+    fprintf(stderr, "Expected deltacloud_prepare_parameter to fail with NULL parameter, but succeeded\n");
+    goto cleanup;
+  }
+
+  if (deltacloud_prepare_parameter(&stackparams[0], NULL, "foo") >= 0) {
+    fprintf(stderr, "Expected deltacloud_prepare_parameter to fail with NULL name, but succeeded\n");
+    goto cleanup;
+  }
+
+  if (deltacloud_prepare_parameter(&stackparams[0], "name", NULL) >= 0) {
+    fprintf(stderr, "Expected deltacloud_prepare_parameter to fail with NULL name, but succeeded\n");
+    goto cleanup;
+  }
+
   if (deltacloud_prepare_parameter(&stackparams[0], "name", "foo") < 0) {
     fprintf(stderr, "Failed to prepare stack parameter 0: %s\n",
 	    deltacloud_get_last_error_string());
@@ -54,6 +69,16 @@ int main(int argc, char *argv[])
   }
   deltacloud_free_parameter_value(&stackparams[0]);
   deltacloud_free_parameter_value(&stackparams[1]);
+
+  if (deltacloud_allocate_parameter(NULL, "foo") != NULL) {
+    fprintf(stderr, "Expected deltacloud_allocate_parameter to fail with NULL name, but succeeded\n");
+    goto cleanup;
+  }
+
+  if (deltacloud_allocate_parameter(NULL, NULL) != NULL) {
+    fprintf(stderr, "Expected deltacloud_allocate_parameter to fail with NULL name, but succeeded\n");
+    goto cleanup;
+  }
 
   heapparams[0] = deltacloud_allocate_parameter("name", "foo");
   if (heapparams[0] == NULL) {

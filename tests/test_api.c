@@ -90,7 +90,6 @@ int main(int argc, char *argv[])
   memset(&zeroapi, 0, sizeof(struct deltacloud_api));
   if (deltacloud_has_link(&zeroapi, NULL) >= 0) {
     fprintf(stderr, "Expected deltacloud_has_link to fail with zeroed api, but succeeded\n");
-    deltacloud_free(&zeroapi);
     goto cleanup;
   }
 
