@@ -290,6 +290,9 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 int deltacloud_prepare_parameter(struct deltacloud_create_parameter *param,
 				 const char *name, const char *value)
 {
+  if (!valid_arg(param) || !valid_arg(name) || !valid_arg(value))
+    return -1;
+
   param->name = strdup(name);
   if (param->name == NULL) {
     oom_error();
@@ -322,6 +325,9 @@ struct deltacloud_create_parameter *deltacloud_allocate_parameter(const char *na
 								  const char *value)
 {
   struct deltacloud_create_parameter *ret;
+
+  if (!valid_arg(name) || !valid_arg(value))
+    return NULL;
 
   ret = malloc(sizeof(struct deltacloud_create_parameter));
   if (ret == NULL) {
