@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <string.h>
+#include <errno.h>
 #include "libdeltacloud.h"
 #include "test_common.h"
 
@@ -54,6 +56,9 @@ int main(int argc, char *argv[])
   struct deltacloud_api zeroapi;
   struct deltacloud_bucket bucket;
   struct deltacloud_bucket *buckets = NULL;
+  struct deltacloud_bucket_blob blob;
+  FILE *fp;
+  struct deltacloud_create_parameter stackparams[2];
   int ret = 3;
 
   if (argc != 4) {
@@ -142,6 +147,261 @@ int main(int argc, char *argv[])
       print_bucket(&bucket);
       deltacloud_free_bucket(&bucket);
     }
+
+    if (deltacloud_create_bucket(NULL, "aname", NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_create_bucket to fail with NULL api, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_create_bucket(&api, NULL, NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_create_bucket to fail with NULL name, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_create_bucket(&zeroapi, "aname", NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_create_bucket to fail with uninitialized api, but succeeded\n");
+      goto cleanup;
+    }
+
+    if (deltacloud_create_bucket(&api, "aname", NULL, 0) < 0) {
+      fprintf(stderr, "Failed to create bucket: %s\n",
+	      deltacloud_get_last_error_string());
+      goto cleanup;
+    }
+
+    if (deltacloud_get_bucket_by_id(&api, "aname", &bucket) < 0) {
+      fprintf(stderr, "Failed to get the bucket by name: %s\n",
+	      deltacloud_get_last_error_string());
+      /* FIXME: unfortunately, if we get here, then we can no longer destroy
+       * the bucket that we created above.  What to do?
+       */
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_create_blob_from_file(NULL, &bucket, "ablob", "tmp",
+						NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_create_blob_from_file to fail with NULL api, but succeeded\n");
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_create_blob_from_file(&api, NULL, "ablob", "tmp",
+						NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_create_blob_from_file to fail with NULL bucket, but succeeded\n");
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_create_blob_from_file(&api, &bucket, NULL, "tmp",
+						NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_create_blob_from_file to fail with NULL name, but succeeded\n");
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_create_blob_from_file(&api, &bucket, "ablob", NULL,
+						NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_create_blob_from_file to fail with NULL file, but succeeded\n");
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_create_blob_from_file(&zeroapi, &bucket, "ablob",
+						"tmp", NULL, 0) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_create_blob_from_file to fail with uninitialized API, but succeeded\n");
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    fp = fopen("tmp", "w");
+    if (fp == NULL) {
+      fprintf(stderr, "Failed to open file tmp: %s\n", strerror(errno));
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+    fprintf(fp, "hello there, this is a blob for a bucket\n");
+    fclose(fp);
+
+    if (deltacloud_bucket_create_blob_from_file(&api, &bucket, "ablob", "tmp",
+						NULL, 0) < 0) {
+      fprintf(stderr, "Failed to create a blob from file: %s\n",
+	      deltacloud_get_last_error_string());
+      unlink("tmp");
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    unlink("tmp");
+
+    if (deltacloud_bucket_get_blob_by_id(NULL, &bucket, "ablob", &blob) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_get_blob_by_id to fail with NULL api, but succeeded\n");
+      /* FIXME: should we try to delete the blob? */
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_get_blob_by_id(&api, NULL, "ablob", &blob) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_get_blob_by_id to fail with NULL bucket, but succeeded\n");
+      /* FIXME: should we try to delete the blob? */
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_get_blob_by_id(&api, &bucket, NULL, &blob) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_get_blob_by_id to fail with NULL name, but succeeded\n");
+      /* FIXME: should we try to delete the blob? */
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_get_blob_by_id(&api, &bucket, "ablob", NULL) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_get_blob_by_id to fail with NULL blob, but succeeded\n");
+      /* FIXME: should we try to delete the blob? */
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_get_blob_by_id(&zeroapi, &bucket, "ablob",
+					 &blob) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_get_blob_by_id to fail with uninitialized api, but succeeded\n");
+      /* FIXME: should we try to delete the blob? */
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_get_blob_by_id(&api, &bucket, "ablob", &blob) < 0) {
+      fprintf(stderr, "Failed to get blob ablob by id: %s\n",
+	      deltacloud_get_last_error_string());
+      /* FIXME: if we couldn't get a handle to the blob, then we can't delete
+       * it.  What to do here?
+       */
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_blob_update_metadata(NULL, &blob,
+					       stackparams, 2) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_blob_update_metadata to fail with NULL api, but succeeded\n");
+      deltacloud_bucket_delete_blob(&api, &blob);
+      deltacloud_free_bucket_blob(&blob);
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_blob_update_metadata(&api, NULL,
+					       stackparams, 2) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_blob_update_metadata to fail with NULL blob, but succeeded\n");
+      deltacloud_bucket_delete_blob(&api, &blob);
+      deltacloud_free_bucket_blob(&blob);
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_blob_update_metadata(&zeroapi, &blob,
+					       stackparams, 2) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_blob_update_metadata to fail with uninitialized api, but succeeded\n");
+      deltacloud_bucket_delete_blob(&api, &blob);
+      deltacloud_free_bucket_blob(&blob);
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_prepare_parameter(&stackparams[0],
+				     "HTTP-X-Deltacloud-Blobmeta-name",
+				     "foo") < 0) {
+      fprintf(stderr, "Failed deltacloud_prepare_parameter: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_bucket_delete_blob(&api, &blob);
+      deltacloud_free_bucket_blob(&blob);
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+    if (deltacloud_prepare_parameter(&stackparams[1],
+				     "HTTP-X-Deltacloud-Blobmeta-bob",
+				     "george") < 0) {
+      fprintf(stderr, "Failed deltacloud_prepare_parameter: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_free_parameter_value(&stackparams[0]);
+      deltacloud_bucket_delete_blob(&api, &blob);
+      deltacloud_free_bucket_blob(&blob);
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_blob_update_metadata(&api, &blob,
+					       stackparams, 2) < 0) {
+      fprintf(stderr, "Failed deltacloud_bucket_blob_update_metadata: %s\n",
+	      deltacloud_get_last_error_string());
+      deltacloud_free_parameter_value(&stackparams[0]);
+      deltacloud_free_parameter_value(&stackparams[1]);
+      deltacloud_bucket_delete_blob(&api, &blob);
+      deltacloud_free_bucket_blob(&blob);
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+    deltacloud_free_parameter_value(&stackparams[0]);
+    deltacloud_free_parameter_value(&stackparams[1]);
+
+    if (deltacloud_bucket_delete_blob(NULL, &blob) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_delete_blob to fail with NULL api, but succeeded\n");
+      /* FIXME: should we try to delete the blob? */
+      deltacloud_free_bucket_blob(&blob);
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_delete_blob(&api, NULL) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_delete_blob to fail with NULL blob, but succeeded\n");
+      /* FIXME: should we try to delete the blob? */
+      deltacloud_free_bucket_blob(&blob);
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_delete_blob(&zeroapi, &blob) >= 0) {
+      fprintf(stderr, "Expected deltacloud_bucket_delete_blob to fail with uninitialized api, but succeeded\n");
+      /* FIXME: should we try to delete the blob? */
+      deltacloud_free_bucket_blob(&blob);
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+    }
+
+    if (deltacloud_bucket_delete_blob(&api, &blob) < 0) {
+      fprintf(stderr, "Failed to delete blob: %s\n",
+	      deltacloud_get_last_error_string());
+      /* FIXME: if the delete failed, then destroying the bucket is going to
+       * fail since it still has stuff in it.  What to do?
+       */
+      deltacloud_free_bucket_blob(&blob);
+      deltacloud_bucket_destroy(&api, &bucket);
+      deltacloud_free_bucket(&bucket);
+      goto cleanup;
+   }
+
+    deltacloud_bucket_destroy(&api, &bucket);
+    deltacloud_free_bucket(&bucket);
   }
   else
     fprintf(stderr, "Buckets are not supported\n");
