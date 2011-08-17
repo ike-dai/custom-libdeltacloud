@@ -425,6 +425,10 @@ int deltacloud_bucket_get_blob_by_id(struct deltacloud_api *api,
   char *bucketurl;
   int rc;
 
+  if (!valid_api(api) || !valid_arg(bucket) || !valid_arg(name) ||
+      !valid_arg(blob))
+    return -1;
+
   if (asprintf(&bucketurl, "buckets/%s", bucket->id) < 0) {
     oom_error();
     return -1;
