@@ -460,6 +460,9 @@ int deltacloud_bucket_blob_update_metadata(struct deltacloud_api *api,
   char *bloburl;
   int ret;
 
+  if (!valid_api(api) || !valid_arg(blob))
+    return -1;
+
   thislink = api_find_link(api, "buckets");
   if (thislink == NULL)
     /* api_find_link set the error */
@@ -493,6 +496,9 @@ int deltacloud_bucket_blob_get_content(struct deltacloud_api *api,
   struct deltacloud_link *thislink;
   char *bloburl;
   int ret = -1;
+
+  if (!valid_api(api) || !valid_arg(blob) || !valid_arg(output))
+    return -1;
 
   thislink = api_find_link(api, "buckets");
   if (thislink == NULL)
