@@ -219,9 +219,7 @@ int do_get_post_url(const char *url, const char *user, const char *password,
     /* it is imperative to set POSTFIELDSIZE so that 0-size POST transfers
      * will work
      */
-    datalen = 0;
-    if (data != NULL)
-      datalen = strlen(data);
+    datalen = data == NULL ? 0 : strlen(data);
     res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, datalen);
     if (res != CURLE_OK) {
       set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
