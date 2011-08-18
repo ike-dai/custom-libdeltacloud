@@ -90,6 +90,10 @@ int deltacloud_bucket_blob_update_metadata(struct deltacloud_api *api,
 int deltacloud_bucket_blob_get_content(struct deltacloud_api *api,
 				       struct deltacloud_bucket_blob *blob,
 				       char **output);
+int deltacloud_bucket_blob_get_metadata(struct deltacloud_api *api,
+					struct deltacloud_bucket_blob *blob,
+					struct deltacloud_create_parameter **params,
+					int *params_length);
 int deltacloud_bucket_delete_blob(struct deltacloud_api *api,
 				  struct deltacloud_bucket_blob *blob);
 void deltacloud_free_bucket_blob(struct deltacloud_bucket_blob *blob);

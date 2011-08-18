@@ -108,6 +108,7 @@ void deltacloud_free(struct deltacloud_api *api);
 #define DELTACLOUD_NAME_NOT_FOUND_ERROR -11
 #define DELTACLOUD_DELETE_URL_ERROR -12
 #define DELTACLOUD_MULTIPART_POST_URL_ERROR -13
+#define DELTACLOUD_INTERNAL_ERROR -14
 
 #ifdef __cplusplus
 }

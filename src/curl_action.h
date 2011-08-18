@@ -43,6 +43,9 @@ int do_multipart_post_url(const char *url, const char *user,
 			  struct curl_httppost *httppost,
 			  char **returndata);
 
+int head_url(const char *url, const char *user, const char *password,
+	     char **returnheader);
+
 #ifdef __cplusplus
 }
 #endif

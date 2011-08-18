@@ -22,6 +22,7 @@ LIBDELTACLOUD_6.0.0 {
 LIBDELTACLOUD_7.0.0 {
     global:
 	deltacloud_bucket_blob_get_content;
+	deltacloud_bucket_blob_get_metadata;
 	deltacloud_bucket_blob_update_metadata;
 	deltacloud_bucket_create_blob_from_file;
 	deltacloud_bucket_delete_blob;

@@ -362,3 +362,42 @@ int do_multipart_post_url(const char *url, const char *user,
 
   return ret;
 }
+
+int head_url(const char *url, const char *user, const char *password,
+	     char **returnheader)
+{
+  CURL *curl;
+  CURLcode res;
+  struct curl_slist *headers = NULL;
+  struct memory header_chunk;
+  int ret = -1;
+
+  if (internal_curl_setup(DELTACLOUD_GET_URL_ERROR, url, user, password, &curl,
+			  &headers, NULL, &header_chunk) < 0)
+    /* internal_curl_setup set the error */
+    return -1;
+
+  res = curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+  if (res != CURLE_OK) {
+    set_curl_error(DELTACLOUD_GET_URL_ERROR, "Failed to set header POST", res);
+    goto cleanup;
+  }
+
+  res = curl_easy_perform(curl);
+  if (res != CURLE_OK) {
+    set_curl_error(DELTACLOUD_GET_URL_ERROR, "Failed to perform transfer", res);
+    goto cleanup;
+  }
+
+  if (header_chunk.data != NULL && returnheader != NULL)
+    *returnheader = strdup(header_chunk.data);
+
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(header_chunk.data);
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(curl);
+
+  return ret;
+}

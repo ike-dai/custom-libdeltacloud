@@ -22,6 +22,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <regex.h>
 #include "common.h"
 #include "curl_action.h"
 #include "bucket.h"
@@ -572,6 +574,111 @@ int deltacloud_bucket_blob_get_content(struct deltacloud_api *api,
  cleanup:
   SAFE_FREE(bloburl);
 
+  return ret;
+}
+
+/**
+ * A function to get the contents of a blob.  It is the responsibility of the
+ * caller to free the memory returned in output.
+ * @param[in] api The deltacloud_api structure representing the connection
+ * @param[in] blob The deltacloud_bucket_blob structure representing the blob
+ * @param[out] params The deltacloud_create_parameter structure that the
+ *                    metadata will be stored in
+ * @param[out] params_length The number of results stored in params
+ * @returns 0 on success, -1 on error
+ */
+int deltacloud_bucket_blob_get_metadata(struct deltacloud_api *api,
+					struct deltacloud_bucket_blob *blob,
+					struct deltacloud_create_parameter **params,
+					int *params_length)
+{
+  struct deltacloud_link *thislink;
+  int ret = -1;
+  char *bloburl;
+  char *headers = NULL;
+  FILE *headerfp = NULL;
+  char header[1024];
+  regex_t regmeta;
+  regmatch_t subs[3];
+  int i;
+
+  if (!valid_api(api) || !valid_arg(blob) || !valid_arg(params))
+    return -1;
+
+  thislink = api_find_link(api, "buckets");
+  if (thislink == NULL)
+    /* api_find_link set the error */
+    return -1;
+
+  if (asprintf(&bloburl, "%s/%s/%s", thislink->href, blob->bucket_id,
+	       blob->id) < 0) {
+    oom_error();
+    return -1;
+  }
+
+  if (head_url(bloburl, api->user, api->password, &headers) != 0)
+    /* head_url sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  headerfp = fmemopen(headers, strlen(headers) + 1, "r");
+  if (headerfp == NULL) {
+    oom_error();
+    goto cleanup;
+  }
+
+  if (regcomp(&regmeta, "^X-Deltacloud-Blobmeta-(.*): (.*)\n",
+	      REG_EXTENDED|REG_ICASE) != 0) {
+    set_error(DELTACLOUD_INTERNAL_ERROR, "Failed to examine headers");
+    goto cleanup;
+  }
+
+  i = 0;
+  *params = NULL;
+  while (fgets(header, 1024, headerfp) != NULL) {
+    memset(subs, 0, sizeof(subs));
+    if (regexec(&regmeta, header, 3, subs, 0) == 0) {
+      *params = realloc(*params,
+			(i + 1) * sizeof(struct deltacloud_create_parameter));
+      if (*params == NULL) {
+	oom_error();
+	regfree(&regmeta);
+	goto cleanup;
+      }
+
+      /* eo is the end offset, so is the start offset.  strndup automatically
+       * adds a \0, so this should be safe.
+       */
+      (*params + i)->name = strndup(header + subs[1].rm_so,
+				    subs[1].rm_eo - subs[1].rm_so);
+      if ((*params + i)->name == NULL) {
+	oom_error();
+	regfree(&regmeta);
+	goto cleanup;
+      }
+
+      (*params + i)->value = strndup(header + subs[2].rm_so,
+				     subs[2].rm_eo - subs[2].rm_so);
+      if ((*params + i)->name == NULL) {
+	oom_error();
+	regfree(&regmeta);
+	goto cleanup;
+      }
+
+      i++;
+    }
+  }
+
+  *params_length = i;
+
+  regfree(&regmeta);
+
+  ret = 0;
+
+ cleanup:
+  if (headerfp != NULL)
+    fclose(headerfp);
+  SAFE_FREE(headers);
+  SAFE_FREE(bloburl);
   return ret;
 }
 
