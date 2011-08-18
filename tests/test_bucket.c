@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
     }
 
     if (deltacloud_prepare_parameter(&stackparams[0],
-				     "HTTP-X-Deltacloud-Blobmeta-name",
+				     "X-Deltacloud-Blobmeta-name",
 				     "foo") < 0) {
       fprintf(stderr, "Failed deltacloud_prepare_parameter: %s\n",
 	      deltacloud_get_last_error_string());
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
       goto cleanup;
     }
     if (deltacloud_prepare_parameter(&stackparams[1],
-				     "HTTP-X-Deltacloud-Blobmeta-bob",
+				     "X-Deltacloud-Blobmeta-bob",
 				     "george") < 0) {
       fprintf(stderr, "Failed deltacloud_prepare_parameter: %s\n",
 	      deltacloud_get_last_error_string());

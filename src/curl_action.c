@@ -188,22 +188,46 @@ static int internal_curl_setup(int errcode, const char *url, const char *user,
 }
 
 int do_get_post_url(const char *url, const char *user, const char *password,
-		    int post, char *data, char **returndata,
-		    char **returnheader)
+		    int post, char *data, struct curl_slist *inheader,
+		    char **returndata, char **returnheader)
 {
   CURL *curl;
   CURLcode res;
   struct curl_slist *headers = NULL;
+  struct curl_slist *curr;
+  char *listdata;
   struct memory chunk;
   struct memory header_chunk;
   int ret = -1;
   size_t datalen;
+  int errcode;
 
-  if (internal_curl_setup(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
-			  url, user, password, &curl, &headers, &chunk,
+  errcode = post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR;
+
+  if (internal_curl_setup(errcode, url, user, password, &curl, &headers, &chunk,
 			  &header_chunk) < 0)
     /* internal_curl_setup set the error */
     return -1;
+
+  if (inheader != NULL) {
+    curr = inheader;
+    while (curr != NULL) {
+      /* we have to strdup the data here because curl_slist_free_all frees
+       * the data and the structure
+       */
+      listdata = strdup(curr->data);
+      if (listdata == NULL) {
+	oom_error();
+	goto cleanup;
+      }
+      headers = curl_slist_append(headers, listdata);
+      if (headers == NULL) {
+	set_error(errcode, "Failed to create header list");
+	goto cleanup;
+      }
+      curr = curr->next;
+    }
+  }
 
   if (post) {
     /* in this case, we want to do a POST; note, however, that it is possible
@@ -211,8 +235,7 @@ int do_get_post_url(const char *url, const char *user, const char *password,
      */
     res = curl_easy_setopt(curl, CURLOPT_POST, 1);
     if (res != CURLE_OK) {
-      set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
-		     "Failed to set header POST", res);
+      set_curl_error(errcode, "Failed to set header POST", res);
       goto cleanup;
     }
 
@@ -222,15 +245,13 @@ int do_get_post_url(const char *url, const char *user, const char *password,
     datalen = data == NULL ? 0 : strlen(data);
     res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, datalen);
     if (res != CURLE_OK) {
-      set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
-		     "Failed to set post field size", res);
+      set_curl_error(errcode, "Failed to set post field size", res);
       goto cleanup;
     }
     if (data != NULL) {
       res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
       if (res != CURLE_OK) {
-	set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
-		       "Failed to set header post fields", res);
+	set_curl_error(errcode, "Failed to set header post fields", res);
 	goto cleanup;
       }
     }
@@ -238,8 +259,7 @@ int do_get_post_url(const char *url, const char *user, const char *password,
 
   res = curl_easy_perform(curl);
   if (res != CURLE_OK) {
-    set_curl_error(post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR,
-		   "Failed to perform transfer", res);
+    set_curl_error(errcode, "Failed to perform transfer", res);
     goto cleanup;
   }
 

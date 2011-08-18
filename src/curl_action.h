@@ -28,11 +28,12 @@ extern "C" {
 #include <curl/curl.h>
 
 int do_get_post_url(const char *url, const char *user, const char *password,
-		    int post, char *data, char **returndata,
-		    char **returnheader);
+		    int post, char *data, struct curl_slist *inheader,
+		    char **returndata, char **returnheader);
 
-#define get_url(url, user, password, returndata) do_get_post_url(url, user, password, 0, NULL, returndata, NULL)
-#define post_url(url, user, password, data, returndata, returnheader) do_get_post_url(url, user, password, 1, data, returndata, returnheader)
+#define get_url(url, user, password, returndata) do_get_post_url(url, user, password, 0, NULL, NULL, returndata, NULL)
+#define post_url(url, user, password, data, returndata, returnheader) do_get_post_url(url, user, password, 1, data, NULL, returndata, returnheader)
+#define post_url_with_headers(url, user, password, inputheaders, returndata) do_get_post_url(url, user, password, 1, NULL, inputheaders, returndata, NULL)
 
 int delete_url(const char *url, const char *user, const char *password,
 	       char **returndata);

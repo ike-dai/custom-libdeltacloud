@@ -457,8 +457,12 @@ int deltacloud_bucket_blob_update_metadata(struct deltacloud_api *api,
 					   int params_length)
 {
   struct deltacloud_link *thislink;
+  struct curl_slist *headers = NULL;
   char *bloburl;
-  int ret;
+  int ret = -1;
+  int i;
+  char *internal_data = NULL;
+  char *header;
 
   if (!valid_api(api) || !valid_arg(blob))
     return -1;
@@ -474,8 +478,41 @@ int deltacloud_bucket_blob_update_metadata(struct deltacloud_api *api,
     return -1;
   }
 
-  ret = internal_post(api, bloburl, params, params_length, NULL, NULL);
+  /* here we have to build up the request headers we want to pass along */
+  for (i = 0; i < params_length; i++) {
+    if (params[i].value != NULL) {
+      if (asprintf(&header, "%s: %s", params[i].name, params[i].value) < 0) {
+	oom_error();
+	goto cleanup;
+      }
 
+      /* you might think that we are losing the pointer to header here, and
+       * hence leaking memory.  However, curl_slist takes over maintenance of
+       * the memory, and it will get properly freed during curl_slist_free_all
+       */
+      headers = curl_slist_append(headers, header);
+      if (headers == NULL) {
+	oom_error();
+	goto cleanup;
+      }
+    }
+  }
+
+  if (post_url_with_headers(bloburl, api->user, api->password, headers,
+			    &internal_data) != 0)
+    /* post_url_with_headers sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  if (internal_data != NULL && is_error_xml(internal_data)) {
+    set_xml_error(internal_data, DELTACLOUD_POST_URL_ERROR);
+    goto cleanup;
+  }
+
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(internal_data);
+  curl_slist_free_all(headers);
   SAFE_FREE(bloburl);
 
   return ret;
