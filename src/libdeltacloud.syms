@@ -102,4 +102,5 @@ LIBDELTACLOUD_7.0.0 {
 	deltacloud_storage_volume_attach;
 	deltacloud_storage_volume_destroy;
 	deltacloud_storage_volume_detach;
+    local: *;
 } LIBDELTACLOUD_6.0.0;
