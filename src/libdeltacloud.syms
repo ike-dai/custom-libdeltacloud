@@ -66,6 +66,7 @@ LIBDELTACLOUD_7.0.0 {
 	deltacloud_free_storage_volume_list;
 	deltacloud_get_buckets;
 	deltacloud_get_bucket_by_id;
+	deltacloud_get_drivers;
 	deltacloud_get_driver_by_id;
 	deltacloud_get_firewalls;
 	deltacloud_get_firewall_by_id;
