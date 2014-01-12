@@ -187,7 +187,7 @@ int deltacloud_storage_volume_destroy(struct deltacloud_api *api,
   if (!valid_api(api) || !valid_arg(storage_volume))
     return -1;
 
-  return internal_destroy(storage_volume->href, api->user, api->password);
+  return internal_destroy(storage_volume->href, api->user, api->password, api->driver, api->provider);
 }
 
 /**

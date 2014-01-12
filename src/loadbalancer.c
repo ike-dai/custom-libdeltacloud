@@ -509,7 +509,7 @@ int deltacloud_loadbalancer_destroy(struct deltacloud_api *api,
   if (!valid_api(api) || !valid_arg(balancer))
     return -1;
 
-  return internal_destroy(balancer->href, api->user, api->password);
+  return internal_destroy(balancer->href, api->user, api->password, api->driver, api->provider);
 }
 
 /**

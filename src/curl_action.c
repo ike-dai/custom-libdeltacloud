@@ -110,7 +110,7 @@ static int set_user_password(CURL *curl, const char *user, const char *password)
  * are setup after this function call
  */
 static int internal_curl_setup(int errcode, const char *url, const char *user,
-			       const char *password, CURL **curl,
+			       const char *password, const char *driver, const char *provider, CURL **curl,
 			       struct curl_slist **headers,
 			       struct memory *chunk,
 			       struct memory *header_chunk)
@@ -118,7 +118,12 @@ static int internal_curl_setup(int errcode, const char *url, const char *user,
   CURLcode res;
 
   *headers = NULL;
-
+  const char *driver_header_name = "X-Deltacloud-Driver: ";
+  const char *provider_header_name = "X-Deltacloud-Provider: ";
+  //char driver_header[strlen(driver)+strlen(driver_header_name)+1];
+  char driver_header[100] = "";
+  //char provider_header[strlen(provider)+strlen(provider_header_name)+1];
+  char provider_header[100] = "";
   *curl = curl_easy_init();
   if (*curl == NULL) {
     set_error(errcode, "Failed to initialize curl library");
@@ -132,6 +137,8 @@ static int internal_curl_setup(int errcode, const char *url, const char *user,
   }
 
   *headers = curl_slist_append(*headers, "Accept: application/xml");
+  *headers = curl_slist_append(*headers, driver_header);
+  *headers = curl_slist_append(*headers, provider_header);
   if (*headers == NULL) {
     set_error(errcode, "Failed to create header list");
     goto error;
@@ -188,6 +195,7 @@ static int internal_curl_setup(int errcode, const char *url, const char *user,
 }
 
 int do_get_post_url(const char *url, const char *user, const char *password,
+                    const char *driver, const char *provider,
 		    int post, char *data, struct curl_slist *inheader,
 		    char **returndata, char **returnheader)
 {
@@ -204,7 +212,7 @@ int do_get_post_url(const char *url, const char *user, const char *password,
 
   errcode = post ? DELTACLOUD_POST_URL_ERROR : DELTACLOUD_GET_URL_ERROR;
 
-  if (internal_curl_setup(errcode, url, user, password, &curl, &headers, &chunk,
+  if (internal_curl_setup(errcode, url, user, password, driver, provider, &curl, &headers, &chunk,
 			  &header_chunk) < 0)
     /* internal_curl_setup set the error */
     return -1;
@@ -280,6 +288,7 @@ int do_get_post_url(const char *url, const char *user, const char *password,
 }
 
 int delete_url(const char *url, const char *user, const char *password,
+               const char *driver, const char *provider,
 	       char **returndata)
 {
   CURL *curl;
@@ -288,7 +297,7 @@ int delete_url(const char *url, const char *user, const char *password,
   struct memory chunk;
   int ret = -1;
 
-  if (internal_curl_setup(DELTACLOUD_DELETE_URL_ERROR, url, user, password,
+  if (internal_curl_setup(DELTACLOUD_DELETE_URL_ERROR, url, user, password, driver, provider,
 			  &curl, &headers, &chunk, NULL) < 0)
     /* internal_curl_setup set the error */
     return -1;
@@ -321,7 +330,7 @@ int delete_url(const char *url, const char *user, const char *password,
 }
 
 int do_multipart_post_url(const char *url, const char *user,
-			  const char *password,
+			  const char *password, const char *driver, const char *provider,
 			  struct curl_httppost *httppost,
 			  char **returndata)
 {
@@ -332,7 +341,7 @@ int do_multipart_post_url(const char *url, const char *user,
   int ret = -1;
 
   if (internal_curl_setup(DELTACLOUD_MULTIPART_POST_URL_ERROR, url, user,
-			  password, &curl, &headers, &chunk, NULL) < 0)
+			  password, driver, provider, &curl, &headers, &chunk, NULL) < 0)
     /* internal_curl_setup set the error */
     return -1;
 
@@ -363,7 +372,7 @@ int do_multipart_post_url(const char *url, const char *user,
   return ret;
 }
 
-int head_url(const char *url, const char *user, const char *password,
+int head_url(const char *url, const char *user, const char *password, const char *driver, const char *provider,
 	     char **returnheader)
 {
   CURL *curl;
@@ -372,7 +381,7 @@ int head_url(const char *url, const char *user, const char *password,
   struct memory header_chunk;
   int ret = -1;
 
-  if (internal_curl_setup(DELTACLOUD_GET_URL_ERROR, url, user, password, &curl,
+  if (internal_curl_setup(DELTACLOUD_GET_URL_ERROR, url, user, password, driver, provider, &curl,
 			  &headers, NULL, &header_chunk) < 0)
     /* internal_curl_setup set the error */
     return -1;

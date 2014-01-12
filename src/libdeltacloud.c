@@ -191,6 +191,7 @@ static void internal_free(struct deltacloud_api *api)
   SAFE_FREE(api->password);
   SAFE_FREE(api->url);
   SAFE_FREE(api->driver);
+  SAFE_FREE(api->provider);
   SAFE_FREE(api->version);
   memset(api, 0, sizeof(struct deltacloud_api));
 }
@@ -206,10 +207,11 @@ static void internal_free(struct deltacloud_api *api)
  * @returns 0 on success, -1 on error
  */
 int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
-			  char *password)
+			  char *password, char *driver, char *provider)
 {
   char *data = NULL;
   int ret = -1;
+
 
   if (!tlsinitialized) {
     tlsinitialized = 1;
@@ -221,7 +223,7 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
   }
 
   if (!valid_arg(api) || !valid_arg(url) || !valid_arg(user) ||
-      !valid_arg(password))
+      !valid_arg(password) || !valid_arg(driver) || !valid_arg(provider))
     return -1;
 
   memset(api, 0, sizeof(struct deltacloud_api));
@@ -241,8 +243,18 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
     oom_error();
     goto cleanup;
   }
+  api->driver = strdup(driver);
+  if (api->driver == NULL) {
+    oom_error();
+    goto cleanup;
+  }
+  api->provider = strdup(provider);
+  if (api->provider == NULL) {
+    oom_error();
+    goto cleanup;
+  }
 
-  if (get_url(api->url, api->user, api->password, &data) != 0)
+  if (get_url(api->url, api->user, api->password, api->driver, api->provider, &data) != 0)
     /* get_url sets its own errors, so don't overwrite it here */
     goto cleanup;
 
@@ -263,6 +275,8 @@ int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
   if (parse_xml_single(data, "api", parse_api_xml, api) < 0)
     goto cleanup;
 
+  api->driver = strdup(driver);
+  api->provider = strdup(provider);
   api->initialized = 0xfeedbeef;
 
   ret = 0;

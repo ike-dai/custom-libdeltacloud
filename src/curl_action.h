@@ -28,22 +28,26 @@ extern "C" {
 #include <curl/curl.h>
 
 int do_get_post_url(const char *url, const char *user, const char *password,
+                    const char *driver, const char *provider,
 		    int post, char *data, struct curl_slist *inheader,
 		    char **returndata, char **returnheader);
 
-#define get_url(url, user, password, returndata) do_get_post_url(url, user, password, 0, NULL, NULL, returndata, NULL)
-#define post_url(url, user, password, data, returndata, returnheader) do_get_post_url(url, user, password, 1, data, NULL, returndata, returnheader)
-#define post_url_with_headers(url, user, password, inputheaders, returndata) do_get_post_url(url, user, password, 1, NULL, inputheaders, returndata, NULL)
+#define get_url(url, user, password, driver, provider, returndata) do_get_post_url(url, user, password, driver, provider, 0, NULL, NULL, returndata, NULL)
+#define post_url(url, user, password, driver, provider, data, returndata, returnheader) do_get_post_url(url, user, password, driver, provider, 1, data, NULL, returndata, returnheader)
+#define post_url_with_headers(url, user, password, driver, provider, inputheaders, returndata) do_get_post_url(url, user, password, driver, provider, 1, NULL, inputheaders, returndata, NULL)
 
 int delete_url(const char *url, const char *user, const char *password,
+               const char *driver, const char *provider,
 	       char **returndata);
 
 int do_multipart_post_url(const char *url, const char *user,
 			  const char *password,
+                          const char *driver, const char *provider,
 			  struct curl_httppost *httppost,
 			  char **returndata);
 
 int head_url(const char *url, const char *user, const char *password,
+             const char *driver, const char *provider,
 	     char **returnheader);
 
 #ifdef __cplusplus

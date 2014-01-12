@@ -214,7 +214,7 @@ int deltacloud_storage_snapshot_destroy(struct deltacloud_api *api,
   if (!valid_api(api) || !valid_arg(storage_snapshot))
     return -1;
 
-  return internal_destroy(storage_snapshot->href, api->user, api->password);
+  return internal_destroy(storage_snapshot->href, api->user, api->password, api->driver, api->provider);
 }
 
 /**

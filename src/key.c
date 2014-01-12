@@ -167,7 +167,7 @@ int deltacloud_key_destroy(struct deltacloud_api *api,
   if (!valid_api(api) || !valid_arg(key))
     return -1;
 
-  return internal_destroy(key->href, api->user, api->password);
+  return internal_destroy(key->href, api->user, api->password, api->driver, api->provider);
 }
 
 /**

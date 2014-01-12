@@ -388,7 +388,7 @@ int deltacloud_bucket_create_blob_from_file(struct deltacloud_api *api,
     goto cleanup;
   }
 
-  if (do_multipart_post_url(href, api->user, api->password, httppost,
+  if (do_multipart_post_url(href, api->user, api->password, api->driver, api->provider, httppost,
 			    &data) < 0)
     /* do_multipart_post_url already set the error */
     goto cleanup;
@@ -500,7 +500,7 @@ int deltacloud_bucket_blob_update_metadata(struct deltacloud_api *api,
     }
   }
 
-  if (post_url_with_headers(bloburl, api->user, api->password, headers,
+  if (post_url_with_headers(bloburl, api->user, api->password, api->driver, api->provider, headers,
 			    &internal_data) != 0)
     /* post_url_with_headers sets its own errors, so don't overwrite it here */
     goto cleanup;
@@ -550,7 +550,7 @@ int deltacloud_bucket_blob_get_content(struct deltacloud_api *api,
     return -1;
   }
 
-  if (get_url(bloburl, api->user, api->password, output) != 0)
+  if (get_url(bloburl, api->user, api->password, api->driver, api->provider, output) != 0)
     /* get_url sets its own errors, so don't overwrite it here */
     return -1;
 
@@ -694,7 +694,7 @@ int deltacloud_bucket_delete_blob(struct deltacloud_api *api,
   if (!valid_api(api) || !valid_arg(blob))
     return -1;
 
-  return internal_destroy(blob->href, api->user, api->password);
+  return internal_destroy(blob->href, api->user, api->password, api->driver, api->provider);
 }
 
 /**
@@ -730,7 +730,7 @@ int deltacloud_bucket_destroy(struct deltacloud_api *api,
   if (!valid_api(api) || !valid_arg(bucket))
     return -1;
 
-  return internal_destroy(bucket->href, api->user, api->password);
+  return internal_destroy(bucket->href, api->user, api->password, api->driver, api->provider);
 }
 
 /**

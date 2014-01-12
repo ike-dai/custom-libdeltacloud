@@ -146,12 +146,12 @@ void set_curl_error(int errcode, const char *header, CURLcode res)
 }
 
 /********************** IMPLEMENTATIONS OF COMMON FUNCTIONS *****************/
-int internal_destroy(const char *href, const char *user, const char *password)
+int internal_destroy(const char *href, const char *user, const char *password, const char *driver, const char *provider)
 {
   char *data = NULL;
   int ret = -1;
 
-  if (delete_url(href, user, password, &data) < 0)
+  if (delete_url(href, user, password, driver, provider, &data) < 0)
     /* delete_url already set the error */
     return -1;
 
@@ -220,7 +220,7 @@ int internal_post(struct deltacloud_api *api, const char *href,
   fclose(paramfp);
   paramfp = NULL;
 
-  if (post_url(href, api->user, api->password, param_string, &internal_data,
+  if (post_url(href, api->user, api->password, api->driver, api->provider, param_string, &internal_data,
 	       headers) != 0)
     /* post_url sets its own errors, so don't overwrite it here */
     goto cleanup;
@@ -286,7 +286,7 @@ int internal_get(struct deltacloud_api *api, const char *relname,
     /* api_find_link set the error */
     return -1;
 
-  if (get_url(thislink->href, api->user, api->password, &data) != 0)
+  if (get_url(thislink->href, api->user, api->password, api->driver, api->provider, &data) != 0)
     /* get_url sets its own errors, so don't overwrite it here */
     return -1;
 
@@ -344,7 +344,7 @@ int internal_get_by_id(struct deltacloud_api *api, const char *id,
     goto cleanup;
   }
 
-  if (get_url(url, api->user, api->password, &data) != 0)
+  if (get_url(url, api->user, api->password, api->driver, api->provider, &data) != 0)
     /* get_url sets its own errors, so don't overwrite it here */
     goto cleanup;
 

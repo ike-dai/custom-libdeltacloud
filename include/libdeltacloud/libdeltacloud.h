@@ -35,6 +35,7 @@ struct deltacloud_api {
   char *user; /**< The username used to connect to the deltacloud server */
   char *password; /**< The password used to connect to the deltacloud server */
   char *driver; /**< The driver in use with the connection (this is determined automatically from the URL) */
+  char *provider; /**< The provider used to connect to the deltacloud server(included HTTP request header) */
   char *version; /**< The version of the deltacloud API as returned by the server */
 
   int initialized; /**< An internal field used to determine if the deltacloud_api structure has been properly initialized */
@@ -78,7 +79,7 @@ struct deltacloud_create_parameter {
 #include "firewall.h"
 
 int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
-			  char *password);
+			  char *password, char *driver, char *provider);
 
 int deltacloud_prepare_parameter(struct deltacloud_create_parameter *param,
 				 const char *name, const char *value);

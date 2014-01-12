@@ -41,7 +41,7 @@ void set_error(int errnum, const char *details);
 void set_curl_error(int errcode, const char *header, CURLcode res);
 
 /********************** IMPLEMENTATIONS OF COMMON FUNCTIONS *****************/
-int internal_destroy(const char *href, const char *user, const char *password);
+int internal_destroy(const char *href, const char *user, const char *password, const char *driver, const char *provider);
 int internal_post(struct deltacloud_api *api, const char *href,
 		  struct deltacloud_create_parameter *params,
 		  int params_length, char **data, char **headers);

@@ -217,7 +217,7 @@ static int instance_action(struct deltacloud_api *api,
     return -1;
   }
 
-  if (post_url(act->href, api->user, api->password, NULL, &data, NULL) != 0)
+  if (post_url(act->href, api->user, api->password, api->driver, api->provider, NULL, &data, NULL) != 0)
     /* post_url sets its own errors, so don't overwrite it here */
     return -1;
 
@@ -399,7 +399,7 @@ int deltacloud_instance_destroy(struct deltacloud_api *api,
   if (!valid_api(api) || !valid_arg(instance))
     return -1;
 
-  return internal_destroy(instance->href, api->user, api->password);
+  return internal_destroy(instance->href, api->user, api->password, api->driver, api->provider);
 }
 
 /**
@@ -461,7 +461,7 @@ int deltacloud_get_instance_by_name(struct deltacloud_api *api,
     /* api_find_link set the error */
     return -1;
 
-  if (get_url(thislink->href, api->user, api->password, &data) != 0)
+  if (get_url(thislink->href, api->user, api->password, api->driver, api->provider, &data) != 0)
     /* get_url sets its own errors, so don't overwrite it here */
     return -1;
 
