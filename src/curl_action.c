@@ -124,6 +124,12 @@ static int internal_curl_setup(int errcode, const char *url, const char *user,
   char driver_header[100] = "";
   //char provider_header[strlen(provider)+strlen(provider_header_name)+1];
   char provider_header[100] = "";
+
+  strcat(driver_header, driver_header_name);
+  strcat(driver_header, driver);
+  strcat(provider_header, provider_header_name);
+  strcat(provider_header, provider);
+
   *curl = curl_easy_init();
   if (*curl == NULL) {
     set_error(errcode, "Failed to initialize curl library");
