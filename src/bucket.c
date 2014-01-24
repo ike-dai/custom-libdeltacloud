@@ -616,7 +616,7 @@ int deltacloud_bucket_blob_get_metadata(struct deltacloud_api *api,
     return -1;
   }
 
-  if (head_url(bloburl, api->user, api->password, &headers) != 0)
+  if (head_url(bloburl, api->user, api->password, api->driver, api->provider, &headers) != 0)
     /* head_url sets its own errors, so don't overwrite it here */
     goto cleanup;
 
