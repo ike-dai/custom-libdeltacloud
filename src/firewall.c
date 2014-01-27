@@ -410,7 +410,7 @@ int deltacloud_firewall_delete_rule(struct deltacloud_api *api,
   if (!valid_api(api) || !valid_arg(rule))
     return -1;
 
-  return internal_destroy(rule->href, api->user, api->password);
+  return internal_destroy(rule->href, api->user, api->password, api->driver, api->provider);
 }
 
 /**
@@ -426,7 +426,7 @@ int deltacloud_firewall_destroy(struct deltacloud_api *api,
   if (!valid_api(api) || !valid_arg(firewall))
     return -1;
 
-  return internal_destroy(firewall->href, api->user, api->password);
+  return internal_destroy(firewall->href, api->user, api->password, api->driver, api->provider);
 }
 
 /**
