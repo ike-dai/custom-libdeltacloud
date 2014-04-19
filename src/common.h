@@ -57,16 +57,29 @@ int internal_get_by_id(struct deltacloud_api *api, const char *id,
 		       int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 				 void *data),
 		       void *output);
+int internal_get_by_id_pp(struct deltacloud_api *api, const char *id,
+		       const char *relname, const char *rootname,
+		       int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				 void **),
+		       void **output);
 
 /************************** XML PARSING FUNCTIONS ****************************/
 int is_error_xml(const char *xml);
 typedef int (*xml_cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void *data);
 int internal_xml_parse(const char *xml_string, const char *name, xml_cb cb,
 		       int single, void *output);
+int internal_xml_parse_pp(const char *xml_string, const char *name, 
+		     int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			       void **data),
+		       int single, void **output);
 int parse_xml_single(const char *xml_string, const char *name,
 		     int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
 			       void *data),
 		     void *output);
+int parse_xml_single_pp(const char *xml_string, const char *name,
+		     int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+			       void **data),
+		     void **output);
 char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt);
 
 /************************ MISCELLANEOUS FUNCTIONS ***************************/

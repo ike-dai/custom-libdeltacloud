@@ -80,6 +80,8 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0644,root,root) %{_includedir}/libdeltacloud/realm.h
 %attr(0644,root,root) %{_includedir}/libdeltacloud/storage_snapshot.h
 %attr(0644,root,root) %{_includedir}/libdeltacloud/storage_volume.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/metric.h
+%attr(0644,root,root) %{_includedir}/libdeltacloud/metric_value.h
 %attr(0755,root,root) %{_libdir}/libdeltacloud.so
 %{_libdir}/pkgconfig/libdeltacloud.pc
 

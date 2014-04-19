@@ -77,6 +77,8 @@ struct deltacloud_create_parameter {
 #include "loadbalancer.h"
 #include "bucket.h"
 #include "firewall.h"
+#include "metric.h"
+#include "metric_value.h"
 
 int deltacloud_initialize(struct deltacloud_api *api, char *url, char *user,
 			  char *password, char *driver, char *provider);

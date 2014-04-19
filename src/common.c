@@ -376,6 +376,68 @@ int internal_get_by_id(struct deltacloud_api *api, const char *id,
   return ret;
 }
 
+int internal_get_by_id_pp(struct deltacloud_api *api, const char *id,
+		       const char *relname, const char *rootname,
+		       int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt,
+				 void **),
+		       void **output)
+{
+  char *url = NULL;
+  char *data = NULL;
+  char *safeid;
+  int ret = -1;
+
+  /* we only check api, id, and output here, as those are the only parameters
+   * from the user
+   */
+  if (!valid_api(api) || !valid_arg(id) || !valid_arg(output))
+  {
+    
+    return -1;
+  }
+
+  safeid = curl_escape(id, 0);
+  if (safeid == NULL) {
+    oom_error();
+    return -1;
+  }
+
+  if (asprintf(&url, "%s/%s/%s", api->url, relname, safeid) < 0) {
+    oom_error();
+    goto cleanup;
+  }
+
+  if (get_url(url, api->user, api->password, api->driver, api->provider, &data) != 0)
+    /* get_url sets its own errors, so don't overwrite it here */
+    goto cleanup;
+
+  if (data == NULL) {
+    /* if we made it here, it means that the transfer was successful (ret
+     * was 0), but the data that we expected wasn't returned.  This is probably
+     * a deltacloud server bug, so just set an error and bail out
+     */
+    data_error(relname);
+    goto cleanup;
+  }
+
+  if (is_error_xml(data)) {
+    set_xml_error(data, DELTACLOUD_GET_URL_ERROR);
+    goto cleanup;
+  }
+
+  if (parse_xml_single_pp(data, rootname, cb, output) < 0)
+    /* parse_xml_single set the error */
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  SAFE_FREE(data);
+  SAFE_FREE(url);
+  curl_free(safeid);
+
+  return ret;
+}
 /************************** XML PARSING FUNCTIONS ****************************/
 static int parse_error_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data)
 {
@@ -474,11 +536,78 @@ int internal_xml_parse(const char *xml_string, const char *name, xml_cb cb,
   return ret;
 }
 
+int internal_xml_parse_pp(const char *xml_string, const char *name, int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data),
+		       int single, void **output)
+{
+  xmlDocPtr xml;
+  xmlNodePtr root;
+  xmlXPathContextPtr ctxt = NULL;
+  int ret = -1;
+  int rc;
+
+  xml = xmlReadDoc(BAD_CAST xml_string, name, NULL,
+		   XML_PARSE_NOENT | XML_PARSE_NONET | XML_PARSE_NOERROR |
+		   XML_PARSE_NOWARNING);
+  if (!xml) {
+    set_error_from_xml(name, "Failed to parse XML");
+    return -1;
+  }
+
+  root = xmlDocGetRootElement(xml);
+  if (root == NULL) {
+    set_error_from_xml(name, "Failed to get the root element");
+    goto cleanup;
+  }
+
+  if (STRNEQ((const char *)root->name, name)) {
+    xml_error(name, "Failed to get expected root element", (char *)root->name);
+    goto cleanup;
+  }
+
+  ctxt = xmlXPathNewContext(xml);
+  if (ctxt == NULL) {
+    set_error_from_xml(name, "Failed to initialize XPath context");
+    goto cleanup;
+  }
+
+  ctxt->node = root;
+
+  /* if "single" is true, then the XML looks something like:
+   * <instance> ... </instance>
+   * if "single" is false, then the XML looks something like:
+   * <instances> <instance> ... </instance> </instances>"
+   */
+  if (single)
+  {
+    rc = cb(root, ctxt, output);
+  }
+  else
+    rc = cb(root->children, ctxt, output);
+
+  if (rc < 0)
+    /* the callbacks are expected to have set their own error */
+    goto cleanup;
+
+  ret = 0;
+
+ cleanup:
+  if (ctxt != NULL)
+    xmlXPathFreeContext(ctxt);
+  xmlFreeDoc(xml);
+
+  return ret;
+}
 int parse_xml_single(const char *xml_string, const char *name,
 		     xml_cb cb,
 		     void *output)
 {
   return internal_xml_parse(xml_string, name, cb, 1, output);
+}
+int parse_xml_single_pp(const char *xml_string, const char *name,
+		     int (*cb)(xmlNodePtr cur, xmlXPathContextPtr ctxt, void **data),
+		     void **output)
+{
+  return internal_xml_parse_pp(xml_string, name, cb, 1, output);
 }
 
 char *getXPathString(const char *xpath, xmlXPathContextPtr ctxt)
