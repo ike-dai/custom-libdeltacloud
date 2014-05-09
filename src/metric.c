@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <memory.h>
 #include "common.h"
 #include "metric.h"
@@ -39,10 +40,9 @@ int parse_metric_xml(xmlNodePtr cur, xmlXPathContextPtr ctxt,
   oldnode = ctxt->node;
   cur = cur->children->next->next->next->children;
   while (cur != NULL) {
-    printf("--CUR->TYPE: %d, CUR->NAME: %s \n",cur->type,cur->name);
     if (cur->type == XML_ELEMENT_NODE) {
       thismetric = calloc(1, sizeof(struct deltacloud_metric));
-      thismetric->name = (char *)cur->name;
+      thismetric->name = strdup((const char *)cur->name);
 
       ctxt->node = cur;
 
