@@ -37,6 +37,9 @@ int parse_one_metric_value(xmlNodePtr cur, xmlXPathContextPtr ctxt, struct delta
   thisvalue = calloc(1, sizeof(struct deltacloud_metric_value));
 
   cur = cur->children;
+  if (cur == NULL) {
+    thisvalue = NULL;
+  }
   while (cur != NULL) {
     if (cur->type == XML_ELEMENT_NODE &&
         STREQ((const char *)cur->name, "property")) {
